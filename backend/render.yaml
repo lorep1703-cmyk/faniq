@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: faniq-backend
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: FANIQ_DATABASE_URL
+        sync: false          # inserisci manualmente nella dashboard Render
+      - key: FANIQ_JWT_SECRET
+        sync: false
+      - key: FANIQ_JWT_EXPIRE_MINUTES
+        value: "10080"
+      - key: FANIQ_CORS_ORIGINS
+        sync: false          # es. https://faniq.vercel.app
+      - key: FANIQ_MAX_UPLOAD_MB
+        value: "20"
+      - key: FANIQ_CACHE_TTL
+        value: "120"
+      - key: FANIQ_LOG_LEVEL
+        value: "INFO"
+      - key: OPENAI_API_KEY
+        sync: false          # opzionale
+      - key: PYTHON_VERSION
+        value: "3.9.18"
