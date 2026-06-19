@@ -10,6 +10,8 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 
+from sqlalchemy.exc import OperationalError
+
 from config import CORS_ORIGINS, LOG_LEVEL
 from limiter import limiter
 from database import Base, SessionLocal, _IS_POSTGRES, engine
@@ -29,6 +31,24 @@ app = FastAPI(
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+@app.exception_handler(OperationalError)
+async def db_error_handler(request: Request, exc: OperationalError):
+    logger.error("Database non raggiungibile: %s", exc)
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "Servizio temporaneamente non disponibile. Riprova tra qualche istante."},
+    )
+
+
+@app.exception_handler(Exception)
+async def generic_error_handler(request: Request, exc: Exception):
+    logger.error("Errore non gestito su %s: %s", request.url, exc, exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Errore interno del server."},
+    )
 
 
 @app.middleware("http")
