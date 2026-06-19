@@ -2,19 +2,18 @@
 import logging
 import os
 
+import time
+from collections import defaultdict
+
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, Response
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
-
 from sqlalchemy.exc import OperationalError
 
 from config import CORS_ORIGINS, LOG_LEVEL
-from limiter import limiter
 from database import Base, SessionLocal, _IS_POSTGRES, engine
 from routers import chat, dashboard, export, insights, privacy, simulator, upload
 from routers.auth import router as auth_router
@@ -30,8 +29,30 @@ app = FastAPI(
     version="3.0.0",
 )
 
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# Rate limiting in-memory per IP sugli endpoint di auth
+_rate_store: dict = defaultdict(list)
+_RATE_LIMITS = {
+    "/auth/register": (5, 60),   # 5 richieste per 60 secondi
+    "/auth/login": (10, 60),     # 10 richieste per 60 secondi
+}
+
+
+@app.middleware("http")
+async def rate_limit_auth(request: Request, call_next):
+    path = request.url.path
+    if path in _RATE_LIMITS:
+        max_calls, window = _RATE_LIMITS[path]
+        ip = request.client.host if request.client else "unknown"
+        key = f"{ip}:{path}"
+        now = time.time()
+        _rate_store[key] = [t for t in _rate_store[key] if now - t < window]
+        if len(_rate_store[key]) >= max_calls:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Troppi tentativi. Riprova tra un minuto."},
+            )
+        _rate_store[key].append(now)
+    return await call_next(request)
 
 
 @app.exception_handler(OperationalError)

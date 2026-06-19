@@ -7,7 +7,6 @@ from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy.orm import Session
 
 from database import get_db
-from limiter import limiter
 from models import Club
 from services.auth import create_token, hash_password, verify_password
 
@@ -69,7 +68,6 @@ def _club_response(club: Club, token: str) -> dict:
 
 
 @router.post("/register", status_code=201)
-@limiter.limit("5/minute")
 def register(request: Request, body: RegisterRequest, db: Session = Depends(get_db)):
     slug = _validate_slug(body.slug)
     _validate_password(body.password)
@@ -94,7 +92,6 @@ def register(request: Request, body: RegisterRequest, db: Session = Depends(get_
 
 
 @router.post("/login")
-@limiter.limit("10/minute")
 def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
     slug = body.slug.strip().lower()
     club = db.query(Club).filter(Club.slug == slug).first()
