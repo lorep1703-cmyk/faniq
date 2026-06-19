@@ -6,12 +6,12 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 from sqlalchemy import text
 
 from config import CORS_ORIGINS, LOG_LEVEL
+from limiter import limiter
 from database import Base, SessionLocal, _IS_POSTGRES, engine
 from routers import chat, dashboard, export, insights, privacy, simulator, upload
 from routers.auth import router as auth_router
@@ -20,8 +20,6 @@ load_dotenv()
 
 logging.basicConfig(level=LOG_LEVEL)
 logger = logging.getLogger("faniq")
-
-limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
     title="FanIQ API",

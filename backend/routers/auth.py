@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
-from main import limiter
+from limiter import limiter
 from models import Club
 from services.auth import create_token, hash_password, verify_password
 
