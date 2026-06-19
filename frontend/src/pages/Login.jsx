@@ -7,6 +7,7 @@ export default function Login() {
   const [tab, setTab] = useState("login");
   const [slug, setSlug] = useState("");
   const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,7 +19,7 @@ export default function Login() {
     setLoading(true);
 
     const endpoint = tab === "login" ? "/auth/login" : "/auth/register";
-    const body = tab === "login" ? { slug, password } : { slug, nome, password };
+    const body = tab === "login" ? { slug, password } : { slug, nome, email, password };
 
     try {
       const res = await fetch(`${API_URL}${endpoint}`, {
@@ -66,17 +67,30 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {tab === "register" && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome del club</label>
-                <input
-                  type="text"
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  placeholder="es. FC Torino Nord"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  required
-                />
-              </div>
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome del club</label>
+                  <input
+                    type="text"
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    placeholder="es. FC Torino Nord"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="es. admin@torino.it"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+              </>
             )}
 
             <div>
@@ -105,7 +119,7 @@ export default function Login() {
                 placeholder="••••••••"
                 className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 required
-                minLength={6}
+                minLength={8}
               />
             </div>
 
