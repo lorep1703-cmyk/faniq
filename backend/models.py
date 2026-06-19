@@ -39,7 +39,7 @@ class Fan(Base):
     )
 
     id = Column(Integer, primary_key=True)
-    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=True)
+    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
     nome = Column(String(120), nullable=True)
     cognome = Column(String(120), nullable=True)
     email = Column(String(255), nullable=True)
@@ -65,7 +65,7 @@ class Abbonamento(Base):
     )
 
     id = Column(Integer, primary_key=True)
-    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=True)
+    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
     fan_id = Column(Integer, ForeignKey("fans.id"), nullable=False)
     upload_id = Column(Integer, ForeignKey("upload_history.id"), nullable=True)
     stagione = Column(String(20), nullable=True)
@@ -84,7 +84,7 @@ class Biglietto(Base):
     )
 
     id = Column(Integer, primary_key=True)
-    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=True)
+    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
     fan_id = Column(Integer, ForeignKey("fans.id"), nullable=False)
     upload_id = Column(Integer, ForeignKey("upload_history.id"), nullable=True)
     data_partita = Column(Date, nullable=True)
@@ -104,7 +104,7 @@ class ShopOrder(Base):
     )
 
     id = Column(Integer, primary_key=True)
-    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=True)
+    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
     fan_id = Column(Integer, ForeignKey("fans.id"), nullable=False)
     upload_id = Column(Integer, ForeignKey("upload_history.id"), nullable=True)
     prodotto = Column(String(200), nullable=True)
@@ -122,7 +122,7 @@ class UploadHistory(Base):
     )
 
     id = Column(Integer, primary_key=True)
-    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=True)
+    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
     type = Column(String(20), nullable=False)
     filename = Column(String(255), nullable=True)
     rows_imported = Column(Integer, default=0)
@@ -157,7 +157,7 @@ class PrivacyLog(Base):
     )
 
     id = Column(Integer, primary_key=True)
-    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=True)
+    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
     action = Column(String(80), nullable=False)
     fan_id = Column(Integer, ForeignKey("fans.id"), nullable=True)
     details = Column(Text, nullable=True)

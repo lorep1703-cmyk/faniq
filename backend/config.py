@@ -32,6 +32,9 @@ LOG_LEVEL = os.environ.get("FANIQ_LOG_LEVEL", "INFO").upper()
 
 # Auth JWT
 import secrets as _secrets
-JWT_SECRET_KEY = os.environ.get("FANIQ_JWT_SECRET", _secrets.token_hex(32))
+_jwt_secret = os.environ.get("FANIQ_JWT_SECRET")
+if not _jwt_secret:
+    raise RuntimeError("FANIQ_JWT_SECRET non configurato — imposta la variabile d'ambiente")
+JWT_SECRET_KEY = _jwt_secret
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.environ.get("FANIQ_JWT_EXPIRE_MINUTES", "10080"))  # 7 giorni
