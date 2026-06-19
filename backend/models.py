@@ -21,6 +21,7 @@ class Club(Base):
     id = Column(Integer, primary_key=True)
     nome = Column(String(200), nullable=False)
     slug = Column(String(100), unique=True, nullable=False)
+    email = Column(String(255), unique=True, nullable=True)
     password_hash = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
