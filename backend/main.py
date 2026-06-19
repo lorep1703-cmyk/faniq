@@ -3,8 +3,12 @@ import logging
 import os
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from sqlalchemy import text
 
 from config import CORS_ORIGINS, LOG_LEVEL
@@ -17,11 +21,16 @@ load_dotenv()
 logging.basicConfig(level=LOG_LEVEL)
 logger = logging.getLogger("faniq")
 
+limiter = Limiter(key_func=get_remote_address)
+
 app = FastAPI(
     title="FanIQ API",
     description="Analytics e intelligence per tifosi — piattaforma multi-club",
     version="3.0.0",
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -43,12 +52,7 @@ app.include_router(chat.router)
 
 @app.get("/health")
 def health():
-    return {
-        "status": "ok",
-        "version": "3.0.0",
-        "db": "postgresql" if _IS_POSTGRES else "sqlite",
-        "openai_configured": bool(os.environ.get("OPENAI_API_KEY")),
-    }
+    return {"status": "ok"}
 
 
 # ---------------------------------------------------------------------------
