@@ -116,6 +116,7 @@ def _build_fan_dict(fan: Fan, today: date) -> dict:
         "has_abbonamento": len(fan.abbonamenti) > 0,
         "has_biglietto": len(fan.biglietti) > 0,
         "has_shop": len(fan.shop_orders) > 0,
+        "recency_days": recency_days,
         "last_activity": last_activity.isoformat() if last_activity else None,
         "consenso_marketing": fan.consenso_marketing,
         "consenso_profilazione": fan.consenso_profilazione,

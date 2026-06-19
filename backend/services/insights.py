@@ -1,4 +1,4 @@
-"""Generazione insights strutturati: Revenue Watch, Opportunità, Qualità dati."""
+"""Generazione insights strutturati: Revenue Watch con sotto-cluster, Opportunità, Azioni."""
 from sqlalchemy.orm import Session
 
 from services.analytics import (
@@ -11,192 +11,205 @@ from services.data_readiness import compute_data_readiness
 
 
 def _business_score(dormienti_pct: float, rischio_pct: float, vip_fedeli_pct: float, email_pct: float) -> int:
-    """Score 0-100 che misura la salute commerciale del club, non la qualità tecnica dei dati."""
-    safety = (1 - rischio_pct) * 40        # 40 pt: quanto revenue è al sicuro
-    engagement = (1 - dormienti_pct) * 35  # 35 pt: quanto i tifosi sono attivi
-    growth = min(vip_fedeli_pct * 3, 15)   # 15 pt: % VIP + Fedeli (cap a 15)
-    data = email_pct * 10                  # 10 pt: copertura email
+    """Score 0-100 sulla salute commerciale: attività tifosi, revenue a rischio, potenziale crescita."""
+    safety     = (1 - rischio_pct)    * 40
+    engagement = (1 - dormienti_pct)  * 35
+    growth     = min(vip_fedeli_pct * 3, 15)
+    data       = email_pct            * 10
     return max(0, min(100, round(safety + engagement + growth + data)))
 
 
+def _sub_cluster(recency_days: int) -> str:
+    if recency_days > 540:  return "Persi"
+    if recency_days > 365:  return "Freddi"
+    if recency_days > 180:  return "Tiepidi"
+    return "A rischio"
+
+
+_CLUSTER_CFG = [
+    ("Persi",     "#dc2626", "high",   0.90, "Ultima chiamata — servono offerte shock o esperienze esclusive"),
+    ("Freddi",    "#ea580c", "high",   0.75, "Finestra stretta — campagna nostalgia o invito a un evento speciale"),
+    ("Tiepidi",   "#d97706", "medium", 0.50, "Ancora recuperabili — sconto biglietto prossima partita"),
+    ("A rischio", "#f59e0b", "medium", 0.35, "Intervieni subito — un messaggio personale può bastare"),
+]
+
+
+def _fan_preview(fans: list, limit: int = 10) -> list:
+    sorted_fans = sorted(fans, key=lambda f: (-f["total_spend"], f.get("recency_days", 0)))
+    return [
+        {
+            "id": f["id"],
+            "nome": f["nome"],
+            "cognome": f["cognome"],
+            "email": f.get("email"),
+            "last_activity": f.get("last_activity"),
+            "recency_days": f.get("recency_days", 999),
+            "total_spend": f["total_spend"],
+        }
+        for f in sorted_fans[:limit]
+    ]
+
+
 def generate_insights(db: Session, club_id: int) -> dict:
-    stats = dashboard_stats(db, club_id)
+    stats    = dashboard_stats(db, club_id)
 
     if stats["total_fans"] == 0:
         return {"empty": True, "summary": "Carica i primi CSV per generare insights automatici."}
 
-    total_fans = stats["total_fans"]
+    total_fans    = stats["total_fans"]
     total_revenue = stats["total_revenue"]
-    spesa_media = stats["spesa_media"]
+    spesa_media   = stats["spesa_media"]
 
-    segments = compute_fan_segments(db, club_id)
-    cross = dashboard_cross_source(db, club_id)
-    readiness = compute_data_readiness(db, club_id)
+    segments    = compute_fan_segments(db, club_id)
+    cross       = dashboard_cross_source(db, club_id)
+    readiness   = compute_data_readiness(db, club_id)
     rev_breakdown = dashboard_revenue_breakdown(db, club_id)
 
-    # Raggruppa per segmento
     seg_map: dict[str, list] = {}
     for f in segments:
         seg_map.setdefault(f["segment"], []).append(f)
 
-    # ── REVENUE WATCH ────────────────────────────────────────────────────────
     dormienti = seg_map.get("Dormiente", [])
     a_rischio = seg_map.get("A rischio", [])
+    vip       = seg_map.get("VIP", [])
+    fedeli    = seg_map.get("Fedele", [])
+    nuovi     = seg_map.get("Nuovo", [])
 
-    rev_dormienti = round(sum(f["total_spend"] for f in dormienti) * 0.9)
-    rev_a_rischio = round(sum(f["total_spend"] for f in a_rischio) * 0.55)
-    totale_a_rischio = rev_dormienti + rev_a_rischio
+    # ── SOTTO-CLUSTER (dormienti + a_rischio divisi per urgenza) ─────────────
+    fans_critici = dormienti + a_rischio
+    cluster_buckets: dict[str, list] = {name: [] for name, *_ in _CLUSTER_CFG}
+    for f in fans_critici:
+        cluster_buckets[_sub_cluster(f.get("recency_days", 999))].append(f)
 
-    revenue_watch_items = []
-    if dormienti:
-        revenue_watch_items.append({
-            "label": f"{len(dormienti)} tifosi dormienti",
-            "sublabel": "Nessuna interazione recente — rischio abbandono definitivo",
-            "count": len(dormienti),
-            "revenue": rev_dormienti,
-            "severity": "high",
-            "segment": "Dormiente",
+    sotto_cluster = []
+    totale_a_rischio = 0
+    for name, color, severity, risk_factor, consiglio in _CLUSTER_CFG:
+        fans_in = cluster_buckets[name]
+        if not fans_in:
+            continue
+        rev = round(sum(f["total_spend"] for f in fans_in) * risk_factor)
+        totale_a_rischio += rev
+        sotto_cluster.append({
+            "nome": name,
+            "count": len(fans_in),
+            "revenue": rev,
+            "color": color,
+            "severity": severity,
+            "consiglio": consiglio,
+            "fans": _fan_preview(fans_in),
         })
-    if a_rischio:
-        revenue_watch_items.append({
-            "label": f"{len(a_rischio)} tifosi a rischio churn",
-            "sublabel": "Erano attivi, stanno rallentando — finestra di intervento ancora aperta",
-            "count": len(a_rischio),
-            "revenue": rev_a_rischio,
-            "severity": "medium",
-            "segment": "A rischio",
-        })
 
-    # ── OPPORTUNITÀ ──────────────────────────────────────────────────────────
-    vip = seg_map.get("VIP", [])
-    fedeli = seg_map.get("Fedele", [])
-    nuovi = seg_map.get("Nuovo", [])
-
-    # Stima prezzo medio abbonamento dai dati reali
-    abb_revenue = next((r["importo"] for r in rev_breakdown if r["fonte"] == "Abbonamenti"), 0)
+    # ── OPPORTUNITÀ ───────────────────────────────────────────────────────────
+    abb_revenue       = next((r["importo"] for r in rev_breakdown if r["fonte"] == "Abbonamenti"), 0)
     n_abbonati_totali = sum(1 for f in segments if f.get("has_abbonamento"))
-    avg_abb = round(abb_revenue / n_abbonati_totali) if n_abbonati_totali else round(spesa_media * 0.8)
+    avg_abb           = round(abb_revenue / n_abbonati_totali) if n_abbonati_totali else round(spesa_media * 0.8)
 
     fedeli_senza_abb = [f for f in fedeli if not f.get("has_abbonamento")]
-    nuovi_alto = [f for f in nuovi if f["total_spend"] >= max(spesa_media * 0.6, 20)]
+    nuovi_alto       = [f for f in nuovi if f["total_spend"] >= max(spesa_media * 0.6, 20)]
 
     opportunita = []
-
     if fedeli_senza_abb:
-        rev_stima = round(len(fedeli_senza_abb) * avg_abb * 0.55)
         opportunita.append({
             "tipo": "abbonamento",
             "titolo": f"{len(fedeli_senza_abb)} fedeli senza abbonamento stagionale",
             "descrizione": "Vengono alle partite ma non abbonano — la proposta giusta al momento giusto può convertirli.",
             "count": len(fedeli_senza_abb),
-            "revenue_stimata": rev_stima,
+            "revenue_stimata": round(len(fedeli_senza_abb) * avg_abb * 0.55),
             "azione_label": "Esporta lista",
             "azione_segment": "Fedele",
+            "fans": _fan_preview(fedeli_senza_abb),
         })
-
     if nuovi_alto:
-        rev_stima = round(sum(f["total_spend"] for f in nuovi_alto) * 1.4)
         opportunita.append({
             "tipo": "vip_conversion",
             "titolo": f"{len(nuovi_alto)} nuovi tifosi ad alto potenziale",
             "descrizione": "Prima interazione con spesa sopra la media — coltivali ora prima che diventino occasionali.",
             "count": len(nuovi_alto),
-            "revenue_stimata": rev_stima,
+            "revenue_stimata": round(sum(f["total_spend"] for f in nuovi_alto) * 1.4),
             "azione_label": "Esporta lista",
             "azione_segment": "Nuovo",
+            "fans": _fan_preview(nuovi_alto),
         })
-
     if vip:
-        rev_stima = round(sum(f["total_spend"] for f in vip) * 0.25)
         opportunita.append({
             "tipo": "vip_experience",
             "titolo": f"{len(vip)} VIP da valorizzare con esperienze",
             "descrizione": "I tuoi top spender: hospitality, jersey personalizzata, incontro con lo staff aumentano il lifetime value.",
             "count": len(vip),
-            "revenue_stimata": rev_stima,
+            "revenue_stimata": round(sum(f["total_spend"] for f in vip) * 0.25),
             "azione_label": "Esporta lista",
             "azione_segment": "VIP",
+            "fans": _fan_preview(vip),
         })
 
-    # ── QUALITÀ DATABASE ─────────────────────────────────────────────────────
-    email_pct = round(stats["fans_with_email"] / total_fans * 100)
-    with_consent = sum(1 for f in segments if f.get("consenso_marketing"))
-    fonti_attive = sum([
-        readiness["sources"]["abbonati"] > 0,
+    # ── BUSINESS SCORE ────────────────────────────────────────────────────────
+    email_pct_raw   = stats["fans_with_email"] / total_fans
+    dormienti_pct   = len(dormienti) / total_fans
+    rischio_pct     = totale_a_rischio / total_revenue if total_revenue else 0
+    vip_fedeli_pct  = (len(vip) + len(fedeli)) / total_fans
+    biz_score       = _business_score(dormienti_pct, rischio_pct, vip_fedeli_pct, email_pct_raw)
+
+    # ── QUALITÀ (solo per uso interno, non nella hero row) ───────────────────
+    email_pct     = round(email_pct_raw * 100)
+    with_consent  = sum(1 for f in segments if f.get("consenso_marketing"))
+    fonti_attive  = sum([
+        readiness["sources"]["abbonati"]    > 0,
         readiness["sources"]["biglietteria"] > 0,
-        readiness["sources"]["shop"] > 0,
+        readiness["sources"]["shop"]        > 0,
     ])
-
-    issues = []
-    if email_pct < 70:
-        issues.append(f"Solo {email_pct}% ha email — raccogli contatti al gate e in cassa")
-    if with_consent < total_fans * 0.4:
-        issues.append(f"Solo {with_consent} consensi marketing — aggiungi raccolta consenso al prossimo acquisto")
-    if fonti_attive < 3:
-        issues.append("Carica tutte e 3 le fonti CSV per insights più precisi")
-
     qualita = {
-        "score": readiness["score"],
-        "email_pct": email_pct,
+        "score":          readiness["score"],
+        "email_pct":      email_pct,
         "consenso_count": with_consent,
-        "consenso_pct": round(with_consent / total_fans * 100),
-        "fonti_attive": fonti_attive,
-        "issues": issues,
+        "consenso_pct":   round(with_consent / total_fans * 100),
+        "fonti_attive":   fonti_attive,
     }
 
-    # ── BUSINESS SCORE ───────────────────────────────────────────────────────
-    dormienti_pct = len(dormienti) / total_fans
-    rischio_pct = totale_a_rischio / total_revenue if total_revenue else 0
-    vip_fedeli_pct = (len(vip) + len(fedeli)) / total_fans
-    email_pct_raw = stats["fans_with_email"] / total_fans
-    biz_score = _business_score(dormienti_pct, rischio_pct, vip_fedeli_pct, email_pct_raw)
-
-    # ── KPI BAR ──────────────────────────────────────────────────────────────
-    opportunita_tot = sum(o["revenue_stimata"] for o in opportunita)
-    super_fans = cross["all_three"]
-
-    # ── HINT PUNTO 2 — azioni della settimana ────────────────────────────────
+    # ── AZIONI CONSIGLIATE ────────────────────────────────────────────────────
+    totale_critici = len(fans_critici)
     azioni_settimana = []
-    if a_rischio:
+
+    if totale_critici > 0:
         azioni_settimana.append({
             "urgenza": "alta",
-            "azione": f"Contatta i {len(a_rischio)} tifosi a rischio prima della prossima partita",
-            "valore": f"€{rev_a_rischio:,} da recuperare",
-            "segment": "A rischio",
+            "azione": f"Riattiva i {totale_critici} tifosi inattivi prima della prossima partita",
+            "valore": f"€{totale_a_rischio:,} a rischio",
+            "segment": "Dormiente",
         })
     if fedeli_senza_abb:
         azioni_settimana.append({
             "urgenza": "media",
-            "azione": f"Proponi l'abbonamento ai {len(fedeli_senza_abb)} fedeli non abbonati",
+            "azione": f"Proponi l'abbonamento ai {len(fedeli_senza_abb)} fedeli non ancora abbonati",
             "valore": f"Potenziale €{round(len(fedeli_senza_abb) * avg_abb * 0.55):,}",
             "segment": "Fedele",
         })
     if nuovi_alto:
         azioni_settimana.append({
             "urgenza": "media",
-            "azione": f"Invia benvenuto personalizzato ai {len(nuovi_alto)} nuovi tifosi con alta spesa",
+            "azione": f"Accogli i {len(nuovi_alto)} nuovi tifosi con alta spesa — fidelizzali subito",
             "valore": "Fidelizzazione precoce",
             "segment": "Nuovo",
         })
 
+    opportunita_tot = sum(o["revenue_stimata"] for o in opportunita)
+
     return {
         "kpi": {
-            "total_fans": total_fans,
-            "total_revenue": total_revenue,
+            "total_fans":        total_fans,
+            "total_revenue":     total_revenue,
             "revenue_a_rischio": totale_a_rischio,
             "opportunita_stimata": opportunita_tot,
-            "business_score": biz_score,
-            "data_score": readiness["score"],
-            "super_fans": super_fans,
+            "business_score":    biz_score,
+            "super_fans":        cross["all_three"],
         },
         "revenue_watch": {
             "totale_a_rischio": totale_a_rischio,
-            "fans_count": len(dormienti) + len(a_rischio),
-            "items": revenue_watch_items,
+            "fans_count":       totale_critici,
+            "sotto_cluster":    sotto_cluster,
         },
-        "opportunita": opportunita,
-        "qualita": qualita,
-        "segment_counts": {seg: len(fans) for seg, fans in seg_map.items()},
-        "azioni_settimana": azioni_settimana,
-        "summary": f"Analisi su {total_fans} tifosi · Revenue totale €{total_revenue:,.0f}",
+        "opportunita":       opportunita,
+        "qualita":           qualita,
+        "segment_counts":    {seg: len(fans) for seg, fans in seg_map.items()},
+        "azioni_settimana":  azioni_settimana,
+        "summary":           f"Analisi su {total_fans} tifosi · Revenue totale €{total_revenue:,.0f}",
     }

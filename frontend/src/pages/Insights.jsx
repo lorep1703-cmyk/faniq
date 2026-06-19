@@ -1,59 +1,48 @@
 import { useEffect, useState } from "react";
 import {
   ShieldAlert, TrendingUp, Download, Users, Star,
-  AlertTriangle, ChevronRight, Sparkles, ChevronDown, ChevronUp,
+  ChevronRight, Sparkles, ChevronDown, ChevronUp,
 } from "lucide-react";
-import { fetchInsights, fetchFansBySegment, exportFans } from "../api/client";
+import { fetchInsights, exportFans } from "../api/client";
 import EmptyState from "../components/EmptyState";
 
 // ── utils ─────────────────────────────────────────────────────────────────────
 
-function fmt(n) {
-  return new Intl.NumberFormat("it-IT").format(Math.round(n ?? 0));
-}
-function fmtEur(n) {
-  if (!n) return "—";
-  return `€${fmt(n)}`;
-}
-function fmtDate(d) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" });
-}
+const fmt    = (n) => new Intl.NumberFormat("it-IT").format(Math.round(n ?? 0));
+const fmtEur = (n) => n ? `€${fmt(n)}` : "—";
+const fmtDate = (d) => d
+  ? new Date(d).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" })
+  : "—";
 
-// ── Business Score circle ─────────────────────────────────────────────────────
+// ── Business Score ────────────────────────────────────────────────────────────
 
-const scoreColor = (s) =>
-  s >= 75 ? "#10b981" : s >= 50 ? "#f59e0b" : s >= 25 ? "#ef4444" : "#dc2626";
-const scoreLabel = (s) =>
-  s >= 75 ? "Buona salute" : s >= 50 ? "Attenzione" : s >= 25 ? "A rischio" : "Critico";
+const scoreColor = (s) => s >= 75 ? "#10b981" : s >= 50 ? "#f59e0b" : s >= 25 ? "#ef4444" : "#dc2626";
+const scoreLabel = (s) => s >= 75 ? "Buona salute" : s >= 50 ? "Attenzione" : s >= 25 ? "A rischio" : "Critico";
 
 function BusinessScore({ score }) {
-  const r = 52;
+  const r    = 52;
   const circ = 2 * Math.PI * r;
-  const offset = circ * (1 - score / 100);
-  const color = scoreColor(score);
+  const off  = circ * (1 - score / 100);
+  const col  = scoreColor(score);
 
   return (
-    <div className="flex flex-col items-center justify-center h-full py-4">
+    <div className="flex flex-col items-center justify-center py-2">
       <div className="relative w-36 h-36">
         <svg viewBox="0 0 128 128" className="w-full h-full -rotate-90">
           <circle cx="64" cy="64" r={r} fill="none" stroke="#f1f5f9" strokeWidth="10" />
-          <circle
-            cx="64" cy="64" r={r}
-            fill="none" stroke={color} strokeWidth="10" strokeLinecap="round"
-            strokeDasharray={circ} strokeDashoffset={offset}
-            style={{ transition: "stroke-dashoffset 1.2s ease" }}
-          />
+          <circle cx="64" cy="64" r={r} fill="none" stroke={col} strokeWidth="10"
+            strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={off}
+            style={{ transition: "stroke-dashoffset 1.2s ease" }} />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-4xl font-black leading-none" style={{ color }}>{score}</span>
+          <span className="text-4xl font-black leading-none" style={{ color: col }}>{score}</span>
           <span className="text-xs text-slate-400 font-medium">/100</span>
         </div>
       </div>
       <p className="text-sm font-bold text-slate-700 mt-3">Salute del club</p>
-      <p className="text-xs font-semibold mt-0.5" style={{ color }}>{scoreLabel(score)}</p>
-      <p className="text-xs text-slate-400 mt-2 text-center max-w-[140px] leading-relaxed">
-        Basato su attività tifosi, revenue a rischio e potenziale di crescita
+      <p className="text-xs font-semibold mt-0.5" style={{ color: col }}>{scoreLabel(score)}</p>
+      <p className="text-xs text-slate-400 mt-2 text-center leading-relaxed px-2">
+        Attività tifosi · Revenue a rischio · Potenziale di crescita
       </p>
     </div>
   );
@@ -71,7 +60,7 @@ function AlertBanner({ kpi }) {
         <div>
           <p className="font-bold text-sm">Intervieni ora — {fmtEur(kpi.revenue_a_rischio)} a rischio</p>
           <p className="text-xs text-red-200 mt-0.5">
-            {Math.round(pct * 100)}% della revenue storica a rischio perdita permanente
+            {Math.round(pct * 100)}% della revenue storica rischia di andare persa definitivamente
           </p>
         </div>
       </div>
@@ -84,13 +73,13 @@ function AlertBanner({ kpi }) {
 
 function KpiStrip({ kpi }) {
   const items = [
-    { label: "Tifosi totali", value: fmt(kpi.total_fans), icon: Users, color: "text-slate-600" },
+    { label: "Tifosi totali",     value: fmt(kpi.total_fans),           icon: Users,      color: "text-slate-600" },
     { label: "Revenue a rischio", value: fmtEur(kpi.revenue_a_rischio), icon: ShieldAlert, color: kpi.revenue_a_rischio > 0 ? "text-red-600" : "text-slate-400" },
-    { label: "Opportunità stimata", value: fmtEur(kpi.opportunita_stimata), icon: TrendingUp, color: kpi.opportunita_stimata > 0 ? "text-emerald-600" : "text-slate-400" },
-    { label: "Super-fan", value: fmt(kpi.super_fans), icon: Star, color: "text-violet-600" },
+    { label: "Opportunità",       value: fmtEur(kpi.opportunita_stimata),icon: TrendingUp, color: kpi.opportunita_stimata > 0 ? "text-emerald-600" : "text-slate-400" },
+    { label: "Super-fan",         value: fmt(kpi.super_fans),           icon: Star,       color: "text-violet-600" },
   ];
   return (
-    <div className="grid grid-cols-2 gap-3 h-full content-center">
+    <div className="grid grid-cols-2 gap-3">
       {items.map(({ label, value, icon: Icon, color }) => (
         <div key={label} className="bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
           <div className="flex items-center gap-1.5 mb-1">
@@ -104,36 +93,6 @@ function KpiStrip({ kpi }) {
   );
 }
 
-// ── Qualità pills ─────────────────────────────────────────────────────────────
-
-function QualitaPills({ qualita }) {
-  const pills = [
-    { label: "Email", value: qualita.email_pct, suffix: "%" },
-    { label: "Consensi", value: qualita.consenso_pct, suffix: "%" },
-    { label: "Fonti", value: qualita.fonti_attive, suffix: "/3" },
-  ];
-  return (
-    <div className="flex flex-col justify-center h-full gap-3">
-      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Qualità Dati</p>
-      {pills.map((p) => {
-        const pct = p.suffix === "/3" ? (p.value / 3) * 100 : p.value;
-        const color = pct >= 70 ? "#10b981" : pct >= 40 ? "#f59e0b" : "#ef4444";
-        return (
-          <div key={p.label}>
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-slate-500">{p.label}</span>
-              <span className="font-bold text-slate-700">{p.value}{p.suffix}</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-              <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 // ── Segment bars ──────────────────────────────────────────────────────────────
 
 const SEG_COLOR = {
@@ -142,11 +101,10 @@ const SEG_COLOR = {
 };
 
 function SegmentBars({ counts }) {
-  const total = Object.values(counts).reduce((a, b) => a + b, 0);
-  if (!total) return null;
+  const total  = Object.values(counts).reduce((a, b) => a + b, 0);
   const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
   return (
-    <div className="flex flex-col justify-center h-full gap-2.5">
+    <div className="flex flex-col justify-center gap-2.5">
       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Segmenti</p>
       {sorted.map(([seg, count]) => (
         <div key={seg} className="flex items-center gap-3">
@@ -161,115 +119,104 @@ function SegmentBars({ counts }) {
   );
 }
 
-// ── Fan mini-list (espandibile) ───────────────────────────────────────────────
+// ── Fan table (inline, dati già inclusi) ──────────────────────────────────────
 
-function FanList({ segment }) {
-  const [fans, setFans] = useState(null);
+function FanTable({ fans, label }) {
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const toggle = async () => {
-    if (!open && fans === null) {
-      setLoading(true);
-      try {
-        const data = await fetchFansBySegment(segment);
-        setFans(data.slice(0, 10)); // max 10 in preview
-      } finally {
-        setLoading(false);
-      }
-    }
-    setOpen((v) => !v);
-  };
+  if (!fans?.length) return null;
 
   return (
     <div className="mt-3">
       <button
-        onClick={toggle}
+        onClick={() => setOpen(v => !v)}
         className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors"
       >
         {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-        {open ? "Nascondi tifosi" : "Vedi chi sono"}
+        {open ? "Nascondi" : `Vedi chi sono (${fans.length}${fans.length === 10 ? "+" : ""})`}
       </button>
 
       {open && (
         <div className="mt-2 rounded-lg border border-slate-200 overflow-hidden">
-          {loading ? (
-            <div className="p-3 text-xs text-slate-400 text-center">Caricamento...</div>
-          ) : !fans?.length ? (
-            <div className="p-3 text-xs text-slate-400 text-center">Nessun tifoso trovato</div>
-          ) : (
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="text-left px-3 py-2 font-semibold text-slate-500">Nome</th>
-                  <th className="text-left px-3 py-2 font-semibold text-slate-500">Email</th>
-                  <th className="text-left px-3 py-2 font-semibold text-slate-500">Ultima attività</th>
-                  <th className="text-right px-3 py-2 font-semibold text-slate-500">Spesa</th>
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200">
+                <th className="text-left px-3 py-2 font-semibold text-slate-500">Nome</th>
+                <th className="text-left px-3 py-2 font-semibold text-slate-500 hidden sm:table-cell">Email</th>
+                <th className="text-left px-3 py-2 font-semibold text-slate-500">Ultima att.</th>
+                <th className="text-right px-3 py-2 font-semibold text-slate-500">Spesa</th>
+              </tr>
+            </thead>
+            <tbody>
+              {fans.map((f) => (
+                <tr key={f.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                  <td className="px-3 py-2 font-medium text-slate-700">{f.nome} {f.cognome}</td>
+                  <td className="px-3 py-2 text-slate-400 hidden sm:table-cell">{f.email ?? "—"}</td>
+                  <td className="px-3 py-2 text-slate-400">{fmtDate(f.last_activity)}</td>
+                  <td className="px-3 py-2 text-right font-semibold text-slate-700">{fmtEur(f.total_spend)}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {fans.map((f) => (
-                  <tr key={f.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                    <td className="px-3 py-2 font-medium text-slate-700">{f.nome} {f.cognome}</td>
-                    <td className="px-3 py-2 text-slate-400">{f.email ?? "—"}</td>
-                    <td className="px-3 py-2 text-slate-400">{fmtDate(f.last_activity)}</td>
-                    <td className="px-3 py-2 text-right font-semibold text-slate-700">{fmtEur(f.total_spend)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
   );
 }
 
-// ── Revenue Watch ─────────────────────────────────────────────────────────────
+// ── Revenue Watch con sotto-cluster ──────────────────────────────────────────
 
 function RevenueWatch({ data, onExport }) {
+  if (!data.sotto_cluster?.length) {
+    return (
+      <div className="bg-white rounded-xl border border-slate-100 p-6">
+        <SectionTitle icon={ShieldAlert} color="text-red-500" title="Revenue Watch" sub="Revenue storica a rischio perdita permanente" />
+        <p className="text-sm text-slate-400 mt-4">Nessuna criticità rilevata — ottimo.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-xl border border-slate-100 p-6">
-      <div className="flex items-center gap-2 mb-1">
-        <ShieldAlert size={15} className="text-red-500" />
-        <h2 className="text-sm font-bold text-slate-700">Revenue Watch</h2>
-      </div>
-      <p className="text-xs text-slate-400 mb-4">Revenue storica a rischio perdita permanente</p>
+      <SectionTitle icon={ShieldAlert} color="text-red-500" title="Revenue Watch" sub="Revenue storica a rischio, divisa per urgenza di intervento" />
 
-      {!data.items.length ? (
-        <p className="text-sm text-slate-400">Nessuna criticità rilevata.</p>
-      ) : (
-        <>
-          <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-3 flex items-baseline justify-between mb-4">
-            <span className="text-xs font-semibold text-red-700">Totale a rischio</span>
-            <span className="text-2xl font-black text-red-600">{fmtEur(data.totale_a_rischio)}</span>
-          </div>
-          <div className="space-y-4">
-            {data.items.map((item) => (
-              <div key={item.segment} className={`rounded-lg border p-4 ${item.severity === "high" ? "border-red-200 bg-red-50" : "border-amber-200 bg-amber-50"}`}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-bold text-slate-800">{item.label}</p>
-                    <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{item.sublabel}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className={`text-lg font-black ${item.severity === "high" ? "text-red-600" : "text-amber-600"}`}>{fmtEur(item.revenue)}</p>
-                    <p className="text-xs text-slate-400">{item.count} tifosi</p>
-                  </div>
-                </div>
-                <FanList segment={item.segment} />
-                <button
-                  onClick={() => onExport(item.segment)}
-                  className="mt-3 flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
-                >
-                  <Download size={12} />
-                  Esporta segmento
-                </button>
+      <div className="flex items-baseline justify-between rounded-lg bg-red-50 border border-red-100 px-4 py-3 mt-4 mb-5">
+        <span className="text-xs font-semibold text-red-700">Totale a rischio · {data.fans_count} tifosi</span>
+        <span className="text-2xl font-black text-red-600">{fmtEur(data.totale_a_rischio)}</span>
+      </div>
+
+      <div className="space-y-4">
+        {data.sotto_cluster.map((cluster) => (
+          <div key={cluster.nome} className="rounded-lg border p-4"
+            style={{ borderColor: cluster.color + "33", backgroundColor: cluster.color + "0d" }}>
+
+            {/* Header cluster */}
+            <div className="flex items-start justify-between gap-3 mb-1">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: cluster.color }} />
+                <p className="text-sm font-bold text-slate-800">{cluster.nome}</p>
+                <span className="text-xs text-slate-400">· {cluster.count} tifosi</span>
               </div>
-            ))}
+              <div className="text-right shrink-0">
+                <p className="text-lg font-black" style={{ color: cluster.color }}>{fmtEur(cluster.revenue)}</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-500 ml-4 leading-relaxed">{cluster.consiglio}</p>
+
+            <div className="ml-4">
+              <FanTable fans={cluster.fans} />
+            </div>
+
+            <button
+              onClick={() => onExport(cluster.nome === "A rischio" ? "A rischio" : "Dormiente")}
+              className="mt-3 ml-4 flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              <Download size={12} />
+              Esporta questo gruppo
+            </button>
           </div>
-        </>
-      )}
+        ))}
+      </div>
     </div>
   );
 }
@@ -279,16 +226,12 @@ function RevenueWatch({ data, onExport }) {
 function Opportunita({ items, onExport }) {
   return (
     <div className="bg-white rounded-xl border border-slate-100 p-6">
-      <div className="flex items-center gap-2 mb-1">
-        <TrendingUp size={15} className="text-emerald-500" />
-        <h2 className="text-sm font-bold text-slate-700">Opportunità</h2>
-      </div>
-      <p className="text-xs text-slate-400 mb-4">Revenue aggiuntiva stimata con azioni mirate</p>
+      <SectionTitle icon={TrendingUp} color="text-emerald-500" title="Opportunità" sub="Revenue aggiuntiva stimata con azioni mirate" />
 
       {!items.length ? (
-        <p className="text-sm text-slate-400">Carica più dati per sbloccare opportunità.</p>
+        <p className="text-sm text-slate-400 mt-4">Carica più dati per sbloccare opportunità.</p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 mt-4">
           {items.map((item) => (
             <div key={item.tipo} className="rounded-lg border border-emerald-100 bg-emerald-50 p-4">
               <div className="flex items-start justify-between gap-3">
@@ -301,7 +244,7 @@ function Opportunita({ items, onExport }) {
                   <p className="text-xs text-slate-400">potenziale</p>
                 </div>
               </div>
-              <FanList segment={item.azione_segment} />
+              <FanTable fans={item.fans} />
               <button
                 onClick={() => onExport(item.azione_segment)}
                 className="mt-3 flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
@@ -321,41 +264,41 @@ function Opportunita({ items, onExport }) {
 
 function AzioniSettimana({ azioni, onExport }) {
   if (!azioni.length) return null;
-  const URGENCY = {
-    alta: { bar: "bg-red-500", label: "Urgente" },
-    media: { bar: "bg-amber-400", label: "Questa settimana" },
-  };
+  const urgencyBar = { alta: "bg-red-500", media: "bg-amber-400" };
+  const urgencyLabel = { alta: "Urgente", media: "Questa settimana" };
+
   return (
     <div className="bg-white rounded-xl border border-slate-100 p-6">
-      <div className="flex items-center gap-2 mb-1">
-        <Sparkles size={15} className="text-primary-600" />
-        <h2 className="text-sm font-bold text-slate-700">Cosa fare adesso</h2>
+      <SectionTitle icon={Sparkles} color="text-primary-600" title="Cosa fare adesso"
+        sub="Ogni azione esporta il segmento giusto — presto porterà direttamente alla sezione Marketing" />
+      <div className="space-y-2 mt-4">
+        {azioni.map((a, i) => (
+          <button key={i} onClick={() => onExport(a.segment)}
+            className="w-full flex items-center gap-4 rounded-lg border border-slate-100 px-4 py-3 hover:bg-slate-50 hover:border-slate-200 transition-colors text-left">
+            <div className={`w-1 h-8 rounded-full shrink-0 ${urgencyBar[a.urgenza] ?? "bg-slate-300"}`} />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-slate-700">{a.azione}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{urgencyLabel[a.urgenza]}</p>
+            </div>
+            <p className="text-xs font-bold text-slate-600 shrink-0">{a.valore}</p>
+            <ChevronRight size={14} className="text-slate-300 shrink-0" />
+          </button>
+        ))}
       </div>
-      <p className="text-xs text-slate-400 mb-4">
-        Ogni azione esporta direttamente il segmento giusto — presto porterà alla sezione Marketing
-      </p>
-      <div className="space-y-2">
-        {azioni.map((a, i) => {
-          const u = URGENCY[a.urgenza] ?? URGENCY.media;
-          return (
-            <button
-              key={i}
-              onClick={() => onExport(a.segment)}
-              className="w-full flex items-center gap-4 rounded-lg border border-slate-100 px-4 py-3 hover:bg-slate-50 hover:border-slate-200 transition-colors text-left"
-            >
-              <div className={`w-1 h-8 rounded-full ${u.bar} shrink-0`} />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-700">{a.azione}</p>
-                <p className="text-xs text-slate-400 mt-0.5">{u.label}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-xs font-bold text-slate-600">{a.valore}</p>
-              </div>
-              <ChevronRight size={14} className="text-slate-300 shrink-0" />
-            </button>
-          );
-        })}
+    </div>
+  );
+}
+
+// ── helper UI ─────────────────────────────────────────────────────────────────
+
+function SectionTitle({ icon: Icon, color, title, sub }) {
+  return (
+    <div>
+      <div className="flex items-center gap-2">
+        <Icon size={15} className={color} />
+        <h2 className="text-sm font-bold text-slate-700">{title}</h2>
       </div>
+      {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
     </div>
   );
 }
@@ -363,9 +306,9 @@ function AzioniSettimana({ azioni, onExport }) {
 // ── Pagina principale ─────────────────────────────────────────────────────────
 
 export default function Insights() {
-  const [data, setData] = useState(null);
+  const [data, setData]     = useState(null);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState(null);
+  const [toast, setToast]   = useState(null);
 
   useEffect(() => {
     fetchInsights()
@@ -405,15 +348,17 @@ export default function Insights() {
 
   return (
     <div className="flex-1 p-8 overflow-auto">
+      {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-800">Intelligence</h1>
         <p className="text-slate-400 text-sm mt-1">{data.summary}</p>
       </div>
 
+      {/* 1 — Alert */}
       <AlertBanner kpi={data.kpi} />
 
-      {/* Hero row */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+      {/* 2 — Come stai */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-slate-100 p-4">
           <BusinessScore score={data.kpi.business_score} />
         </div>
@@ -423,18 +368,15 @@ export default function Insights() {
         <div className="bg-white rounded-xl border border-slate-100 p-4">
           <SegmentBars counts={data.segment_counts} />
         </div>
-        <div className="bg-white rounded-xl border border-slate-100 p-4">
-          <QualitaPills qualita={data.qualita} />
-        </div>
       </div>
 
-      {/* Revenue Watch + Opportunità */}
+      {/* 3 — Cosa rischi + Cosa puoi guadagnare */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <RevenueWatch data={data.revenue_watch} onExport={handleExport} />
-        <Opportunita items={data.opportunita} onExport={handleExport} />
+        <Opportunita  items={data.opportunita}  onExport={handleExport} />
       </div>
 
-      {/* Cosa fare adesso */}
+      {/* 4 — Cosa fai adesso */}
       <AzioniSettimana azioni={data.azioni_settimana} onExport={handleExport} />
 
       {toast && (
