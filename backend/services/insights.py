@@ -1,106 +1,185 @@
-"""Generazione insights automatici sui dati del club."""
+"""Generazione insights strutturati: Revenue Watch, Opportunità, Qualità dati."""
 from sqlalchemy.orm import Session
 
 from services.analytics import (
     compute_fan_segments,
     dashboard_cross_source,
+    dashboard_revenue_breakdown,
     dashboard_stats,
-    get_all_fans_raw,
 )
+from services.data_readiness import compute_data_readiness
 
 
 def generate_insights(db: Session, club_id: int) -> dict:
     stats = dashboard_stats(db, club_id)
-    segments = compute_fan_segments(db, club_id)
-    cross = dashboard_cross_source(db, club_id)
 
     if stats["total_fans"] == 0:
-        return {
-            "insights": [],
-            "summary": "Carica i primi CSV per generare insights automatici.",
-        }
+        return {"empty": True, "summary": "Carica i primi CSV per generare insights automatici."}
 
-    seg_counts = {}
-    for s in segments:
-        seg_counts[s["segment"]] = seg_counts.get(s["segment"], 0) + 1
+    total_fans = stats["total_fans"]
+    total_revenue = stats["total_revenue"]
+    spesa_media = stats["spesa_media"]
 
-    insights = []
+    segments = compute_fan_segments(db, club_id)
+    cross = dashboard_cross_source(db, club_id)
+    readiness = compute_data_readiness(db, club_id)
+    rev_breakdown = dashboard_revenue_breakdown(db, club_id)
 
-    email_pct = round(stats["fans_with_email"] / stats["total_fans"] * 100) if stats["total_fans"] else 0
+    # Raggruppa per segmento
+    seg_map: dict[str, list] = {}
+    for f in segments:
+        seg_map.setdefault(f["segment"], []).append(f)
+
+    # ── REVENUE WATCH ────────────────────────────────────────────────────────
+    dormienti = seg_map.get("Dormiente", [])
+    a_rischio = seg_map.get("A rischio", [])
+
+    rev_dormienti = round(sum(f["total_spend"] for f in dormienti) * 0.9)
+    rev_a_rischio = round(sum(f["total_spend"] for f in a_rischio) * 0.55)
+    totale_a_rischio = rev_dormienti + rev_a_rischio
+
+    revenue_watch_items = []
+    if dormienti:
+        revenue_watch_items.append({
+            "label": f"{len(dormienti)} tifosi dormienti",
+            "sublabel": "Nessuna interazione recente — rischio abbandono definitivo",
+            "count": len(dormienti),
+            "revenue": rev_dormienti,
+            "severity": "high",
+            "segment": "Dormiente",
+        })
+    if a_rischio:
+        revenue_watch_items.append({
+            "label": f"{len(a_rischio)} tifosi a rischio churn",
+            "sublabel": "Erano attivi, stanno rallentando — finestra di intervento ancora aperta",
+            "count": len(a_rischio),
+            "revenue": rev_a_rischio,
+            "severity": "medium",
+            "segment": "A rischio",
+        })
+
+    # ── OPPORTUNITÀ ──────────────────────────────────────────────────────────
+    vip = seg_map.get("VIP", [])
+    fedeli = seg_map.get("Fedele", [])
+    nuovi = seg_map.get("Nuovo", [])
+
+    # Stima prezzo medio abbonamento dai dati reali
+    abb_revenue = next((r["importo"] for r in rev_breakdown if r["fonte"] == "Abbonamenti"), 0)
+    n_abbonati_totali = sum(1 for f in segments if f.get("has_abbonamento"))
+    avg_abb = round(abb_revenue / n_abbonati_totali) if n_abbonati_totali else round(spesa_media * 0.8)
+
+    fedeli_senza_abb = [f for f in fedeli if not f.get("has_abbonamento")]
+    nuovi_alto = [f for f in nuovi if f["total_spend"] >= max(spesa_media * 0.6, 20)]
+
+    opportunita = []
+
+    if fedeli_senza_abb:
+        rev_stima = round(len(fedeli_senza_abb) * avg_abb * 0.55)
+        opportunita.append({
+            "tipo": "abbonamento",
+            "titolo": f"{len(fedeli_senza_abb)} fedeli senza abbonamento stagionale",
+            "descrizione": "Vengono alle partite ma non abbonano — la proposta giusta al momento giusto può convertirli.",
+            "count": len(fedeli_senza_abb),
+            "revenue_stimata": rev_stima,
+            "azione_label": "Esporta lista",
+            "azione_segment": "Fedele",
+        })
+
+    if nuovi_alto:
+        rev_stima = round(sum(f["total_spend"] for f in nuovi_alto) * 1.4)
+        opportunita.append({
+            "tipo": "vip_conversion",
+            "titolo": f"{len(nuovi_alto)} nuovi tifosi ad alto potenziale",
+            "descrizione": "Prima interazione con spesa sopra la media — coltivali ora prima che diventino occasionali.",
+            "count": len(nuovi_alto),
+            "revenue_stimata": rev_stima,
+            "azione_label": "Esporta lista",
+            "azione_segment": "Nuovo",
+        })
+
+    if vip:
+        rev_stima = round(sum(f["total_spend"] for f in vip) * 0.25)
+        opportunita.append({
+            "tipo": "vip_experience",
+            "titolo": f"{len(vip)} VIP da valorizzare con esperienze",
+            "descrizione": "I tuoi top spender: hospitality, jersey personalizzata, incontro con lo staff aumentano il lifetime value.",
+            "count": len(vip),
+            "revenue_stimata": rev_stima,
+            "azione_label": "Esporta lista",
+            "azione_segment": "VIP",
+        })
+
+    # ── QUALITÀ DATABASE ─────────────────────────────────────────────────────
+    email_pct = round(stats["fans_with_email"] / total_fans * 100)
+    with_consent = sum(1 for f in segments if f.get("consenso_marketing"))
+    fonti_attive = sum([
+        readiness["sources"]["abbonati"] > 0,
+        readiness["sources"]["biglietteria"] > 0,
+        readiness["sources"]["shop"] > 0,
+    ])
+
+    issues = []
     if email_pct < 70:
-        insights.append({
-            "type": "warning",
-            "title": "Email incomplete",
-            "body": f"Solo {email_pct}% dei tifosi ha un'email. Migliora la raccolta al gate o nello shop per campagne più efficaci.",
-            "priority": "high",
-        })
-    else:
-        insights.append({
-            "type": "success",
-            "title": "Base email solida",
-            "body": f"{email_pct}% dei tifosi è raggiungibile via email — ottimo per comunicazioni e marketing.",
-            "priority": "low",
-        })
+        issues.append(f"Solo {email_pct}% ha email — raccogli contatti al gate e in cassa")
+    if with_consent < total_fans * 0.4:
+        issues.append(f"Solo {with_consent} consensi marketing — aggiungi raccolta consenso al prossimo acquisto")
+    if fonti_attive < 3:
+        issues.append("Carica tutte e 3 le fonti CSV per insights più precisi")
 
-    dormienti = seg_counts.get("Dormiente", 0)
-    if dormienti > 0:
-        pct = round(dormienti / stats["total_fans"] * 100)
-        insights.append({
-            "type": "alert",
-            "title": f"{dormienti} tifosi dormienti",
-            "body": f"{pct}% del database non interagisce da tempo. Considera una campagna di riattivazione con offerta biglietto.",
-            "priority": "high",
-        })
+    qualita = {
+        "score": readiness["score"],
+        "email_pct": email_pct,
+        "consenso_count": with_consent,
+        "consenso_pct": round(with_consent / total_fans * 100),
+        "fonti_attive": fonti_attive,
+        "issues": issues,
+    }
 
-    vip = seg_counts.get("VIP", 0)
-    if vip > 0:
-        insights.append({
-            "type": "opportunity",
-            "title": f"{vip} tifosi VIP",
-            "body": "I tuoi top spender meritano attenzione: esperienze esclusive, hospitality o abbonamenti premium.",
-            "priority": "medium",
-        })
+    # ── KPI BAR ──────────────────────────────────────────────────────────────
+    opportunita_tot = sum(o["revenue_stimata"] for o in opportunita)
+    super_fans = cross["all_three"]
 
-    a_rischio = seg_counts.get("A rischio", 0)
-    if a_rischio > 0:
-        insights.append({
-            "type": "warning",
-            "title": f"{a_rischio} tifosi a rischio churn",
-            "body": "Erano attivi ma non tornano. Un contatto personalizzato prima della prossima partita può fare la differenza.",
-            "priority": "high",
+    # ── HINT PUNTO 2 — azioni della settimana ────────────────────────────────
+    azioni_settimana = []
+    if a_rischio:
+        azioni_settimana.append({
+            "urgenza": "alta",
+            "icona": "🚨",
+            "azione": f"Contatta i {len(a_rischio)} tifosi a rischio prima della prossima partita",
+            "valore": f"€{rev_a_rischio:,} da recuperare",
         })
-
-    if cross["multi_source"] > 0:
-        pct = round(cross["multi_source"] / stats["total_fans"] * 100)
-        insights.append({
-            "type": "info",
-            "title": "Cross-canale",
-            "body": f"{pct}% dei tifosi interagisce su più fonti (abbonamento + biglietti + shop). Punta a unificare l'identità con email.",
-            "priority": "medium",
+    if fedeli_senza_abb:
+        azioni_settimana.append({
+            "urgenza": "media",
+            "icona": "🎟️",
+            "azione": f"Proponi l'abbonamento ai {len(fedeli_senza_abb)} fedeli non abbonati",
+            "valore": f"Potenziale €{round(len(fedeli_senza_abb) * avg_abb * 0.55):,}",
         })
-
-    if cross["all_three"] > 0:
-        insights.append({
-            "type": "success",
-            "title": f"{cross['all_three']} super-fan",
-            "body": "Tifosi presenti su tutte e tre le fonti: il segmento più fedele e redditizio del club.",
-            "priority": "low",
+    if nuovi_alto:
+        azioni_settimana.append({
+            "urgenza": "media",
+            "icona": "⭐",
+            "azione": f"Invia benvenuto personalizzato ai {len(nuovi_alto)} nuovi tifosi con alta spesa",
+            "valore": "Fidelizzazione precoce",
         })
-
-    fans = get_all_fans_raw(db, club_id)
-    with_consent = sum(1 for f in fans if f.consenso_marketing is True)
-    if with_consent > 0:
-        insights.append({
-            "type": "info",
-            "title": "Consenso marketing",
-            "body": f"{with_consent} tifosi hanno dato consenso marketing — usali per campagne GDPR-compliant.",
-            "priority": "medium",
-        })
-
-    insights.sort(key=lambda x: {"high": 0, "medium": 1, "low": 2}.get(x["priority"], 3))
 
     return {
-        "insights": insights,
-        "summary": f"Analisi su {stats['total_fans']} tifosi — revenue totale {stats['total_revenue']:.0f} €",
-        "segment_counts": seg_counts,
+        "kpi": {
+            "total_fans": total_fans,
+            "total_revenue": total_revenue,
+            "revenue_a_rischio": totale_a_rischio,
+            "opportunita_stimata": opportunita_tot,
+            "data_score": readiness["score"],
+            "super_fans": super_fans,
+        },
+        "revenue_watch": {
+            "totale_a_rischio": totale_a_rischio,
+            "fans_count": len(dormienti) + len(a_rischio),
+            "items": revenue_watch_items,
+        },
+        "opportunita": opportunita,
+        "qualita": qualita,
+        "segment_counts": {seg: len(fans) for seg, fans in seg_map.items()},
+        "azioni_settimana": azioni_settimana,
+        "summary": f"Analisi su {total_fans} tifosi · Revenue totale €{total_revenue:,.0f}",
     }

@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
-import { Upload as UploadIcon, CheckCircle, XCircle, FileText } from "lucide-react";
-import { uploadCsv } from "../api/client";
+import { Upload as UploadIcon, CheckCircle, XCircle, FileText, Download } from "lucide-react";
+import { uploadCsv, API_URL } from "../api/client";
 
 const CSV_TYPES = [
   {
@@ -89,9 +89,18 @@ function UploadCard({ type }) {
         <FileText className={c.text} size={20} />
       </div>
 
-      <p className="text-xs text-slate-400 mb-4 font-mono bg-slate-50 rounded px-3 py-2">
+      <p className="text-xs text-slate-400 mb-3 font-mono bg-slate-50 rounded px-3 py-2">
         Colonne: {type.description}
       </p>
+
+      <a
+        href={`${API_URL}/upload/template/${type.id}`}
+        download
+        className={`inline-flex items-center gap-1.5 text-xs font-medium mb-4 ${c.text} hover:underline`}
+      >
+        <Download size={13} />
+        Scarica template CSV
+      </a>
 
       {/* Drop zone */}
       <div

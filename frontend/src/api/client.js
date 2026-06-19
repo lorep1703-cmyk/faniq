@@ -57,7 +57,18 @@ export const uploadCsv = (type, file) => {
 };
 
 export const downloadTemplate = (type) => {
-  window.open(`${API_URL}/upload/template/${type}`, "_blank");
+  const token = localStorage.getItem("faniq_token");
+  return api.get(`/upload/template/${type}`, {
+    responseType: "blob",
+    headers: { Authorization: `Bearer ${token}` },
+  }).then((r) => {
+    const url = URL.createObjectURL(r.data);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `template_${type}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
 };
 export const fetchUploadHistory = () => api.get("/upload/history").then((r) => r.data);
 export const undoUpload = (id) => api.delete(`/upload/${id}`).then((r) => r.data);
