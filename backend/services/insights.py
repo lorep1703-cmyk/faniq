@@ -10,6 +10,15 @@ from services.analytics import (
 from services.data_readiness import compute_data_readiness
 
 
+def _business_score(dormienti_pct: float, rischio_pct: float, vip_fedeli_pct: float, email_pct: float) -> int:
+    """Score 0-100 che misura la salute commerciale del club, non la qualità tecnica dei dati."""
+    safety = (1 - rischio_pct) * 40        # 40 pt: quanto revenue è al sicuro
+    engagement = (1 - dormienti_pct) * 35  # 35 pt: quanto i tifosi sono attivi
+    growth = min(vip_fedeli_pct * 3, 15)   # 15 pt: % VIP + Fedeli (cap a 15)
+    data = email_pct * 10                  # 10 pt: copertura email
+    return max(0, min(100, round(safety + engagement + growth + data)))
+
+
 def generate_insights(db: Session, club_id: int) -> dict:
     stats = dashboard_stats(db, club_id)
 
@@ -135,6 +144,13 @@ def generate_insights(db: Session, club_id: int) -> dict:
         "issues": issues,
     }
 
+    # ── BUSINESS SCORE ───────────────────────────────────────────────────────
+    dormienti_pct = len(dormienti) / total_fans
+    rischio_pct = totale_a_rischio / total_revenue if total_revenue else 0
+    vip_fedeli_pct = (len(vip) + len(fedeli)) / total_fans
+    email_pct_raw = stats["fans_with_email"] / total_fans
+    biz_score = _business_score(dormienti_pct, rischio_pct, vip_fedeli_pct, email_pct_raw)
+
     # ── KPI BAR ──────────────────────────────────────────────────────────────
     opportunita_tot = sum(o["revenue_stimata"] for o in opportunita)
     super_fans = cross["all_three"]
@@ -144,23 +160,23 @@ def generate_insights(db: Session, club_id: int) -> dict:
     if a_rischio:
         azioni_settimana.append({
             "urgenza": "alta",
-            "icona": "🚨",
             "azione": f"Contatta i {len(a_rischio)} tifosi a rischio prima della prossima partita",
             "valore": f"€{rev_a_rischio:,} da recuperare",
+            "segment": "A rischio",
         })
     if fedeli_senza_abb:
         azioni_settimana.append({
             "urgenza": "media",
-            "icona": "🎟️",
             "azione": f"Proponi l'abbonamento ai {len(fedeli_senza_abb)} fedeli non abbonati",
             "valore": f"Potenziale €{round(len(fedeli_senza_abb) * avg_abb * 0.55):,}",
+            "segment": "Fedele",
         })
     if nuovi_alto:
         azioni_settimana.append({
             "urgenza": "media",
-            "icona": "⭐",
             "azione": f"Invia benvenuto personalizzato ai {len(nuovi_alto)} nuovi tifosi con alta spesa",
             "valore": "Fidelizzazione precoce",
+            "segment": "Nuovo",
         })
 
     return {
@@ -169,6 +185,7 @@ def generate_insights(db: Session, club_id: int) -> dict:
             "total_revenue": total_revenue,
             "revenue_a_rischio": totale_a_rischio,
             "opportunita_stimata": opportunita_tot,
+            "business_score": biz_score,
             "data_score": readiness["score"],
             "super_fans": super_fans,
         },

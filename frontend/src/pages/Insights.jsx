@@ -1,15 +1,9 @@
 import { useEffect, useState } from "react";
 import {
-  ShieldAlert,
-  TrendingUp,
-  Download,
-  Users,
-  Star,
-  AlertTriangle,
-  ChevronRight,
-  Sparkles,
+  ShieldAlert, TrendingUp, Download, Users, Star,
+  AlertTriangle, ChevronRight, Sparkles, ChevronDown, ChevronUp,
 } from "lucide-react";
-import { fetchInsights, exportFans } from "../api/client";
+import { fetchInsights, fetchFansBySegment, exportFans } from "../api/client";
 import EmptyState from "../components/EmptyState";
 
 // ── utils ─────────────────────────────────────────────────────────────────────
@@ -21,44 +15,46 @@ function fmtEur(n) {
   if (!n) return "—";
   return `€${fmt(n)}`;
 }
+function fmtDate(d) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" });
+}
 
-// ── Score circle ──────────────────────────────────────────────────────────────
+// ── Business Score circle ─────────────────────────────────────────────────────
 
-const SCORE_COLOR = (s) =>
-  s >= 90 ? "#10b981" : s >= 70 ? "#059669" : s >= 40 ? "#d97706" : "#dc2626";
+const scoreColor = (s) =>
+  s >= 75 ? "#10b981" : s >= 50 ? "#f59e0b" : s >= 25 ? "#ef4444" : "#dc2626";
+const scoreLabel = (s) =>
+  s >= 75 ? "Buona salute" : s >= 50 ? "Attenzione" : s >= 25 ? "A rischio" : "Critico";
 
-const SCORE_LABEL = (s) =>
-  s >= 90 ? "Eccellente" : s >= 70 ? "Buono" : s >= 40 ? "Da migliorare" : "Critico";
-
-function ScoreCircle({ score }) {
+function BusinessScore({ score }) {
   const r = 52;
   const circ = 2 * Math.PI * r;
   const offset = circ * (1 - score / 100);
-  const color = SCORE_COLOR(score);
+  const color = scoreColor(score);
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative w-32 h-32">
+    <div className="flex flex-col items-center justify-center h-full py-4">
+      <div className="relative w-36 h-36">
         <svg viewBox="0 0 128 128" className="w-full h-full -rotate-90">
           <circle cx="64" cy="64" r={r} fill="none" stroke="#f1f5f9" strokeWidth="10" />
           <circle
             cx="64" cy="64" r={r}
-            fill="none"
-            stroke={color}
-            strokeWidth="10"
-            strokeLinecap="round"
-            strokeDasharray={circ}
-            strokeDashoffset={offset}
+            fill="none" stroke={color} strokeWidth="10" strokeLinecap="round"
+            strokeDasharray={circ} strokeDashoffset={offset}
             style={{ transition: "stroke-dashoffset 1.2s ease" }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl font-black leading-none" style={{ color }}>{score}</span>
+          <span className="text-4xl font-black leading-none" style={{ color }}>{score}</span>
           <span className="text-xs text-slate-400 font-medium">/100</span>
         </div>
       </div>
-      <p className="text-sm font-bold text-slate-700 mt-2">Salute del club</p>
-      <p className="text-xs font-semibold mt-0.5" style={{ color }}>{SCORE_LABEL(score)}</p>
+      <p className="text-sm font-bold text-slate-700 mt-3">Salute del club</p>
+      <p className="text-xs font-semibold mt-0.5" style={{ color }}>{scoreLabel(score)}</p>
+      <p className="text-xs text-slate-400 mt-2 text-center max-w-[140px] leading-relaxed">
+        Basato su attività tifosi, revenue a rischio e potenziale di crescita
+      </p>
     </div>
   );
 }
@@ -68,7 +64,6 @@ function ScoreCircle({ score }) {
 function AlertBanner({ kpi }) {
   const pct = kpi.total_revenue > 0 ? kpi.revenue_a_rischio / kpi.total_revenue : 0;
   if (pct < 0.15 || !kpi.revenue_a_rischio) return null;
-
   return (
     <div className="mb-6 rounded-xl bg-red-600 text-white px-5 py-4 flex items-center justify-between gap-4">
       <div className="flex items-center gap-3">
@@ -76,7 +71,7 @@ function AlertBanner({ kpi }) {
         <div>
           <p className="font-bold text-sm">Intervieni ora — {fmtEur(kpi.revenue_a_rischio)} a rischio</p>
           <p className="text-xs text-red-200 mt-0.5">
-            {Math.round(pct * 100)}% della revenue storica è in pericolo di perdita permanente
+            {Math.round(pct * 100)}% della revenue storica a rischio perdita permanente
           </p>
         </div>
       </div>
@@ -90,37 +85,48 @@ function AlertBanner({ kpi }) {
 function KpiStrip({ kpi }) {
   const items = [
     { label: "Tifosi totali", value: fmt(kpi.total_fans), icon: Users, color: "text-slate-600" },
-    {
-      label: "Revenue a rischio",
-      value: fmtEur(kpi.revenue_a_rischio),
-      icon: ShieldAlert,
-      color: kpi.revenue_a_rischio > 0 ? "text-red-600" : "text-slate-400",
-    },
-    {
-      label: "Opportunità",
-      value: fmtEur(kpi.opportunita_stimata),
-      icon: TrendingUp,
-      color: kpi.opportunita_stimata > 0 ? "text-emerald-600" : "text-slate-400",
-    },
-    {
-      label: "Super-fan",
-      value: fmt(kpi.super_fans),
-      icon: Star,
-      color: "text-violet-600",
-    },
+    { label: "Revenue a rischio", value: fmtEur(kpi.revenue_a_rischio), icon: ShieldAlert, color: kpi.revenue_a_rischio > 0 ? "text-red-600" : "text-slate-400" },
+    { label: "Opportunità stimata", value: fmtEur(kpi.opportunita_stimata), icon: TrendingUp, color: kpi.opportunita_stimata > 0 ? "text-emerald-600" : "text-slate-400" },
+    { label: "Super-fan", value: fmt(kpi.super_fans), icon: Star, color: "text-violet-600" },
   ];
-
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {items.map((item) => {
-        const Icon = item.icon;
+    <div className="grid grid-cols-2 gap-3 h-full content-center">
+      {items.map(({ label, value, icon: Icon, color }) => (
+        <div key={label} className="bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Icon size={12} className={color} />
+            <span className="text-xs text-slate-400">{label}</span>
+          </div>
+          <p className={`text-xl font-black leading-tight ${color}`}>{value}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Qualità pills ─────────────────────────────────────────────────────────────
+
+function QualitaPills({ qualita }) {
+  const pills = [
+    { label: "Email", value: qualita.email_pct, suffix: "%" },
+    { label: "Consensi", value: qualita.consenso_pct, suffix: "%" },
+    { label: "Fonti", value: qualita.fonti_attive, suffix: "/3" },
+  ];
+  return (
+    <div className="flex flex-col justify-center h-full gap-3">
+      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Qualità Dati</p>
+      {pills.map((p) => {
+        const pct = p.suffix === "/3" ? (p.value / 3) * 100 : p.value;
+        const color = pct >= 70 ? "#10b981" : pct >= 40 ? "#f59e0b" : "#ef4444";
         return (
-          <div key={item.label} className="bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
-            <div className="flex items-center gap-1.5 mb-1">
-              <Icon size={12} className={item.color} />
-              <span className="text-xs text-slate-400">{item.label}</span>
+          <div key={p.label}>
+            <div className="flex justify-between text-xs mb-1">
+              <span className="text-slate-500">{p.label}</span>
+              <span className="font-bold text-slate-700">{p.value}{p.suffix}</span>
             </div>
-            <p className={`text-xl font-black leading-tight ${item.color}`}>{item.value}</p>
+            <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+              <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
+            </div>
           </div>
         );
       })}
@@ -131,43 +137,90 @@ function KpiStrip({ kpi }) {
 // ── Segment bars ──────────────────────────────────────────────────────────────
 
 const SEG_COLOR = {
-  VIP: "#7c3aed",
-  Fedele: "#059669",
-  "A rischio": "#d97706",
-  Dormiente: "#dc2626",
-  Nuovo: "#2563eb",
-  Occasionale: "#6b7280",
+  VIP: "#7c3aed", Fedele: "#059669", "A rischio": "#d97706",
+  Dormiente: "#dc2626", Nuovo: "#2563eb", Occasionale: "#6b7280",
 };
 
 function SegmentBars({ counts }) {
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   if (!total) return null;
-
   const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  return (
+    <div className="flex flex-col justify-center h-full gap-2.5">
+      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Segmenti</p>
+      {sorted.map(([seg, count]) => (
+        <div key={seg} className="flex items-center gap-3">
+          <span className="text-xs text-slate-500 w-20 shrink-0">{seg}</span>
+          <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-full rounded-full" style={{ width: `${(count / total) * 100}%`, backgroundColor: SEG_COLOR[seg] ?? "#6b7280" }} />
+          </div>
+          <span className="text-xs font-bold text-slate-600 w-6 text-right">{count}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Fan mini-list (espandibile) ───────────────────────────────────────────────
+
+function FanList({ segment }) {
+  const [fans, setFans] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const toggle = async () => {
+    if (!open && fans === null) {
+      setLoading(true);
+      try {
+        const data = await fetchFansBySegment(segment);
+        setFans(data.slice(0, 10)); // max 10 in preview
+      } finally {
+        setLoading(false);
+      }
+    }
+    setOpen((v) => !v);
+  };
 
   return (
-    <div>
-      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
-        Segmenti
-      </p>
-      <div className="space-y-2.5">
-        {sorted.map(([seg, count]) => {
-          const pct = (count / total) * 100;
-          const color = SEG_COLOR[seg] ?? "#6b7280";
-          return (
-            <div key={seg} className="flex items-center gap-3">
-              <span className="text-xs text-slate-500 w-20 shrink-0">{seg}</span>
-              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{ width: `${pct}%`, backgroundColor: color }}
-                />
-              </div>
-              <span className="text-xs font-bold text-slate-600 w-8 text-right">{count}</span>
-            </div>
-          );
-        })}
-      </div>
+    <div className="mt-3">
+      <button
+        onClick={toggle}
+        className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors"
+      >
+        {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+        {open ? "Nascondi tifosi" : "Vedi chi sono"}
+      </button>
+
+      {open && (
+        <div className="mt-2 rounded-lg border border-slate-200 overflow-hidden">
+          {loading ? (
+            <div className="p-3 text-xs text-slate-400 text-center">Caricamento...</div>
+          ) : !fans?.length ? (
+            <div className="p-3 text-xs text-slate-400 text-center">Nessun tifoso trovato</div>
+          ) : (
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="text-left px-3 py-2 font-semibold text-slate-500">Nome</th>
+                  <th className="text-left px-3 py-2 font-semibold text-slate-500">Email</th>
+                  <th className="text-left px-3 py-2 font-semibold text-slate-500">Ultima attività</th>
+                  <th className="text-right px-3 py-2 font-semibold text-slate-500">Spesa</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fans.map((f) => (
+                  <tr key={f.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                    <td className="px-3 py-2 font-medium text-slate-700">{f.nome} {f.cognome}</td>
+                    <td className="px-3 py-2 text-slate-400">{f.email ?? "—"}</td>
+                    <td className="px-3 py-2 text-slate-400">{fmtDate(f.last_activity)}</td>
+                    <td className="px-3 py-2 text-right font-semibold text-slate-700">{fmtEur(f.total_spend)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -191,32 +244,23 @@ function RevenueWatch({ data, onExport }) {
             <span className="text-xs font-semibold text-red-700">Totale a rischio</span>
             <span className="text-2xl font-black text-red-600">{fmtEur(data.totale_a_rischio)}</span>
           </div>
-
-          <div className="space-y-3">
+          <div className="space-y-4">
             {data.items.map((item) => (
-              <div
-                key={item.segment}
-                className={`rounded-lg border p-4 ${
-                  item.severity === "high"
-                    ? "border-red-200 bg-red-50"
-                    : "border-amber-200 bg-amber-50"
-                }`}
-              >
+              <div key={item.segment} className={`rounded-lg border p-4 ${item.severity === "high" ? "border-red-200 bg-red-50" : "border-amber-200 bg-amber-50"}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-bold text-slate-800">{item.label}</p>
                     <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{item.sublabel}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className={`text-lg font-black ${item.severity === "high" ? "text-red-600" : "text-amber-600"}`}>
-                      {fmtEur(item.revenue)}
-                    </p>
+                    <p className={`text-lg font-black ${item.severity === "high" ? "text-red-600" : "text-amber-600"}`}>{fmtEur(item.revenue)}</p>
                     <p className="text-xs text-slate-400">{item.count} tifosi</p>
                   </div>
                 </div>
+                <FanList segment={item.segment} />
                 <button
                   onClick={() => onExport(item.segment)}
-                  className="mt-3 flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors"
+                  className="mt-3 flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                 >
                   <Download size={12} />
                   Esporta segmento
@@ -244,7 +288,7 @@ function Opportunita({ items, onExport }) {
       {!items.length ? (
         <p className="text-sm text-slate-400">Carica più dati per sbloccare opportunità.</p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {items.map((item) => (
             <div key={item.tipo} className="rounded-lg border border-emerald-100 bg-emerald-50 p-4">
               <div className="flex items-start justify-between gap-3">
@@ -257,9 +301,10 @@ function Opportunita({ items, onExport }) {
                   <p className="text-xs text-slate-400">potenziale</p>
                 </div>
               </div>
+              <FanList segment={item.azione_segment} />
               <button
                 onClick={() => onExport(item.azione_segment)}
-                className="mt-3 flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors"
+                className="mt-3 flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
               >
                 <Download size={12} />
                 {item.azione_label}
@@ -272,79 +317,14 @@ function Opportunita({ items, onExport }) {
   );
 }
 
-// ── Qualità database ──────────────────────────────────────────────────────────
+// ── Cosa fare adesso ──────────────────────────────────────────────────────────
 
-function QualitaStrip({ qualita }) {
-  const metrics = [
-    { label: "Email raccolte", value: qualita.email_pct, suffix: "%" },
-    { label: "Consensi marketing", value: qualita.consenso_pct, suffix: "%" },
-    { label: "Fonti attive", value: Math.round((qualita.fonti_attive / 3) * 100), suffix: "%" },
-  ];
-
-  return (
-    <div className="bg-white rounded-xl border border-slate-100 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-          Qualità Database
-        </p>
-        <span
-          className={`text-xs font-bold px-3 py-1 rounded-full ${
-            qualita.score >= 70
-              ? "bg-emerald-50 text-emerald-700"
-              : qualita.score >= 40
-              ? "bg-amber-50 text-amber-700"
-              : "bg-red-50 text-red-700"
-          }`}
-        >
-          {qualita.score}/100
-        </span>
-      </div>
-
-      <div className="grid grid-cols-3 gap-6 mb-4">
-        {metrics.map((m) => (
-          <div key={m.label}>
-            <div className="flex justify-between text-xs mb-1.5">
-              <span className="text-slate-400">{m.label}</span>
-              <span className="font-bold text-slate-700">{m.value}{m.suffix}</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-              <div
-                className="h-full rounded-full"
-                style={{
-                  width: `${m.value}%`,
-                  backgroundColor:
-                    m.value >= 70 ? "#10b981" : m.value >= 40 ? "#d97706" : "#ef4444",
-                }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {qualita.issues.length > 0 && (
-        <div className="space-y-1.5 pt-3 border-t border-slate-100">
-          {qualita.issues.map((issue, i) => (
-            <div key={i} className="flex items-start gap-2">
-              <AlertTriangle size={11} className="text-amber-400 shrink-0 mt-0.5" />
-              <span className="text-xs text-slate-500">{issue}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Azioni settimana ──────────────────────────────────────────────────────────
-
-function AzioniSettimana({ azioni }) {
+function AzioniSettimana({ azioni, onExport }) {
   if (!azioni.length) return null;
-
   const URGENCY = {
     alta: { bar: "bg-red-500", label: "Urgente" },
     media: { bar: "bg-amber-400", label: "Questa settimana" },
   };
-
   return (
     <div className="bg-white rounded-xl border border-slate-100 p-6">
       <div className="flex items-center gap-2 mb-1">
@@ -352,27 +332,27 @@ function AzioniSettimana({ azioni }) {
         <h2 className="text-sm font-bold text-slate-700">Cosa fare adesso</h2>
       </div>
       <p className="text-xs text-slate-400 mb-4">
-        Azioni in ordine di priorità — presto le riceverai automaticamente
+        Ogni azione esporta direttamente il segmento giusto — presto porterà alla sezione Marketing
       </p>
-
       <div className="space-y-2">
         {azioni.map((a, i) => {
           const u = URGENCY[a.urgenza] ?? URGENCY.media;
           return (
-            <div
+            <button
               key={i}
-              className="flex items-center gap-4 rounded-lg border border-slate-100 px-4 py-3 hover:bg-slate-50 transition-colors"
+              onClick={() => onExport(a.segment)}
+              className="w-full flex items-center gap-4 rounded-lg border border-slate-100 px-4 py-3 hover:bg-slate-50 hover:border-slate-200 transition-colors text-left"
             >
               <div className={`w-1 h-8 rounded-full ${u.bar} shrink-0`} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-700 truncate">{a.azione}</p>
+                <p className="text-sm font-semibold text-slate-700">{a.azione}</p>
                 <p className="text-xs text-slate-400 mt-0.5">{u.label}</p>
               </div>
               <div className="text-right shrink-0">
                 <p className="text-xs font-bold text-slate-600">{a.valore}</p>
               </div>
               <ChevronRight size={14} className="text-slate-300 shrink-0" />
-            </div>
+            </button>
           );
         })}
       </div>
@@ -380,7 +360,7 @@ function AzioniSettimana({ azioni }) {
   );
 }
 
-// ── Pagina ────────────────────────────────────────────────────────────────────
+// ── Pagina principale ─────────────────────────────────────────────────────────
 
 export default function Insights() {
   const [data, setData] = useState(null);
@@ -395,6 +375,7 @@ export default function Insights() {
   }, []);
 
   const handleExport = async (segment) => {
+    if (!segment) return;
     try {
       await exportFans(segment);
       setToast(`Export "${segment}" avviato`);
@@ -424,30 +405,26 @@ export default function Insights() {
 
   return (
     <div className="flex-1 p-8 overflow-auto">
-      {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-800">Intelligence</h1>
         <p className="text-slate-400 text-sm mt-1">{data.summary}</p>
       </div>
 
-      {/* Alert banner */}
       <AlertBanner kpi={data.kpi} />
 
-      {/* Hero row: score + KPI + segment bars */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Score */}
-        <div className="bg-white rounded-xl border border-slate-100 p-6 flex items-center justify-center">
-          <ScoreCircle score={data.kpi.data_score} />
+      {/* Hero row */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-xl border border-slate-100 p-4">
+          <BusinessScore score={data.kpi.business_score} />
         </div>
-
-        {/* KPI */}
-        <div className="bg-white rounded-xl border border-slate-100 p-6">
+        <div className="bg-white rounded-xl border border-slate-100 p-4">
           <KpiStrip kpi={data.kpi} />
         </div>
-
-        {/* Segment bars */}
-        <div className="bg-white rounded-xl border border-slate-100 p-6">
+        <div className="bg-white rounded-xl border border-slate-100 p-4">
           <SegmentBars counts={data.segment_counts} />
+        </div>
+        <div className="bg-white rounded-xl border border-slate-100 p-4">
+          <QualitaPills qualita={data.qualita} />
         </div>
       </div>
 
@@ -457,15 +434,9 @@ export default function Insights() {
         <Opportunita items={data.opportunita} onExport={handleExport} />
       </div>
 
-      {/* Qualità database */}
-      <div className="mb-6">
-        <QualitaStrip qualita={data.qualita} />
-      </div>
+      {/* Cosa fare adesso */}
+      <AzioniSettimana azioni={data.azioni_settimana} onExport={handleExport} />
 
-      {/* Azioni settimana */}
-      <AzioniSettimana azioni={data.azioni_settimana} />
-
-      {/* Toast */}
       {toast && (
         <div className="fixed bottom-6 right-6 bg-slate-800 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg z-50">
           {toast}

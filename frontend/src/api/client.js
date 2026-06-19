@@ -41,6 +41,8 @@ export const fetchTopSpenders = () => api.get("/dashboard/top-spenders").then((r
 export const fetchCrossSource = () => api.get("/dashboard/cross-source").then((r) => r.data);
 export const fetchSeasons = () => api.get("/dashboard/seasons").then((r) => r.data);
 export const fetchAllFans = () => api.get("/dashboard/fans").then((r) => r.data);
+export const fetchFansBySegment = (segment) =>
+  api.get("/dashboard/fans").then((r) => r.data.filter((f) => f.segment === segment));
 export const fetchInsights = () => api.get("/insights/overview").then((r) => r.data);
 export const fetchDataReadiness = () => api.get("/insights/data-readiness").then((r) => r.data);
 
