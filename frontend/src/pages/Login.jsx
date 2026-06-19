@@ -28,7 +28,13 @@ export default function Login() {
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Errore");
+      if (!res.ok) {
+        const detail = data.detail;
+        const msg = Array.isArray(detail)
+          ? detail.map((e) => e.msg || JSON.stringify(e)).join(", ")
+          : detail || "Errore";
+        throw new Error(msg);
+      }
       localStorage.setItem("faniq_token", data.token);
       localStorage.setItem("faniq_club", JSON.stringify(data.club));
       navigate("/");
