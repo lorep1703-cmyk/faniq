@@ -7,6 +7,7 @@ from collections import defaultdict
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, Response
@@ -32,19 +33,31 @@ app = FastAPI(
 # Rate limiting in-memory per IP sugli endpoint di auth
 _rate_store: dict = defaultdict(list)
 _RATE_LIMITS = {
-    "/auth/register": (5, 60),   # 5 richieste per 60 secondi
-    "/auth/login": (10, 60),     # 10 richieste per 60 secondi
+    "/auth/register": (5, 60),
+    "/auth/login": (10, 60),
 }
+_CLEANUP_INTERVAL = 300  # pulisci chiavi scadute ogni 5 minuti
+_last_cleanup = time.time()
 
 
 @app.middleware("http")
 async def rate_limit_auth(request: Request, call_next):
+    global _last_cleanup
     path = request.url.path
+
+    # Pulizia periodica per evitare memory leak
+    now = time.time()
+    if now - _last_cleanup > _CLEANUP_INTERVAL:
+        max_window = max(w for _, w in _RATE_LIMITS.values())
+        stale = [k for k, times in _rate_store.items() if not any(now - t < max_window for t in times)]
+        for k in stale:
+            del _rate_store[k]
+        _last_cleanup = now
+
     if path in _RATE_LIMITS:
         max_calls, window = _RATE_LIMITS[path]
         ip = request.client.host if request.client else "unknown"
         key = f"{ip}:{path}"
-        now = time.time()
         _rate_store[key] = [t for t in _rate_store[key] if now - t < window]
         if len(_rate_store[key]) >= max_calls:
             return JSONResponse(
@@ -53,6 +66,25 @@ async def rate_limit_auth(request: Request, call_next):
             )
         _rate_store[key].append(now)
     return await call_next(request)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request: Request, exc: RequestValidationError):
+    errors = exc.errors()
+    msgs = []
+    for e in errors:
+        field = e["loc"][-1] if e["loc"] else "campo"
+        raw = e.get("msg", "")
+        if "email" in str(field).lower() or "email" in raw.lower():
+            msgs.append("Inserisci un indirizzo email valido (es. nome@dominio.it)")
+        elif "missing" in e.get("type", ""):
+            msgs.append(f"Il campo '{field}' è obbligatorio")
+        else:
+            msgs.append(raw)
+    return JSONResponse(
+        status_code=422,
+        content={"detail": " | ".join(msgs)},
+    )
 
 
 @app.exception_handler(OperationalError)

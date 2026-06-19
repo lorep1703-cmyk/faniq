@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import re
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -48,11 +49,17 @@ class RegisterRequest(BaseModel):
     @field_validator("nome")
     @classmethod
     def nome_not_empty(cls, v: str) -> str:
-        if not v.strip():
+        v = html.escape(v.strip())
+        if not v:
             raise ValueError("Il nome del club non può essere vuoto")
-        if len(v.strip()) > 200:
+        if len(v) > 200:
             raise ValueError("Il nome del club non può superare 200 caratteri")
-        return v.strip()
+        return v
+
+    @field_validator("email")
+    @classmethod
+    def email_error_ita(cls, v: EmailStr) -> EmailStr:
+        return v
 
 
 class LoginRequest(BaseModel):
