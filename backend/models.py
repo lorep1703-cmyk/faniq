@@ -1,9 +1,18 @@
+from __future__ import annotations
+
+import enum
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import Boolean, Column, Date, DateTime, Enum, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from database import Base
+
+
+class RuoloEnum(str, enum.Enum):
+    admin = "admin"
+    staff = "staff"
+    coach = "coach"
 
 
 class Club(Base):
@@ -17,6 +26,7 @@ class Club(Base):
 
     fans = relationship("Fan", back_populates="club", cascade="all, delete-orphan")
     upload_history = relationship("UploadHistory", back_populates="club", cascade="all, delete-orphan")
+    utenti = relationship("ClubUser", back_populates="club", cascade="all, delete-orphan")
 
 
 class Fan(Base):
@@ -119,6 +129,24 @@ class UploadHistory(Base):
     uploaded_at = Column(DateTime, default=datetime.utcnow)
 
     club = relationship("Club", back_populates="upload_history")
+
+
+class ClubUser(Base):
+    """Utente interno a un club con ruolo specifico (ADMIN / STAFF / COACH)."""
+    __tablename__ = "club_users"
+    __table_args__ = (
+        Index("ix_club_users_club_email", "club_id", "email", unique=True),
+    )
+
+    id            = Column(Integer, primary_key=True)
+    club_id       = Column(Integer, ForeignKey("clubs.id"), nullable=False)
+    email         = Column(String(255), nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    ruolo         = Column(Enum(RuoloEnum), nullable=False, default=RuoloEnum.staff)
+    attivo        = Column(Boolean, default=True)
+    created_at    = Column(DateTime, default=datetime.utcnow)
+
+    club = relationship("Club", back_populates="utenti")
 
 
 class PrivacyLog(Base):

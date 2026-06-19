@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import List
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
@@ -32,3 +36,37 @@ def get_current_club(
         db.execute(text("SET LOCAL app.current_club_id = :cid"), {"cid": club.id})
 
     return club
+
+
+def _get_raw_payload(
+    credentials: HTTPAuthorizationCredentials = Depends(_bearer),
+) -> dict:
+    """Ritorna il payload JWT grezzo per leggere campi extra come 'ruolo'."""
+    try:
+        return decode_token(credentials.credentials)
+    except JWTError:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Token non valido o scaduto")
+
+
+def require_role(allowed_roles: List[str]):
+    """
+    Dipendenza riutilizzabile per proteggere endpoint per ruolo.
+
+    Uso:  club: Club = Depends(require_role(["admin"]))
+          club: Club = Depends(require_role(["admin", "staff"]))
+
+    I token emessi prima dell'introduzione del campo 'ruolo' non hanno quel campo:
+    vengono trattati come 'admin' per retrocompatibilità (il club owner originale).
+    """
+    def _check(
+        club: Club = Depends(get_current_club),
+        payload: dict = Depends(_get_raw_payload),
+    ) -> Club:
+        ruolo = payload.get("ruolo", "admin")
+        if ruolo not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Ruolo '{ruolo}' non autorizzato. Richiesto: {allowed_roles}",
+            )
+        return club
+    return _check
