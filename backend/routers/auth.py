@@ -13,8 +13,8 @@ from services.auth import create_token, hash_password, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-# Slug: 3-30 caratteri, solo minuscole, numeri e trattini, non inizia/finisce con trattino
-_SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9\-]{1,28}[a-z0-9]$")
+# Slug: 2-30 caratteri, solo minuscole, numeri e trattini, non inizia/finisce con trattino
+_SLUG_RE = re.compile(r"^[a-z0-9]([a-z0-9\-]{0,28}[a-z0-9])?$")
 
 # Password: min 8 caratteri, almeno 1 maiuscola, 1 minuscola, 1 numero, 1 speciale
 _PASSWORD_RE = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$")

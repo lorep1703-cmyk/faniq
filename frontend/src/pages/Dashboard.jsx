@@ -18,6 +18,7 @@ function fmtEur(n) {
 }
 
 export default function Dashboard() {
+  const club = JSON.parse(localStorage.getItem("faniq_club") || "{}");
   const [stats, setStats] = useState(null);
   const [citta, setCitta] = useState([]);
   const [presenze, setPresenze] = useState([]);
@@ -33,7 +34,7 @@ export default function Dashboard() {
         setPresenze(p);
         setRevenue(r);
       })
-      .catch(() => setError("Impossibile connettersi al backend. Assicurati che il server sia avviato su :8000"))
+      .catch((err) => setError(err.userMessage || err.message || "Impossibile caricare i dati. Riprova."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -66,7 +67,7 @@ export default function Dashboard() {
     <div className="flex-1 p-8 overflow-auto">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-        <p className="text-slate-500 text-sm mt-1">Panoramica tifosi — FC Torino Nord</p>
+        <p className="text-slate-500 text-sm mt-1">Panoramica tifosi — {club.nome || "Il tuo club"}</p>
       </div>
 
       {/* KPI Cards */}
