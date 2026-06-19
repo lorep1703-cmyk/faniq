@@ -152,6 +152,22 @@ class ClubUser(Base):
     club = relationship("Club", back_populates="utenti")
 
 
+class Partita(Base):
+    """Calendario partite del club — necessario per l'analisi comportamentale."""
+    __tablename__ = "partite"
+    __table_args__ = (
+        Index("ix_partite_club_data", "club_id", "data"),
+    )
+
+    id             = Column(Integer, primary_key=True)
+    club_id        = Column(Integer, ForeignKey("clubs.id"), nullable=False)
+    data           = Column(Date, nullable=False)
+    avversario     = Column(String(150), nullable=False)
+    casa_trasferta = Column(String(20), nullable=False)   # "casa" | "trasferta"
+    competizione   = Column(String(100), nullable=True)
+    created_at     = Column(DateTime, default=datetime.utcnow)
+
+
 class PrivacyLog(Base):
     __tablename__ = "privacy_log"
     __table_args__ = (

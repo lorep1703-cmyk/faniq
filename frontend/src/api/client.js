@@ -102,3 +102,14 @@ export const exportFans = (segment = "tutti", soloConsenzienti = false) => {
 
 export const sendChat = (messages) =>
   api.post("/chat/", { messages }).then((r) => r.data);
+
+// Partite & Behavioral
+export const fetchPartite       = ()       => api.get("/partite/").then((r) => r.data);
+export const addPartita         = (body)   => api.post("/partite/", body).then((r) => r.data);
+export const deletePartita      = (id)     => api.delete(`/partite/${id}`).then((r) => r.data);
+export const uploadPartite      = (file)   => {
+  const form = new FormData();
+  form.append("file", file);
+  return api.post("/partite/upload", form).then((r) => r.data);
+};
+export const fetchBehavioral    = ()       => api.get("/partite/behavioral").then((r) => r.data);

@@ -8,6 +8,7 @@ import Report from "./pages/Report";
 import Insights from "./pages/Insights";
 import Privacy from "./pages/Privacy";
 import Simulatore from "./pages/Simulatore";
+import Calendario from "./pages/Calendario";
 import Login from "./pages/Login";
 import ChatWidget from "./components/ChatWidget";
 
@@ -32,6 +33,7 @@ export default function App() {
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/insights" element={<Insights />} />
+                    <Route path="/calendario" element={<Calendario />} />
                     <Route path="/report" element={<Report />} />
                     <Route path="/simulatore" element={<Simulatore />} />
                     <Route path="/upload" element={<Upload />} />

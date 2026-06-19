@@ -16,7 +16,7 @@ from sqlalchemy.exc import OperationalError
 
 from config import CORS_ORIGINS, LOG_LEVEL
 from database import Base, SessionLocal, _IS_POSTGRES, engine
-from routers import chat, dashboard, export, insights, privacy, simulator, upload
+from routers import chat, dashboard, export, insights, partite, privacy, simulator, upload
 from routers.auth import router as auth_router
 
 load_dotenv()
@@ -132,6 +132,7 @@ app.include_router(export.router)
 app.include_router(simulator.router)
 app.include_router(privacy.router)
 app.include_router(chat.router)
+app.include_router(partite.router)
 
 
 @app.get("/health")
@@ -142,7 +143,7 @@ def health():
 # ---------------------------------------------------------------------------
 # Tabelle tenant su cui va applicata la RLS
 # ---------------------------------------------------------------------------
-_TENANT_TABLES = ["fans", "abbonamenti", "biglietti", "shop_orders", "upload_history", "privacy_log"]
+_TENANT_TABLES = ["fans", "abbonamenti", "biglietti", "shop_orders", "upload_history", "privacy_log", "partite"]
 
 
 def _apply_rls_postgres():
