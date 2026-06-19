@@ -1,6 +1,6 @@
 import logging
 
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
@@ -13,13 +13,15 @@ _IS_POSTGRES = DATABASE_URL.startswith("postgresql")
 if _IS_POSTGRES:
     engine = create_engine(
         DATABASE_URL,
+        # Pool base: 5 connessioni permanenti, fino a 20 sotto carico
         pool_size=5,
-        max_overflow=10,
+        max_overflow=15,
         pool_pre_ping=True,
         pool_recycle=300,
+        pool_timeout=30,       # aspetta max 30s prima di dare errore pool esaurito
         connect_args={
-            "connect_timeout": 10,       # timeout connessione: 10 secondi
-            "options": "-c statement_timeout=15000",  # timeout query: 15 secondi
+            "connect_timeout": 10,
+            "options": "-c statement_timeout=15000",
         },
     )
 else:

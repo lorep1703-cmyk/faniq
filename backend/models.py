@@ -23,6 +23,8 @@ class Club(Base):
     slug = Column(String(100), unique=True, nullable=False)
     email = Column(String(255), unique=True, nullable=True)
     password_hash = Column(String(255), nullable=False)
+    piano = Column(String(20), nullable=False, default="premium")
+    stripe_customer_id = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     fans = relationship("Fan", back_populates="club", cascade="all, delete-orphan")
