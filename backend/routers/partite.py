@@ -13,6 +13,7 @@ from database import get_db
 from models import Club, Fan, Partita
 from tenant import get_current_club
 from services.behavioral import compute_behavioral
+from services.analytics import compute_fan_segments
 
 router = APIRouter(prefix="/partite", tags=["partite"])
 
@@ -171,4 +172,78 @@ def get_behavioral(db: Session = Depends(get_db), club: Club = Depends(get_curre
     return {
         **data,
         "fan_scores": enriched,
+    }
+
+
+# ── Predizione presenze ───────────────────────────────────────────────────────
+
+@router.get("/predizione/{partita_id}")
+def get_predizione(
+    partita_id: int,
+    db: Session = Depends(get_db),
+    club: Club = Depends(get_current_club),
+):
+    partita = db.query(Partita).filter(Partita.id == partita_id, Partita.club_id == club.id).first()
+    if not partita:
+        raise HTTPException(404, "Partita non trovata")
+
+    partita_out = {
+        "id": partita.id,
+        "data": partita.data.isoformat(),
+        "avversario": partita.avversario,
+        "casa_trasferta": partita.casa_trasferta,
+        "competizione": partita.competizione,
+    }
+
+    behavioral = compute_behavioral(db, club.id)
+    if not behavioral or not behavioral.get("fan_scores"):
+        return {"empty": True, "partita": partita_out}
+
+    # fan_scores è {fan_id: {...}} dal servizio
+    raw_scores = behavioral["fan_scores"]
+
+    # RFM per ogni fan
+    rfm = compute_fan_segments(db, club.id)
+    seg_map = {f["id"]: f["segment"] for f in rfm}
+
+    # Tutti i fan del club per i "nessun dato"
+    all_fans = db.query(Fan).filter(Fan.club_id == club.id).all()
+    tipo = partita.casa_trasferta  # "casa" | "trasferta"
+
+    alta, media, bassa, nessun_dato = [], [], [], []
+
+    for fan in all_fans:
+        score = raw_scores.get(fan.id)
+        segment = seg_map.get(fan.id, "—")
+        base = {"id": fan.id, "nome": fan.nome, "cognome": fan.cognome, "email": fan.email, "segment": segment}
+
+        if score is None:
+            nessun_dato.append(base)
+            continue
+
+        rate = score["home_rate"] if tipo == "casa" else score["away_rate"]
+        attended = score["home_attended"] if tipo == "casa" else score["away_attended"]
+        entry = {**base, "rate": rate, "partite_seguite": attended, "badge": score["badge"]}
+
+        if rate >= 60:
+            alta.append(entry)
+        elif rate >= 25:
+            media.append(entry)
+        else:
+            bassa.append(entry)
+
+    for tier in [alta, media, bassa]:
+        tier.sort(key=lambda f: -f.get("rate", 0))
+
+    totale_previsto = round(len(alta) * 0.85 + len(media) * 0.50 + len(bassa) * 0.15)
+
+    return {
+        "partita": partita_out,
+        "totale_previsto": totale_previsto,
+        "tiers": {
+            "alta":       {"fans": alta[:20],        "count": len(alta),       "label": "Verranno quasi sicuramente", "color": "#059669", "prob": 85},
+            "media":      {"fans": media[:20],       "count": len(media),      "label": "Probabile presenza",         "color": "#2563eb", "prob": 50},
+            "bassa":      {"fans": bassa[:20],       "count": len(bassa),      "label": "Presenza incerta",           "color": "#d97706", "prob": 15},
+            "nessun_dato":{"fans": nessun_dato[:10], "count": len(nessun_dato),"label": "Nessun dato storico",        "color": "#6b7280", "prob": 0},
+        },
     }

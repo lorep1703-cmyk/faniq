@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import {
   ShieldAlert, TrendingUp, Download, Users, Star,
   ChevronRight, Sparkles, ChevronDown, ChevronUp,
+  CalendarDays, Megaphone,
 } from "lucide-react";
-import { fetchInsights, exportFans } from "../api/client";
+import { fetchInsights, exportFans, fetchPartite, fetchPredizione } from "../api/client";
 import EmptyState from "../components/EmptyState";
 
 // ── utils ─────────────────────────────────────────────────────────────────────
@@ -303,6 +304,188 @@ function SectionTitle({ icon: Icon, color, title, sub }) {
   );
 }
 
+// ── Predizione Presenze ───────────────────────────────────────────────────────
+
+const TIER_ORDER = ["alta", "media", "bassa", "nessun_dato"];
+
+function TierRow({ tier, label, color, count, prob, fans }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-lg border" style={{ borderColor: color + "33", backgroundColor: color + "0d" }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+          <div>
+            <p className="text-sm font-bold text-slate-800">{label}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{count} tifosi{prob > 0 ? ` · probabilità ~${prob}%` : ""}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xl font-black" style={{ color }}>{count}</span>
+          {count > 0 && (open ? <ChevronUp size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />)}
+        </div>
+      </button>
+
+      {open && fans?.length > 0 && (
+        <div className="px-4 pb-4">
+          <div className="rounded-lg border border-slate-200 overflow-hidden">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="text-left px-3 py-2 font-semibold text-slate-500">Nome</th>
+                  <th className="text-left px-3 py-2 font-semibold text-slate-500 hidden sm:table-cell">Segmento</th>
+                  <th className="text-left px-3 py-2 font-semibold text-slate-500 hidden sm:table-cell">Email</th>
+                  <th className="text-right px-3 py-2 font-semibold text-slate-500">Presenze %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fans.map((f) => (
+                  <tr key={f.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                    <td className="px-3 py-2 font-medium text-slate-700">{f.nome} {f.cognome}</td>
+                    <td className="px-3 py-2 text-slate-400 hidden sm:table-cell">{f.segment}</td>
+                    <td className="px-3 py-2 text-slate-400 hidden sm:table-cell">{f.email ?? "—"}</td>
+                    <td className="px-3 py-2 text-right font-bold" style={{ color }}>
+                      {f.rate != null ? `${f.rate}%` : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {count > fans.length && (
+              <p className="text-xs text-slate-400 px-3 py-2 border-t border-slate-100">
+                + altri {count - fans.length} tifosi non mostrati
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PredizionPresenze() {
+  const [partite, setPartite]       = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
+  const [pred, setPred]             = useState(null);
+  const [loading, setLoading]       = useState(false);
+
+  useEffect(() => {
+    fetchPartite()
+      .then((rows) => {
+        const future = rows.filter((p) => !p.passata);
+        setPartite(future);
+      })
+      .catch(() => setPartite([]));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedId) { setPred(null); return; }
+    setLoading(true);
+    fetchPredizione(selectedId)
+      .then(setPred)
+      .catch(() => setPred(null))
+      .finally(() => setLoading(false));
+  }, [selectedId]);
+
+  const fmtData = (iso) =>
+    new Date(iso).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" });
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-100 p-6">
+      <div className="flex items-start justify-between gap-4 mb-5">
+        <SectionTitle
+          icon={CalendarDays}
+          color="text-blue-500"
+          title="Predizione Presenze"
+          sub="Chi verrà alla prossima partita, basato sullo storico reale di ogni tifoso"
+        />
+      </div>
+
+      {/* Selettore partita */}
+      {partite.length === 0 ? (
+        <div className="rounded-lg bg-slate-50 border border-slate-200 px-4 py-5 text-center">
+          <CalendarDays size={22} className="mx-auto text-slate-300 mb-2" />
+          <p className="text-sm font-semibold text-slate-500">Nessuna partita futura in calendario</p>
+          <p className="text-xs text-slate-400 mt-1">Carica il calendario dalla sezione <span className="font-semibold">Carica dati</span> per abilitare le predizioni.</p>
+        </div>
+      ) : (
+        <>
+          <select
+            value={selectedId ?? ""}
+            onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
+            className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400 mb-5"
+          >
+            <option value="">— Seleziona una partita —</option>
+            {partite.map((p) => (
+              <option key={p.id} value={p.id}>
+                {fmtData(p.data)} · {p.avversario} ({p.casa_trasferta}){p.competizione ? ` · ${p.competizione}` : ""}
+              </option>
+            ))}
+          </select>
+
+          {loading && (
+            <div className="flex justify-center py-8">
+              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+
+          {!loading && pred && !pred.empty && (
+            <>
+              {/* Totale previsto */}
+              <div className="flex items-center justify-between rounded-xl bg-blue-50 border border-blue-100 px-5 py-4 mb-5">
+                <div>
+                  <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Presenze stimate</p>
+                  <p className="text-xs text-blue-400 mt-0.5">
+                    {pred.partita.avversario} · {pred.partita.casa_trasferta} · {fmtData(pred.partita.data)}
+                  </p>
+                </div>
+                <span className="text-4xl font-black text-blue-600">{pred.totale_previsto}</span>
+              </div>
+
+              {/* Tier */}
+              <div className="space-y-3 mb-5">
+                {TIER_ORDER.map((key) => {
+                  const t = pred.tiers[key];
+                  return (
+                    <TierRow
+                      key={key}
+                      label={t.label}
+                      color={t.color}
+                      count={t.count}
+                      prob={t.prob}
+                      fans={t.fans}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* CTA Marketing */}
+              <div className="rounded-lg border border-dashed border-slate-300 px-4 py-3 flex items-center gap-3">
+                <Megaphone size={16} className="text-slate-400 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-slate-600">Crea campagna per chi probabilmente non viene</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Raggiungi i tifosi "Presenza incerta" e "Nessun dato" prima della partita</p>
+                </div>
+                <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md shrink-0">Presto</span>
+              </div>
+            </>
+          )}
+
+          {!loading && pred?.empty && (
+            <div className="rounded-lg bg-slate-50 border border-slate-200 px-4 py-5 text-center">
+              <p className="text-sm font-semibold text-slate-500">Nessun dato comportamentale disponibile</p>
+              <p className="text-xs text-slate-400 mt-1">Carica i biglietti con data partita per abilitare le predizioni individuali.</p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── Pagina principale ─────────────────────────────────────────────────────────
 
 export default function Insights() {
@@ -378,6 +561,11 @@ export default function Insights() {
 
       {/* 4 — Cosa fai adesso */}
       <AzioniSettimana azioni={data.azioni_settimana} onExport={handleExport} />
+
+      {/* 5 — Predizione presenze */}
+      <div className="mt-6">
+        <PredizionPresenze />
+      </div>
 
       {toast && (
         <div className="fixed bottom-6 right-6 bg-slate-800 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg z-50">

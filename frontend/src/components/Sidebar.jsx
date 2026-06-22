@@ -1,12 +1,10 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Upload, Users, FileBarChart2, Lightbulb, ShieldCheck, FlaskConical, LogOut, CalendarDays } from "lucide-react";
+import { LayoutDashboard, Upload, Users, FileBarChart2, Lightbulb, ShieldCheck, LogOut } from "lucide-react";
 
 const links = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/insights", label: "Intelligence", icon: Lightbulb },
-  { to: "/calendario", label: "Calendario", icon: CalendarDays },
   { to: "/report", label: "Report & Segmenti", icon: FileBarChart2 },
-  { to: "/simulatore", label: "Simulatore", icon: FlaskConical },
   { to: "/upload", label: "Carica dati", icon: Upload },
   { to: "/privacy", label: "Privacy & GDPR", icon: ShieldCheck },
 ];

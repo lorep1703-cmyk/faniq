@@ -113,3 +113,4 @@ export const uploadPartite      = (file)   => {
   return api.post("/partite/upload", form).then((r) => r.data);
 };
 export const fetchBehavioral    = ()       => api.get("/partite/behavioral").then((r) => r.data);
+export const fetchPredizione    = (id)     => api.get(`/partite/predizione/${id}`).then((r) => r.data);
