@@ -114,3 +114,4 @@ export const uploadPartite      = (file)   => {
 };
 export const fetchBehavioral    = ()       => api.get("/partite/behavioral").then((r) => r.data);
 export const fetchPredizione    = (id)     => api.get(`/partite/predizione/${id}`).then((r) => r.data);
+export const fetchRenewalScores = (params = {}) => api.get("/fans/renewal-scores", { params: { per_page: 500, ...params } }).then((r) => r.data);

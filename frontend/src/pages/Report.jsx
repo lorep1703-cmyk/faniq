@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Download, Search } from "lucide-react";
+import { Download, Search, RefreshCw } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import {
   fetchAllFans,
@@ -7,6 +7,7 @@ import {
   fetchStats,
   fetchTopSpenders,
   exportFans,
+  fetchRenewalScores,
 } from "../api/client";
 import DataHealthPill from "../components/DataHealthPill";
 import EmptyState from "../components/EmptyState";
@@ -24,6 +25,24 @@ function fmtEur(n) {
   return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 }
 
+function RenewalBadge({ score }) {
+  if (score == null) return <span className="text-xs text-slate-300">—</span>;
+  const cfg = score >= 70
+    ? { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" }
+    : score >= 40
+    ? { bg: "bg-amber-50",   text: "text-amber-700",   dot: "bg-amber-400" }
+    : { bg: "bg-red-50",     text: "text-red-700",     dot: "bg-red-500" };
+  return (
+    <span
+      title="Basato su presenze, trend e storico abbonamenti"
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.text}`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+      {score}%
+    </span>
+  );
+}
+
 export default function Report() {
   const [fans, setFans] = useState([]);
   const [segments, setSegments] = useState([]);
@@ -31,6 +50,9 @@ export default function Report() {
   const [stats, setStats] = useState(null);
   const [filter, setFilter] = useState("");
   const [segmentFilter, setSegmentFilter] = useState("tutti");
+  const [soloRischio, setSoloRischio] = useState(false);
+  const [renewalMap, setRenewalMap] = useState({});
+  const [renewalLoading, setRenewalLoading] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,6 +65,17 @@ export default function Report() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const loadRenewal = async () => {
+    setRenewalLoading(true);
+    try {
+      const data = await fetchRenewalScores();
+      const map = {};
+      for (const item of data.items) map[item.fan_id] = item;
+      setRenewalMap(map);
+    } catch { /* silenzioso */ }
+    finally { setRenewalLoading(false); }
+  };
 
   if (loading) {
     return (
@@ -61,14 +94,22 @@ export default function Report() {
     );
   }
 
-  const filtered = fans.filter((f) => {
-    const matchSeg = segmentFilter === "tutti" || f.segment === segmentFilter;
-    const q = filter.toLowerCase();
-    const matchText =
-      !q ||
-      `${f.nome} ${f.cognome} ${f.email} ${f.citta}`.toLowerCase().includes(q);
-    return matchSeg && matchText;
-  });
+  const hasRenewal = Object.keys(renewalMap).length > 0;
+
+  const filtered = fans
+    .filter((f) => {
+      const matchSeg = segmentFilter === "tutti" || f.segment === segmentFilter;
+      const q = filter.toLowerCase();
+      const matchText = !q || `${f.nome} ${f.cognome} ${f.email} ${f.citta}`.toLowerCase().includes(q);
+      const matchRischio = !soloRischio || (renewalMap[f.id]?.score_pct ?? 100) < 40;
+      return matchSeg && matchText && matchRischio;
+    })
+    .sort((a, b) => {
+      if (!hasRenewal) return 0;
+      const sa = renewalMap[a.id]?.score_pct ?? 100;
+      const sb = renewalMap[b.id]?.score_pct ?? 100;
+      return sa - sb;
+    });
 
   return (
     <div className="flex-1 p-8 overflow-auto">
@@ -152,6 +193,28 @@ export default function Report() {
               <option key={s.segment} value={s.segment}>{s.segment}</option>
             ))}
           </select>
+
+          {!hasRenewal ? (
+            <button
+              onClick={loadRenewal}
+              disabled={renewalLoading}
+              className="flex items-center gap-2 text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+            >
+              <RefreshCw size={14} className={renewalLoading ? "animate-spin" : ""} />
+              {renewalLoading ? "Calcolo..." : "Calcola prob. rinnovo"}
+            </button>
+          ) : (
+            <button
+              onClick={() => setSoloRischio(v => !v)}
+              className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 font-medium border transition-colors ${
+                soloRischio
+                  ? "bg-red-50 border-red-200 text-red-700"
+                  : "border-slate-200 text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              {soloRischio ? "✕ Solo a rischio rinnovo" : "Mostra solo a rischio rinnovo"}
+            </button>
+          )}
         </div>
 
         <div className="overflow-x-auto">
@@ -164,7 +227,8 @@ export default function Report() {
                 <th className="pb-3 pr-4">Segmento</th>
                 <th className="pb-3 pr-4">RFM</th>
                 <th className="pb-3 pr-4">Fonti</th>
-                <th className="pb-3">Spesa</th>
+                <th className="pb-3 pr-4">Spesa</th>
+                {hasRenewal && <th className="pb-3">Prob. rinnovo</th>}
               </tr>
             </thead>
             <tbody>
@@ -182,7 +246,12 @@ export default function Report() {
                   </td>
                   <td className="py-2.5 pr-4 text-slate-500">{f.rfm_score}</td>
                   <td className="py-2.5 pr-4 text-slate-500">{f.n_sources}</td>
-                  <td className="py-2.5 font-semibold text-slate-800">{fmtEur(f.total_spend)}</td>
+                  <td className="py-2.5 pr-4 font-semibold text-slate-800">{fmtEur(f.total_spend)}</td>
+                  {hasRenewal && (
+                    <td className="py-2.5">
+                      <RenewalBadge score={renewalMap[f.id]?.score_pct} />
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
