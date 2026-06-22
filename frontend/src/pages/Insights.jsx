@@ -537,34 +537,28 @@ export default function Insights() {
         <p className="text-slate-400 text-sm mt-1">{data.summary}</p>
       </div>
 
-      {/* 1 — Alert */}
+      {/* 1 — Alert emergenza */}
       <AlertBanner kpi={data.kpi} />
 
-      {/* 2 — Come stai */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+      {/* 2 — Predizione presenze (feature principale) */}
+      <div className="mb-6">
+        <PredizionPresenze />
+      </div>
+
+      {/* 3 — Salute del club: score + KPI */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-slate-100 p-4">
           <BusinessScore score={data.kpi.business_score} />
         </div>
-        <div className="bg-white rounded-xl border border-slate-100 p-4">
+        <div className="bg-white rounded-xl border border-slate-100 p-4 flex flex-col justify-center">
           <KpiStrip kpi={data.kpi} />
         </div>
-        <div className="bg-white rounded-xl border border-slate-100 p-4">
-          <SegmentBars counts={data.segment_counts} />
-        </div>
       </div>
 
-      {/* 3 — Cosa rischi + Cosa puoi guadagnare */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      {/* 4 — Rischi + Opportunità */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RevenueWatch data={data.revenue_watch} onExport={handleExport} />
         <Opportunita  items={data.opportunita}  onExport={handleExport} />
-      </div>
-
-      {/* 4 — Cosa fai adesso */}
-      <AzioniSettimana azioni={data.azioni_settimana} onExport={handleExport} />
-
-      {/* 5 — Predizione presenze */}
-      <div className="mt-6">
-        <PredizionPresenze />
       </div>
 
       {toast && (
