@@ -337,8 +337,9 @@ function TierRow({ tier, label, color, count, prob, fans }) {
                 <tr className="bg-slate-50 border-b border-slate-200">
                   <th className="text-left px-3 py-2 font-semibold text-slate-500">Nome</th>
                   <th className="text-left px-3 py-2 font-semibold text-slate-500 hidden sm:table-cell">Segmento</th>
-                  <th className="text-left px-3 py-2 font-semibold text-slate-500 hidden sm:table-cell">Email</th>
-                  <th className="text-right px-3 py-2 font-semibold text-slate-500">Presenze %</th>
+                  <th className="text-left px-3 py-2 font-semibold text-slate-500 hidden md:table-cell">Email</th>
+                  <th className="text-center px-3 py-2 font-semibold text-slate-500 hidden sm:table-cell">Ultime 5</th>
+                  <th className="text-right px-3 py-2 font-semibold text-slate-500">%</th>
                 </tr>
               </thead>
               <tbody>
@@ -346,7 +347,16 @@ function TierRow({ tier, label, color, count, prob, fans }) {
                   <tr key={f.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
                     <td className="px-3 py-2 font-medium text-slate-700">{f.nome} {f.cognome}</td>
                     <td className="px-3 py-2 text-slate-400 hidden sm:table-cell">{f.segment}</td>
-                    <td className="px-3 py-2 text-slate-400 hidden sm:table-cell">{f.email ?? "—"}</td>
+                    <td className="px-3 py-2 text-slate-400 hidden md:table-cell">{f.email ?? "—"}</td>
+                    <td className="px-3 py-2 hidden sm:table-cell">
+                      <div className="flex items-center justify-center gap-1">
+                        {(f.streak ?? []).map((present, i) => (
+                          <div key={i} className="w-2.5 h-2.5 rounded-full"
+                            style={{ backgroundColor: present ? "#059669" : "#e2e8f0" }} />
+                        ))}
+                        {(!f.streak || f.streak.length === 0) && <span className="text-slate-300 text-xs">—</span>}
+                      </div>
+                    </td>
                     <td className="px-3 py-2 text-right font-bold" style={{ color }}>
                       {f.rate != null ? `${f.rate}%` : "—"}
                     </td>

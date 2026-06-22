@@ -199,23 +199,47 @@ def get_predizione(
     if not behavioral or not behavioral.get("fan_scores"):
         return {"empty": True, "partita": partita_out}
 
-    # fan_scores è {fan_id: {...}} dal servizio
     raw_scores = behavioral["fan_scores"]
 
     # RFM per ogni fan
     rfm = compute_fan_segments(db, club.id)
     seg_map = {f["id"]: f["segment"] for f in rfm}
 
-    # Tutti i fan del club per i "nessun dato"
+    # Ultime 5 partite dello stesso tipo (casa/trasferta) per lo streak
+    tipo = partita.casa_trasferta
+    partite_tipo = (
+        db.query(Partita)
+        .filter(Partita.club_id == club.id, Partita.casa_trasferta == tipo, Partita.data < partita.data)
+        .order_by(Partita.data.desc())
+        .limit(5)
+        .all()
+    )
+    streak_dates = [p.data for p in partite_tipo]  # più recente prima
+
+    # Biglietti per fan: {fan_id: set(date)}
+    from models import Biglietto
+    biglietti = db.query(Biglietto).filter(Biglietto.club_id == club.id).all()
+    fan_ticket_dates: dict[int, set] = {}
+    for b in biglietti:
+        if b.data_partita:
+            fan_ticket_dates.setdefault(b.fan_id, set()).add(b.data_partita)
+
+    def build_streak(fan_id: int) -> list[bool]:
+        dates = fan_ticket_dates.get(fan_id, set())
+        return [d in dates for d in streak_dates]
+
     all_fans = db.query(Fan).filter(Fan.club_id == club.id).all()
-    tipo = partita.casa_trasferta  # "casa" | "trasferta"
 
     alta, media, bassa, nessun_dato = [], [], [], []
 
     for fan in all_fans:
         score = raw_scores.get(fan.id)
         segment = seg_map.get(fan.id, "—")
-        base = {"id": fan.id, "nome": fan.nome, "cognome": fan.cognome, "email": fan.email, "segment": segment}
+        base = {
+            "id": fan.id, "nome": fan.nome, "cognome": fan.cognome,
+            "email": fan.email, "segment": segment,
+            "streak": build_streak(fan.id),
+        }
 
         if score is None:
             nessun_dato.append(base)

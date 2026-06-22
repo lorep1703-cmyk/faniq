@@ -1,5 +1,116 @@
 nome,cognome,email,data_partita,settore,prezzo
+Paolo,Verdi,p.verdi@gmail.com,2024-09-01,Tribuna,18.00
+Paolo,Verdi,p.verdi@gmail.com,2024-09-15,Tribuna,22.00
+Paolo,Verdi,p.verdi@gmail.com,2024-09-22,Tribuna,18.00
+Paolo,Verdi,p.verdi@gmail.com,2024-10-06,Tribuna,22.00
+Paolo,Verdi,p.verdi@gmail.com,2024-10-20,Tribuna,18.00
+Paolo,Verdi,p.verdi@gmail.com,2024-11-03,Tribuna,22.00
+Paolo,Verdi,p.verdi@gmail.com,2024-11-10,Tribuna,18.00
+Paolo,Verdi,p.verdi@gmail.com,2024-11-24,Tribuna,22.00
+Paolo,Verdi,p.verdi@gmail.com,2024-12-08,Tribuna,18.00
+Paolo,Verdi,p.verdi@gmail.com,2024-12-15,Tribuna,22.00
+Paolo,Verdi,p.verdi@gmail.com,2025-01-12,Tribuna,18.00
+Paolo,Verdi,p.verdi@gmail.com,2025-01-19,Tribuna,22.00
+Paolo,Verdi,p.verdi@gmail.com,2025-02-02,Tribuna,18.00
+Paolo,Verdi,p.verdi@gmail.com,2025-02-16,Tribuna,22.00
 Paolo,Verdi,p.verdi@gmail.com,2025-03-02,Tribuna,18.00
-Mario,Blu,,2025-03-02,Curva Nord,12.00
-Laura,Neri,l.neri@email.it,2025-03-16,Gradinata,10.00
-Mario,Blu,,2025-03-16,Curva Nord,12.00
+Paolo,Verdi,p.verdi@gmail.com,2025-03-16,Tribuna,22.00
+Paolo,Verdi,p.verdi@gmail.com,2025-03-30,Tribuna,18.00
+Paolo,Verdi,p.verdi@gmail.com,2025-04-06,Tribuna,22.00
+Paolo,Verdi,p.verdi@gmail.com,2025-04-13,Tribuna,18.00
+Paolo,Verdi,p.verdi@gmail.com,2025-04-27,Tribuna,22.00
+Marco,Ferrari,m.ferrari@gmail.com,2024-09-01,Curva Nord,12.00
+Marco,Ferrari,m.ferrari@gmail.com,2024-09-15,Curva Nord,15.00
+Marco,Ferrari,m.ferrari@gmail.com,2024-09-22,Curva Nord,12.00
+Marco,Ferrari,m.ferrari@gmail.com,2024-10-06,Curva Nord,15.00
+Marco,Ferrari,m.ferrari@gmail.com,2024-10-20,Curva Nord,12.00
+Marco,Ferrari,m.ferrari@gmail.com,2024-11-03,Curva Nord,15.00
+Marco,Ferrari,m.ferrari@gmail.com,2024-11-10,Curva Nord,12.00
+Marco,Ferrari,m.ferrari@gmail.com,2024-11-24,Curva Nord,15.00
+Marco,Ferrari,m.ferrari@gmail.com,2024-12-08,Curva Nord,12.00
+Marco,Ferrari,m.ferrari@gmail.com,2024-12-15,Curva Nord,15.00
+Marco,Ferrari,m.ferrari@gmail.com,2025-01-12,Curva Nord,12.00
+Marco,Ferrari,m.ferrari@gmail.com,2025-02-02,Curva Nord,12.00
+Marco,Ferrari,m.ferrari@gmail.com,2025-02-16,Curva Nord,15.00
+Marco,Ferrari,m.ferrari@gmail.com,2025-03-02,Curva Nord,12.00
+Marco,Ferrari,m.ferrari@gmail.com,2025-03-16,Curva Nord,15.00
+Marco,Ferrari,m.ferrari@gmail.com,2025-03-30,Curva Nord,12.00
+Marco,Ferrari,m.ferrari@gmail.com,2025-04-06,Curva Nord,15.00
+Marco,Ferrari,m.ferrari@gmail.com,2025-04-13,Curva Nord,12.00
+Marco,Ferrari,m.ferrari@gmail.com,2025-04-27,Curva Nord,15.00
+Davide,Conti,d.conti@yahoo.it,2024-09-01,Gradinata,10.00
+Davide,Conti,d.conti@yahoo.it,2024-09-22,Gradinata,10.00
+Davide,Conti,d.conti@yahoo.it,2024-10-20,Gradinata,10.00
+Davide,Conti,d.conti@yahoo.it,2024-11-10,Gradinata,10.00
+Davide,Conti,d.conti@yahoo.it,2024-12-08,Gradinata,10.00
+Davide,Conti,d.conti@yahoo.it,2025-01-12,Gradinata,10.00
+Davide,Conti,d.conti@yahoo.it,2025-02-02,Gradinata,10.00
+Davide,Conti,d.conti@yahoo.it,2025-03-02,Gradinata,10.00
+Davide,Conti,d.conti@yahoo.it,2025-03-30,Gradinata,10.00
+Davide,Conti,d.conti@yahoo.it,2025-04-13,Gradinata,10.00
+Chiara,Costa,c.costa@gmail.com,2024-09-01,Tribuna,18.00
+Chiara,Costa,c.costa@gmail.com,2024-09-22,Tribuna,18.00
+Chiara,Costa,c.costa@gmail.com,2024-10-20,Tribuna,18.00
+Chiara,Costa,c.costa@gmail.com,2024-11-10,Tribuna,18.00
+Chiara,Costa,c.costa@gmail.com,2024-11-24,Tribuna,22.00
+Chiara,Costa,c.costa@gmail.com,2024-12-08,Tribuna,18.00
+Chiara,Costa,c.costa@gmail.com,2025-01-12,Tribuna,18.00
+Chiara,Costa,c.costa@gmail.com,2025-02-02,Tribuna,18.00
+Chiara,Costa,c.costa@gmail.com,2025-03-02,Tribuna,18.00
+Chiara,Costa,c.costa@gmail.com,2025-03-30,Tribuna,18.00
+Chiara,Costa,c.costa@gmail.com,2025-04-06,Tribuna,22.00
+Chiara,Costa,c.costa@gmail.com,2025-04-13,Tribuna,18.00
+Laura,Neri,l.neri@email.it,2024-09-01,Gradinata,10.00
+Laura,Neri,l.neri@email.it,2024-09-15,Gradinata,13.00
+Laura,Neri,l.neri@email.it,2024-09-22,Gradinata,10.00
+Laura,Neri,l.neri@email.it,2024-10-06,Gradinata,13.00
+Laura,Neri,l.neri@email.it,2024-10-20,Gradinata,10.00
+Laura,Neri,l.neri@email.it,2024-11-03,Gradinata,13.00
+Laura,Neri,l.neri@email.it,2024-11-10,Gradinata,10.00
+Laura,Neri,l.neri@email.it,2024-11-24,Gradinata,13.00
+Laura,Neri,l.neri@email.it,2024-12-08,Gradinata,10.00
+Laura,Neri,l.neri@email.it,2024-12-15,Gradinata,13.00
+Laura,Neri,l.neri@email.it,2025-01-19,Gradinata,13.00
+Laura,Neri,l.neri@email.it,2025-02-02,Gradinata,10.00
+Laura,Neri,l.neri@email.it,2025-02-16,Gradinata,13.00
+Laura,Neri,l.neri@email.it,2025-03-02,Gradinata,10.00
+Laura,Neri,l.neri@email.it,2025-03-16,Gradinata,13.00
+Laura,Neri,l.neri@email.it,2025-03-30,Gradinata,10.00
+Laura,Neri,l.neri@email.it,2025-04-06,Gradinata,13.00
+Laura,Neri,l.neri@email.it,2025-04-27,Gradinata,13.00
+Nicola,Cattaneo,n.cattaneo@email.it,2024-09-15,Curva Nord,15.00
+Nicola,Cattaneo,n.cattaneo@email.it,2024-09-22,Curva Nord,12.00
+Nicola,Cattaneo,n.cattaneo@email.it,2024-10-06,Curva Nord,15.00
+Nicola,Cattaneo,n.cattaneo@email.it,2024-11-03,Curva Nord,15.00
+Nicola,Cattaneo,n.cattaneo@email.it,2024-11-10,Curva Nord,12.00
+Nicola,Cattaneo,n.cattaneo@email.it,2024-11-24,Curva Nord,15.00
+Nicola,Cattaneo,n.cattaneo@email.it,2024-12-15,Curva Nord,15.00
+Nicola,Cattaneo,n.cattaneo@email.it,2025-01-12,Curva Nord,12.00
+Nicola,Cattaneo,n.cattaneo@email.it,2025-01-19,Curva Nord,15.00
+Nicola,Cattaneo,n.cattaneo@email.it,2025-02-16,Curva Nord,15.00
+Nicola,Cattaneo,n.cattaneo@email.it,2025-03-16,Curva Nord,15.00
+Nicola,Cattaneo,n.cattaneo@email.it,2025-04-06,Curva Nord,15.00
+Mario,Blu,,2024-09-01,Curva Sud,10.00
+Mario,Blu,,2024-10-20,Curva Sud,10.00
+Mario,Blu,,2024-12-08,Curva Sud,10.00
+Mario,Blu,,2025-02-02,Curva Sud,10.00
+Mario,Blu,,2025-03-02,Curva Sud,10.00
+Mario,Blu,,2025-03-16,Curva Sud,13.00
+Sara,Ricci,s.ricci@email.it,2025-02-02,Gradinata,10.00
+Sara,Ricci,s.ricci@email.it,2025-03-02,Gradinata,10.00
+Sara,Ricci,s.ricci@email.it,2025-03-30,Gradinata,10.00
+Sara,Ricci,s.ricci@email.it,2025-04-13,Gradinata,10.00
+Alberto,Lombardi,a.lombardi@gmail.com,2024-09-01,Gradinata,10.00
+Alberto,Lombardi,a.lombardi@gmail.com,2024-09-22,Gradinata,10.00
+Alberto,Lombardi,a.lombardi@gmail.com,2024-10-20,Gradinata,10.00
+Stefano,Bruno,s.bruno@libero.it,2024-09-01,Curva Nord,12.00
+Stefano,Bruno,s.bruno@libero.it,2024-09-15,Curva Nord,15.00
+Anna,Greco,a.greco@yahoo.it,2024-09-01,Tribuna,18.00
+Anna,Greco,a.greco@yahoo.it,2024-11-10,Tribuna,18.00
+Anna,Greco,a.greco@yahoo.it,2025-01-12,Tribuna,18.00
+Anna,Greco,a.greco@yahoo.it,2025-03-02,Tribuna,18.00
+Anna,Greco,a.greco@yahoo.it,2025-04-13,Tribuna,18.00
+Giulia,Russo,g.russo@hotmail.it,2024-09-22,Gradinata,10.00
+Giulia,Russo,g.russo@hotmail.it,2024-11-03,Gradinata,13.00
+Giulia,Russo,g.russo@hotmail.it,2025-02-16,Gradinata,13.00
+Giulia,Russo,g.russo@hotmail.it,2025-04-27,Gradinata,13.00
