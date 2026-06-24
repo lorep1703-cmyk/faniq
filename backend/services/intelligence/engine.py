@@ -6,7 +6,7 @@ import time
 from datetime import date
 from typing import Optional
 
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, selectinload
 
 from intelligence_config import (
     CAP_DORMIENTE,
@@ -208,9 +208,9 @@ def compute_fan_intelligence(fan_id: int, club_id: int, db: Session) -> FanIntel
         db.query(Fan)
         .filter(Fan.id == fan_id, Fan.club_id == club_id)
         .options(
-            joinedload(Fan.abbonamenti),
-            joinedload(Fan.biglietti),
-            joinedload(Fan.shop_orders),
+            selectinload(Fan.abbonamenti),
+            selectinload(Fan.biglietti),
+            selectinload(Fan.shop_orders),
         )
         .first()
     )
@@ -237,9 +237,9 @@ def compute_club_intelligence(club_id: int, db: Session) -> list[FanIntelligence
         db.query(Fan)
         .filter(Fan.club_id == club_id)
         .options(
-            joinedload(Fan.abbonamenti),
-            joinedload(Fan.biglietti),
-            joinedload(Fan.shop_orders),
+            selectinload(Fan.abbonamenti),
+            selectinload(Fan.biglietti),
+            selectinload(Fan.shop_orders),
         )
         .all()
     )

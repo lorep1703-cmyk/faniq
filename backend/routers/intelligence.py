@@ -11,8 +11,23 @@ from sqlalchemy.orm import Session
 from database import get_db
 from fan_intelligence import DataQuality, FanIntelligence, JourneyStage
 from models import Club, Fan
+from services.cache import get as cache_get, set as cache_set
 from services.intelligence.engine import compute_club_intelligence, compute_fan_intelligence
 from tenant import get_current_club
+
+
+def _intel_cache_key(club_id: int) -> str:
+    return f"intelligence_{club_id}"
+
+
+def _get_or_compute(club_id: int, db) -> list:
+    key = _intel_cache_key(club_id)
+    cached = cache_get(key)
+    if cached is not None:
+        return cached
+    results = compute_club_intelligence(club_id, db)
+    cache_set(key, results)
+    return results
 
 router = APIRouter(prefix="/api/intelligence", tags=["intelligence"])
 
@@ -62,7 +77,7 @@ def get_fan_intelligence(
 @router.get("/club")
 def get_club_intelligence(
     page: int = Query(1, ge=1),
-    per_page: int = Query(50, ge=1, le=200),
+    per_page: int = Query(50, ge=1, le=5000),
     min_renewal: float = Query(0.0, ge=0.0, le=1.0),
     max_renewal: float = Query(1.0, ge=0.0, le=1.0),
     journey_stage: Optional[str] = Query(None),
@@ -70,7 +85,7 @@ def get_club_intelligence(
     db: Session = Depends(get_db),
     club: Club = Depends(get_current_club),
 ):
-    results = compute_club_intelligence(club.id, db)
+    results = _get_or_compute(club.id, db)
 
     # Arricchisce con nome fan
     fans = db.query(Fan).filter(Fan.club_id == club.id).all()
@@ -118,7 +133,7 @@ def get_club_summary(
     db: Session = Depends(get_db),
     club: Club = Depends(get_current_club),
 ):
-    results = compute_club_intelligence(club.id, db)
+    results = _get_or_compute(club.id, db)
 
     total = len(results)
     renewal_values = [fi.renewal_probability for fi in results if fi.renewal_probability is not None]

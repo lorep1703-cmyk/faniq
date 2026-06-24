@@ -25,7 +25,7 @@ CHAT_MAX_TOKENS = int(os.environ.get("FANIQ_CHAT_MAX_TOKENS", "2048"))
 CHAT_ANONYMIZE_PII = os.environ.get("FANIQ_CHAT_ANONYMIZE", "true").lower() != "false"
 
 # Cache analytics (secondi). 0 = disabilitata
-ANALYTICS_CACHE_TTL = int(os.environ.get("FANIQ_CACHE_TTL", "60"))
+ANALYTICS_CACHE_TTL = int(os.environ.get("FANIQ_CACHE_TTL", "300"))
 
 # Logging
 LOG_LEVEL = os.environ.get("FANIQ_LOG_LEVEL", "INFO").upper()

@@ -3,13 +3,22 @@ from __future__ import annotations
 import html
 import re
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy.orm import Session
 
 from database import get_db
 from models import Club
 from services.auth import create_token, hash_password, verify_password
+from services.cache import get as cache_get, set as cache_set
+from services.intelligence.engine import compute_club_intelligence
+
+
+def _warmup_intelligence(club_id: int, db: Session) -> None:
+    key = f"intelligence_{club_id}"
+    if cache_get(key) is None:
+        results = compute_club_intelligence(club_id, db)
+        cache_set(key, results)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -99,9 +108,16 @@ def register(request: Request, body: RegisterRequest, db: Session = Depends(get_
 
 
 @router.post("/login")
-def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
+def login(
+    request: Request,
+    body: LoginRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     slug = body.slug.strip().lower()
     club = db.query(Club).filter(Club.slug == slug).first()
     if not club or not verify_password(body.password, club.password_hash):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Credenziali non valide")
-    return _club_response(club, create_token(club.id, club.slug, club.nome))
+    response = _club_response(club, create_token(club.id, club.slug, club.nome))
+    background_tasks.add_task(_warmup_intelligence, club.id, db)
+    return response
