@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Download, Search, RefreshCw } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import RfmDistributionWidget from "../components/RfmDistributionWidget";
+import TopSpendersWidget from "../components/TopSpendersWidget";
 import {
   fetchAllFans,
   fetchSegments,
@@ -8,9 +11,26 @@ import {
   fetchTopSpenders,
   exportFans,
   fetchRenewalScores,
+  fetchClubIntelligence,
 } from "../api/client";
 import DataHealthPill from "../components/DataHealthPill";
 import EmptyState from "../components/EmptyState";
+import JourneyBadge from "../components/intelligence/JourneyBadge";
+import AmbassadorBadge, { getTier, TIERS } from "../components/intelligence/AmbassadorBadge";
+import FanCommunityImpact from "../components/intelligence/FanCommunityImpact";
+import DecayBadge, { PROFILES as DECAY_PROFILES } from "../components/intelligence/DecayBadge";
+import FanDecayProfile from "../components/intelligence/FanDecayProfile";
+
+const JOURNEY_STAGES = [
+  { value: "", label: "Tutti gli stadi" },
+  { value: "SCOPERTA",   label: "🌱 Scoperta" },
+  { value: "ABITUDINE",  label: "📈 Abitudine" },
+  { value: "FEDELTA",    label: "💪 Fedeltà" },
+  { value: "PICCO",      label: "⭐ Picco" },
+  { value: "RISCHIO",    label: "⚠️ A rischio" },
+  { value: "DORMIENTE",  label: "😴 Dormiente" },
+  { value: "RECUPERATO", label: "🔄 Recuperato" },
+];
 
 const SEGMENT_COLORS = {
   VIP: "#534AB7",
@@ -48,12 +68,20 @@ export default function Report() {
   const [segments, setSegments] = useState([]);
   const [topSpenders, setTopSpenders] = useState([]);
   const [stats, setStats] = useState(null);
+  const [searchParams] = useSearchParams();
   const [filter, setFilter] = useState("");
   const [segmentFilter, setSegmentFilter] = useState("tutti");
+  const [journeyFilter, setJourneyFilter] = useState("");
   const [soloRischio, setSoloRischio] = useState(false);
   const [renewalMap, setRenewalMap] = useState({});
   const [renewalLoading, setRenewalLoading] = useState(false);
+  const [intelligenceMap, setIntelligenceMap] = useState({});
+  const [intelligenceLoading, setIntelligenceLoading] = useState(false);
+  const [intelligenceError, setIntelligenceError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [ambassadorSort, setAmbassadorSort] = useState(false);
+  const [decaySort, setDecaySort] = useState(false);
+  const [expandedFanId, setExpandedFanId] = useState(null);
 
   useEffect(() => {
     Promise.all([fetchAllFans(), fetchSegments(), fetchTopSpenders(), fetchStats()])
@@ -77,6 +105,29 @@ export default function Report() {
     finally { setRenewalLoading(false); }
   };
 
+  const loadIntelligence = async (stage = "") => {
+    setIntelligenceLoading(true);
+    setIntelligenceError(null);
+    try {
+      const params = stage ? { journey_stage: stage } : {};
+      const data = await fetchClubIntelligence(params);
+      const map = {};
+      for (const item of data.items) map[item.fan_id] = item;
+      setIntelligenceMap(map);
+    } catch (err) {
+      setIntelligenceError(err.userMessage || "Errore caricamento intelligence");
+    } finally {
+      setIntelligenceLoading(false);
+    }
+  };
+
+  // Carica intelligence al mount
+  useEffect(() => { loadIntelligence(""); }, []);
+
+  useEffect(() => {
+    if (searchParams.get("filter") === "at_risk") setSoloRischio(true);
+  }, [searchParams]);
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -95,6 +146,7 @@ export default function Report() {
   }
 
   const hasRenewal = Object.keys(renewalMap).length > 0;
+  const hasIntelligence = Object.keys(intelligenceMap).length > 0;
 
   const filtered = fans
     .filter((f) => {
@@ -102,9 +154,21 @@ export default function Report() {
       const q = filter.toLowerCase();
       const matchText = !q || `${f.nome} ${f.cognome} ${f.email} ${f.citta}`.toLowerCase().includes(q);
       const matchRischio = !soloRischio || (renewalMap[f.id]?.score_pct ?? 100) < 40;
-      return matchSeg && matchText && matchRischio;
+      const matchJourney = !journeyFilter || intelligenceMap[f.id]?.journey_stage === journeyFilter;
+      return matchSeg && matchText && matchRischio && matchJourney;
     })
     .sort((a, b) => {
+      if (decaySort) {
+        const DECAY_ORDER = { VOLATILE: 0, RAPIDO: 1, MEDIO: 2, LENTO: 3 };
+        const da = DECAY_ORDER[intelligenceMap[a.id]?.decay_profile] ?? 4;
+        const db = DECAY_ORDER[intelligenceMap[b.id]?.decay_profile] ?? 4;
+        return da - db;
+      }
+      if (ambassadorSort) {
+        const sa = intelligenceMap[a.id]?.ambassador_score ?? -1;
+        const sb = intelligenceMap[b.id]?.ambassador_score ?? -1;
+        return sb - sa;
+      }
       if (!hasRenewal) return 0;
       const sa = renewalMap[a.id]?.score_pct ?? 100;
       const sb = renewalMap[b.id]?.score_pct ?? 100;
@@ -133,43 +197,9 @@ export default function Report() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
-          <h2 className="text-base font-semibold text-slate-700 mb-4">Segmenti RFM</h2>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={segments}>
-              <XAxis dataKey="segment" tick={{ fontSize: 11 }} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-              <Tooltip />
-              <Bar dataKey="count" name="Tifosi" radius={[4, 4, 0, 0]}>
-                {segments.map((s) => (
-                  <Cell key={s.segment} fill={SEGMENT_COLORS[s.segment] || "#534AB7"} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <RfmDistributionWidget data={segments} showFetch={false} />
 
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
-          <h2 className="text-base font-semibold text-slate-700 mb-4">Top 10 spender</h2>
-          <ul className="space-y-2">
-            {topSpenders.map((f, i) => (
-              <li key={f.id} className="flex items-center justify-between text-sm py-2 border-b border-slate-50 last:border-0">
-                <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 rounded-full bg-primary-100 text-primary-600 text-xs font-bold flex items-center justify-center">
-                    {i + 1}
-                  </span>
-                  <span className="font-medium text-slate-700">
-                    {f.nome} {f.cognome}
-                  </span>
-                  <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-                    {f.segment}
-                  </span>
-                </div>
-                <span className="font-semibold text-slate-800">{fmtEur(f.total_spend)}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <TopSpendersWidget data={topSpenders} showFetch={false} limit={5} />
       </div>
 
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
@@ -193,6 +223,25 @@ export default function Report() {
               <option key={s.segment} value={s.segment}>{s.segment}</option>
             ))}
           </select>
+
+          <select
+            value={journeyFilter}
+            onChange={(e) => {
+              const v = e.target.value;
+              setJourneyFilter(v);
+              loadIntelligence(v);
+            }}
+            disabled={intelligenceLoading}
+            className="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300 disabled:opacity-50"
+          >
+            {JOURNEY_STAGES.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+
+          {intelligenceError && (
+            <span className="text-xs text-red-500">{intelligenceError}</span>
+          )}
 
           {!hasRenewal ? (
             <button
@@ -225,35 +274,119 @@ export default function Report() {
                 <th className="pb-3 pr-4">Email</th>
                 <th className="pb-3 pr-4">Città</th>
                 <th className="pb-3 pr-4">Segmento</th>
+                <th className="pb-3 pr-4">Stadio</th>
                 <th className="pb-3 pr-4">RFM</th>
                 <th className="pb-3 pr-4">Fonti</th>
                 <th className="pb-3 pr-4">Spesa</th>
-                {hasRenewal && <th className="pb-3">Prob. rinnovo</th>}
+                {hasRenewal && <th className="pb-3 pr-4">Prob. rinnovo</th>}
+                {hasIntelligence && (
+                  <th className="pb-3 pr-4">
+                    <button
+                      onClick={() => { setAmbassadorSort(v => !v); setDecaySort(false); }}
+                      title="Ordina per impatto comunitario"
+                      className={`flex items-center gap-1 uppercase tracking-wide text-xs transition-colors ${
+                        ambassadorSort ? "text-violet-500" : "text-slate-400 hover:text-slate-600"
+                      }`}
+                    >
+                      Impatto {ambassadorSort ? "↓" : "↕"}
+                    </button>
+                  </th>
+                )}
+                {hasIntelligence && (
+                  <th className="pb-3">
+                    <button
+                      onClick={() => { setDecaySort(v => !v); setAmbassadorSort(false); }}
+                      title="Ordina per profilo fedeltà (Volatile prima)"
+                      className={`flex items-center gap-1 uppercase tracking-wide text-xs transition-colors ${
+                        decaySort ? "text-amber-500" : "text-slate-400 hover:text-slate-600"
+                      }`}
+                    >
+                      Fedeltà {decaySort ? "↓" : "↕"}
+                    </button>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
-              {filtered.slice(0, 100).map((f) => (
-                <tr key={f.id} className="border-b border-slate-50 hover:bg-slate-50">
-                  <td className="py-2.5 pr-4 font-medium text-slate-700">
-                    {f.nome} {f.cognome}
-                  </td>
-                  <td className="py-2.5 pr-4 text-slate-500">{f.email || "—"}</td>
-                  <td className="py-2.5 pr-4 text-slate-500">{f.citta || "—"}</td>
-                  <td className="py-2.5 pr-4">
-                    <span className="text-xs font-medium bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full">
-                      {f.segment}
-                    </span>
-                  </td>
-                  <td className="py-2.5 pr-4 text-slate-500">{f.rfm_score}</td>
-                  <td className="py-2.5 pr-4 text-slate-500">{f.n_sources}</td>
-                  <td className="py-2.5 pr-4 font-semibold text-slate-800">{fmtEur(f.total_spend)}</td>
-                  {hasRenewal && (
-                    <td className="py-2.5">
-                      <RenewalBadge score={renewalMap[f.id]?.score_pct} />
-                    </td>
-                  )}
-                </tr>
-              ))}
+              {filtered.slice(0, 100).map((f) => {
+                const intel = intelligenceMap[f.id];
+                const isRecuperato = intel?.journey_stage === "RECUPERATO";
+                const isExpanded = expandedFanId === f.id;
+                const ambassadorScore = intel?.ambassador_score ?? null;
+                const tierKey = getTier(ambassadorScore);
+                const tierTooltip = tierKey
+                  ? `${TIERS[tierKey].icon} ${TIERS[tierKey].label} (score: ${ambassadorScore})`
+                  : "Dati insufficienti per calcolarlo";
+
+                return (
+                  <>
+                    <tr
+                      key={f.id}
+                      onClick={() => setExpandedFanId(isExpanded ? null : f.id)}
+                      className={`border-b border-slate-50 cursor-pointer ${
+                        isExpanded ? "bg-slate-50" : "hover:bg-slate-50"
+                      } ${isRecuperato ? "border-l-2 border-l-violet-400" : ""}`}
+                    >
+                      <td className="py-2.5 pr-4 font-medium text-slate-700">
+                        {f.nome} {f.cognome}
+                      </td>
+                      <td className="py-2.5 pr-4 text-slate-500">{f.email || "—"}</td>
+                      <td className="py-2.5 pr-4 text-slate-500">{f.citta || "—"}</td>
+                      <td className="py-2.5 pr-4">
+                        <span className="text-xs font-medium bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full">
+                          {f.segment}
+                        </span>
+                      </td>
+                      <td className="py-2.5 pr-4">
+                        {intelligenceLoading
+                          ? <span className="inline-block w-16 h-4 bg-slate-100 rounded animate-pulse" />
+                          : <JourneyBadge stage={intel?.journey_stage} size="sm" />
+                        }
+                      </td>
+                      <td className="py-2.5 pr-4 text-slate-500">{f.rfm_score}</td>
+                      <td className="py-2.5 pr-4 text-slate-500">{f.n_sources}</td>
+                      <td className="py-2.5 pr-4 font-semibold text-slate-800">{fmtEur(f.total_spend)}</td>
+                      {hasRenewal && (
+                        <td className="py-2.5 pr-4">
+                          <RenewalBadge score={renewalMap[f.id]?.score_pct} />
+                        </td>
+                      )}
+                      {hasIntelligence && (
+                        <td className="py-2.5 pr-4" title={tierTooltip}>
+                          {intelligenceLoading
+                            ? <span className="inline-block w-10 h-4 bg-slate-100 rounded animate-pulse" />
+                            : <AmbassadorBadge score={ambassadorScore} size="sm" />
+                          }
+                        </td>
+                      )}
+                      {hasIntelligence && (
+                        <td
+                          className="py-2.5"
+                          title={
+                            intel?.decay_profile
+                              ? DECAY_PROFILES[intel.decay_profile]?.desc
+                              : "Storico insufficiente (meno di 8 partite)"
+                          }
+                        >
+                          {intelligenceLoading
+                            ? <span className="inline-block w-14 h-4 bg-slate-100 rounded animate-pulse" />
+                            : <DecayBadge profile={intel?.decay_profile} size="sm" />
+                          }
+                        </td>
+                      )}
+                    </tr>
+
+                    {isExpanded && (
+                      <tr key={`${f.id}-detail`} className="bg-slate-50">
+                        <td colSpan={8 + (hasRenewal ? 1 : 0) + (hasIntelligence ? 2 : 0)} className="px-4 pb-4">
+                          <FanDecayProfile profile={intel?.decay_profile} />
+                          <FanCommunityImpact score={ambassadorScore} />
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                );
+              })}
             </tbody>
           </table>
           {filtered.length > 100 && (

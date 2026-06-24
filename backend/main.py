@@ -16,7 +16,7 @@ from sqlalchemy.exc import OperationalError
 
 from config import CORS_ORIGINS, LOG_LEVEL
 from database import Base, SessionLocal, _IS_POSTGRES, engine
-from routers import chat, dashboard, export, insights, partite, privacy, renewal, simulator, upload
+from routers import chat, dashboard, export, insights, intelligence, partite, privacy, renewal, simulator, upload
 from routers.auth import router as auth_router
 
 load_dotenv()
@@ -134,6 +134,7 @@ app.include_router(privacy.router)
 app.include_router(chat.router)
 app.include_router(partite.router)
 app.include_router(renewal.router)
+app.include_router(intelligence.router)
 
 
 @app.get("/health")

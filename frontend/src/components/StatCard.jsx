@@ -3,6 +3,7 @@ const COLOR_MAP = {
   green: { bg: "bg-emerald-50", icon: "text-emerald-600", ring: "ring-emerald-100" },
   amber: { bg: "bg-amber-50", icon: "text-amber-600", ring: "ring-amber-100" },
   blue: { bg: "bg-blue-50", icon: "text-blue-600", ring: "ring-blue-100" },
+  red: { bg: "bg-red-50", icon: "text-red-600", ring: "ring-red-100" },
 };
 
 export default function StatCard({ label, value, sub, icon: Icon, color = "primary" }) {

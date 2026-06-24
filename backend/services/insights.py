@@ -1,5 +1,9 @@
 """Generazione insights strutturati: Revenue Watch con sotto-cluster, Opportunità, Azioni."""
+import logging
+
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger("faniq.insights")
 
 from services.analytics import (
     compute_fan_segments,
@@ -8,6 +12,43 @@ from services.analytics import (
     dashboard_stats,
 )
 from services.data_readiness import compute_data_readiness
+
+
+def _apply_intelligence_penalties(score: int, segments: list, db: Session, club_id: int) -> int:
+    """
+    Aggiunge al Business Score i segnali del Fan Intelligence Engine.
+    -10 se più del 30% dei fan ha renewal_probability < 0.4.
+    -5 se più del 5% degli abbonati ha anomalie critiche.
+    Lazy import per evitare dipendenza circolare.
+    """
+    try:
+        from services.intelligence.engine import compute_club_intelligence
+        from fan_intelligence import AnomalySeverity
+
+        intelligence = compute_club_intelligence(club_id, db)
+        if not intelligence:
+            return score
+
+        total = len(intelligence)
+        at_risk = sum(
+            1 for fi in intelligence
+            if fi.renewal_probability is not None and fi.renewal_probability < 0.4
+        )
+        critical_anomalies = sum(
+            1 for fi in intelligence
+            if fi.subscription_anomaly
+            and fi.subscription_anomaly.severity == AnomalySeverity.CRITICA
+        )
+        abbonati = sum(1 for f in segments if f.get("has_abbonamento"))
+
+        if total > 0 and at_risk / total > 0.30:
+            score -= 10
+        if abbonati > 0 and critical_anomalies / abbonati > 0.05:
+            score -= 5
+    except Exception as exc:
+        logger.warning("intelligence_penalties fallback: %s", exc)
+
+    return max(0, score)
 
 
 def _business_score(dormienti_pct: float, rischio_pct: float, vip_fedeli_pct: float, email_pct: float) -> int:
@@ -148,6 +189,7 @@ def generate_insights(db: Session, club_id: int) -> dict:
     rischio_pct     = totale_a_rischio / total_revenue if total_revenue else 0
     vip_fedeli_pct  = (len(vip) + len(fedeli)) / total_fans
     biz_score       = _business_score(dormienti_pct, rischio_pct, vip_fedeli_pct, email_pct_raw)
+    biz_score       = _apply_intelligence_penalties(biz_score, segments, db, club_id)
 
     # ── QUALITÀ (solo per uso interno, non nella hero row) ───────────────────
     email_pct     = round(email_pct_raw * 100)

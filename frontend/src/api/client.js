@@ -115,3 +115,13 @@ export const uploadPartite      = (file)   => {
 export const fetchBehavioral    = ()       => api.get("/partite/behavioral").then((r) => r.data);
 export const fetchPredizione    = (id)     => api.get(`/partite/predizione/${id}`).then((r) => r.data);
 export const fetchRenewalScores = (params = {}) => api.get("/fans/renewal-scores", { params: { per_page: 500, ...params } }).then((r) => r.data);
+
+// Intelligence Engine
+export const fetchFanIntelligence   = (fanId) => api.get(`/api/intelligence/fan/${fanId}`).then((r) => r.data);
+export const fetchClubIntelligence  = (params = {}) => api.get("/api/intelligence/club", { params: { per_page: 500, ...params } }).then((r) => r.data);
+export const fetchIntelligenceSummary = () => api.get("/api/intelligence/club/summary").then((r) => r.data);
+
+// Alerts — filtra lato client su subscription_anomaly != null
+export const fetchAlertsRaw = () =>
+  api.get("/api/intelligence/club", { params: { per_page: 500 } })
+    .then((r) => r.data.items.filter((fi) => fi.subscription_anomaly != null));

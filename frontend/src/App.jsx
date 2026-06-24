@@ -8,6 +8,7 @@ import Report from "./pages/Report";
 import Insights from "./pages/Insights";
 import Privacy from "./pages/Privacy";
 import Login from "./pages/Login";
+import AlertsPage from "./pages/AlertsPage";
 import ChatWidget from "./components/ChatWidget";
 
 function PrivateRoute({ children }) {
@@ -34,6 +35,7 @@ export default function App() {
                     <Route path="/report" element={<Report />} />
                     <Route path="/upload" element={<Upload />} />
                     <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/alerts" element={<AlertsPage />} />
                   </Routes>
                 </ErrorBoundary>
               </main>

@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Upload, Users, FileBarChart2, Lightbulb, ShieldCheck, LogOut } from "lucide-react";
+import { LayoutDashboard, Upload, Users, FileBarChart2, Lightbulb, ShieldCheck, LogOut, Bell } from "lucide-react";
+import { fetchIntelligenceSummary } from "../api/client";
 
 const links = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -11,10 +13,20 @@ const links = [
 
 export default function Sidebar() {
   const navigate = useNavigate();
+  const [criticalCount, setCriticalCount] = useState(0);
+
   const club = (() => {
     try { return JSON.parse(localStorage.getItem("faniq_club") || "{}"); }
     catch { return {}; }
   })();
+
+  useEffect(() => {
+    const token = localStorage.getItem("faniq_token");
+    if (!token) return;
+    fetchIntelligenceSummary()
+      .then((data) => setCriticalCount(data.fans_critical_anomaly ?? 0))
+      .catch(() => {/* badge non critico — fallisce silenziosamente */});
+  }, []);
 
   function logout() {
     localStorage.removeItem("faniq_token");
@@ -52,6 +64,28 @@ export default function Sidebar() {
             {label}
           </NavLink>
         ))}
+
+        {/* Link "Da contattare" con badge anomalie critiche */}
+        <NavLink
+          to="/alerts"
+          className={({ isActive }) =>
+            `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              isActive
+                ? "bg-white text-primary-600"
+                : "text-primary-100 hover:bg-primary-500 hover:text-white"
+            }`
+          }
+        >
+          <div className="relative">
+            <Bell size={18} />
+            {criticalCount > 0 && (
+              <span className="absolute -top-2 -right-2 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                {criticalCount > 99 ? "99+" : criticalCount}
+              </span>
+            )}
+          </div>
+          Da contattare
+        </NavLink>
       </nav>
 
       <div className="px-4 py-4 border-t border-primary-500 space-y-2">
