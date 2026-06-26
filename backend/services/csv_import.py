@@ -7,7 +7,7 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from models import Abbonamento, Biglietto, Fan, ShopOrder, UploadHistory
+from models import Abbonamento, Biglietto, Fan, Partita, ShopOrder, UploadHistory
 from services.cache import invalidate
 
 
@@ -145,6 +145,20 @@ def undo_upload(db: Session, club_id: int, upload_id: int) -> dict:
         db.query(Biglietto).filter(Biglietto.upload_id == upload_id).delete()
     elif upload.type == "shop":
         db.query(ShopOrder).filter(ShopOrder.upload_id == upload_id).delete()
+    elif upload.type == "partite":
+        db.query(Partita).filter(Partita.club_id == club_id).delete()
+
+    # Rimuove i fan che non hanno più nessuna transazione collegata
+    orphan_fans = (
+        db.query(Fan)
+        .filter(Fan.club_id == club_id)
+        .filter(~Fan.abbonamenti.any())
+        .filter(~Fan.biglietti.any())
+        .filter(~Fan.shop_orders.any())
+        .all()
+    )
+    for fan in orphan_fans:
+        db.delete(fan)
 
     db.delete(upload)
     db.commit()
