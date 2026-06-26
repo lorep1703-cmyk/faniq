@@ -1,6 +1,6 @@
-import { useState, useRef } from "react";
-import { Upload as UploadIcon, CheckCircle, XCircle, FileText, Download, CalendarDays } from "lucide-react";
-import { uploadCsv, uploadPartite, API_URL } from "../api/client";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Upload as UploadIcon, CheckCircle, XCircle, FileText, Download, CalendarDays, Trash2, Clock } from "lucide-react";
+import { uploadCsv, uploadPartite, API_URL, fetchUploadHistory, undoUpload } from "../api/client";
 
 const CSV_TYPES = [
   {
@@ -250,6 +250,103 @@ function PartiteUploadCard() {
   );
 }
 
+function UploadHistory() {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchUploadHistory();
+      setHistory(data);
+    } catch (err) {
+      setError(err.userMessage || "Errore nel caricamento dello storico");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleUndo = async (id, filename) => {
+    if (!window.confirm(`Annullare il caricamento "${filename}"? I record importati verranno rimossi.`)) return;
+    setDeletingId(id);
+    try {
+      await undoUpload(id);
+      await load();
+    } catch (err) {
+      setError(err.userMessage || "Errore durante l'annullamento");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const typeLabel = {
+    abbonati: "Abbonati",
+    biglietteria: "Biglietteria",
+    shop: "Shop",
+    partite: "Calendario",
+  };
+
+  return (
+    <div className="mt-8 bg-white border border-slate-200 rounded-xl shadow-sm">
+      <div className="flex items-center gap-2 px-5 py-4 border-b border-slate-100">
+        <Clock size={16} className="text-slate-400" />
+        <h3 className="text-sm font-semibold text-slate-700">Storico caricamenti</h3>
+      </div>
+
+      {loading && (
+        <p className="text-sm text-slate-400 px-5 py-6 text-center">Caricamento...</p>
+      )}
+
+      {error && (
+        <div className="mx-5 my-4 flex items-center gap-2 text-red-600 bg-red-50 rounded-lg px-3 py-2">
+          <XCircle size={16} />
+          <span className="text-sm">{error}</span>
+        </div>
+      )}
+
+      {!loading && !error && history.length === 0 && (
+        <p className="text-sm text-slate-400 px-5 py-6 text-center">Nessun caricamento ancora.</p>
+      )}
+
+      {!loading && history.length > 0 && (
+        <ul className="divide-y divide-slate-100">
+          {history.map((u) => (
+            <li key={u.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50">
+              <div className="flex items-center gap-3 min-w-0">
+                <FileText size={15} className="text-slate-400 shrink-0" />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                      {typeLabel[u.type] || u.type}
+                    </span>
+                    <span className="text-sm text-slate-700 truncate">{u.filename}</span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {u.rows_imported} record · {u.uploaded_at ? new Date(u.uploaded_at).toLocaleString("it-IT") : "—"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleUndo(u.id, u.filename)}
+                disabled={deletingId === u.id}
+                className="ml-4 shrink-0 flex items-center gap-1.5 text-xs font-medium text-red-500 hover:text-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <Trash2 size={13} />
+                {deletingId === u.id ? "Annullamento..." : "Annulla"}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function Upload() {
   return (
     <div className="flex-1 p-8 overflow-auto">
@@ -275,6 +372,8 @@ export default function Upload() {
           <li>La spesa totale viene aggregata automaticamente per ogni profilo unificato</li>
         </ul>
       </div>
+
+      <UploadHistory />
     </div>
   );
 }
