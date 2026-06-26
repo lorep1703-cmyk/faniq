@@ -24,8 +24,10 @@ CHAT_MAX_TOKENS = int(os.environ.get("FANIQ_CHAT_MAX_TOKENS", "2048"))
 # mai inviati al modello AI esterno — i tifosi sono referenziati come "Tifoso #ID".
 CHAT_ANONYMIZE_PII = os.environ.get("FANIQ_CHAT_ANONYMIZE", "true").lower() != "false"
 
-# Cache analytics (secondi). 0 = disabilitata
-ANALYTICS_CACHE_TTL = int(os.environ.get("FANIQ_CACHE_TTL", "300"))
+# Cache analytics (secondi). 0 = disabilitata.
+# 900s (15 min): su Render Free il worker si spegne dopo ~15 min di inattività e la cache
+# si azzera ad ogni riavvio — un TTL più lungo riduce i ricalcoli tra una sessione e l'altra.
+ANALYTICS_CACHE_TTL = int(os.environ.get("FANIQ_CACHE_TTL", "900"))
 
 # Logging
 LOG_LEVEL = os.environ.get("FANIQ_LOG_LEVEL", "INFO").upper()

@@ -231,6 +231,20 @@ Tutte le funzioni sono in `frontend/src/api/client.js`:
 
 ---
 
+## Deploy — regola obbligatoria
+
+Dopo ogni fix o sessione di lavoro, **committa e pusha sempre su `main`**:
+
+```bash
+git add backend/  # o i file modificati
+git commit -m "fix: descrizione"
+git push origin main
+```
+
+Render si aggiorna automaticamente ad ogni push. Non lasciare mai modifiche non committate a fine sessione.
+
+---
+
 ## Cosa NON fare
 
 - **Non riscrivere feature già esistenti** — leggi il codice prima. RFM, Business Score, Renewal e l'intero Intelligence Engine sono completi.

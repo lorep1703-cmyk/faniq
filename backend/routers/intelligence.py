@@ -20,14 +20,33 @@ def _intel_cache_key(club_id: int) -> str:
     return f"intelligence_{club_id}"
 
 
-def _get_or_compute(club_id: int, db) -> list:
+def _build_cache(club_id: int, db) -> list[dict]:
+    """Calcola intelligence, serializza e aggiunge nome/cognome in un'unica passata."""
+    from sqlalchemy import text
+    results = compute_club_intelligence(club_id, db)
+    rows = db.execute(
+        text("SELECT id, nome, cognome FROM fans WHERE club_id = :cid"),
+        {"cid": club_id},
+    ).fetchall()
+    names = {row[0]: (row[1], row[2]) for row in rows}
+    items = []
+    for fi in results:
+        row = _serialize(fi)
+        nome, cognome = names.get(fi.fan_id, (None, None))
+        row["nome"] = nome
+        row["cognome"] = cognome
+        items.append(row)
+    return items
+
+
+def _get_or_compute(club_id: int, db) -> list[dict]:
     key = _intel_cache_key(club_id)
     cached = cache_get(key)
     if cached is not None:
         return cached
-    results = compute_club_intelligence(club_id, db)
-    cache_set(key, results)
-    return results
+    items = _build_cache(club_id, db)
+    cache_set(key, items)
+    return items
 
 router = APIRouter(prefix="/api/intelligence", tags=["intelligence"])
 
@@ -77,7 +96,7 @@ def get_fan_intelligence(
 @router.get("/club")
 def get_club_intelligence(
     page: int = Query(1, ge=1),
-    per_page: int = Query(50, ge=1, le=5000),
+    per_page: int = Query(50, ge=1, le=200),  # paginazione in-memory; DB-level è ottimizzazione futura
     min_renewal: float = Query(0.0, ge=0.0, le=1.0),
     max_renewal: float = Query(1.0, ge=0.0, le=1.0),
     journey_stage: Optional[str] = Query(None),
@@ -85,19 +104,7 @@ def get_club_intelligence(
     db: Session = Depends(get_db),
     club: Club = Depends(get_current_club),
 ):
-    results = _get_or_compute(club.id, db)
-
-    # Arricchisce con nome fan
-    fans = db.query(Fan).filter(Fan.club_id == club.id).all()
-    fan_map = {f.id: f for f in fans}
-
-    items = []
-    for fi in results:
-        fan = fan_map.get(fi.fan_id)
-        row = _serialize(fi)
-        row["nome"] = fan.nome if fan else None
-        row["cognome"] = fan.cognome if fan else None
-        items.append(row)
+    items = _get_or_compute(club.id, db)
 
     # Filtri
     def _within_renewal(r: dict) -> bool:
@@ -136,24 +143,20 @@ def get_club_summary(
     results = _get_or_compute(club.id, db)
 
     total = len(results)
-    renewal_values = [fi.renewal_probability for fi in results if fi.renewal_probability is not None]
+    renewal_values = [r["renewal_probability"] for r in results if r.get("renewal_probability") is not None]
     avg_renewal = round(sum(renewal_values) / len(renewal_values), 3) if renewal_values else None
 
     fans_at_risk = sum(
-        1 for fi in results
-        if fi.renewal_probability is not None and fi.renewal_probability < 0.4
+        1 for r in results
+        if r.get("renewal_probability") is not None and r["renewal_probability"] < 0.4
     )
     fans_critical_anomaly = sum(
-        1 for fi in results
-        if fi.subscription_anomaly and fi.subscription_anomaly.severity.value == "CRITICA"
+        1 for r in results
+        if r.get("subscription_anomaly") and r["subscription_anomaly"].get("severity") == "CRITICA"
     )
 
-    journey_dist = Counter(
-        fi.journey_stage.value for fi in results if fi.journey_stage
-    )
-    decay_dist = Counter(
-        fi.decay_profile.value for fi in results if fi.decay_profile
-    )
+    journey_dist = Counter(r["journey_stage"] for r in results if r.get("journey_stage"))
+    decay_dist = Counter(r["decay_profile"] for r in results if r.get("decay_profile"))
 
     return {
         "total_fans": total,
@@ -170,12 +173,17 @@ def get_club_summary(
 _refresh_jobs: dict[int, str] = {}  # club_id → status
 
 
-def _do_refresh(club_id: int, db: Session) -> None:
+def _do_refresh(club_id: int) -> None:
+    from database import SessionLocal
+    import logging
+    db = SessionLocal()
     try:
         _refresh_jobs[club_id] = "running"
-        compute_club_intelligence(club_id, db)
+        items = _build_cache(club_id, db)
+        cache_set(_intel_cache_key(club_id), items)
         _refresh_jobs[club_id] = "done"
     except Exception:
+        logging.exception("Errore durante il refresh intelligence per club_id=%s", club_id)
         _refresh_jobs[club_id] = "error"
     finally:
         db.close()
@@ -184,12 +192,14 @@ def _do_refresh(club_id: int, db: Session) -> None:
 @router.post("/club/refresh")
 def refresh_club_intelligence(
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
     club: Club = Depends(get_current_club),
 ):
     job_id = f"refresh_{club.id}"
+    current = _refresh_jobs.get(club.id)
+    if current in ("queued", "running"):
+        return {"job_id": job_id, "status": current}
     _refresh_jobs[club.id] = "queued"
-    background_tasks.add_task(_do_refresh, club.id, db)
+    background_tasks.add_task(_do_refresh, club.id)
     return {"job_id": job_id, "status": "queued"}
 
 

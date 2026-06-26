@@ -4,6 +4,7 @@ from __future__ import annotations  # noqa: F401 — abilita X | Y su Python 3.9
 from collections import Counter
 from datetime import date
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from models import Abbonamento, Biglietto, Fan, ShopOrder
@@ -165,11 +166,19 @@ def get_all_fans_raw(db: Session, club_id: int) -> list[Fan]:
 
 
 def dashboard_stats(db: Session, club_id: int) -> dict:
-    fans = get_all_fans_raw(db, club_id)
-    total_fans = len(fans)
-    fans_with_email = sum(1 for f in fans if _norm_email(f.email))
-    spends = [_fan_total_spend(f) for f in fans]
-    total_revenue = round(sum(spends), 2)
+    total_fans = db.query(func.count(Fan.id)).filter(Fan.club_id == club_id).scalar() or 0
+
+    fans_with_email = (
+        db.query(func.count(Fan.id))
+        .filter(Fan.club_id == club_id, Fan.email.isnot(None), Fan.email != "")
+        .scalar() or 0
+    )
+
+    rev_abb = db.query(func.sum(Abbonamento.importo_pagato)).filter(Abbonamento.club_id == club_id).scalar() or 0
+    rev_big = db.query(func.sum(Biglietto.prezzo)).filter(Biglietto.club_id == club_id).scalar() or 0
+    rev_shop = db.query(func.sum(ShopOrder.importo)).filter(ShopOrder.club_id == club_id).scalar() or 0
+    total_revenue = round(float(rev_abb) + float(rev_big) + float(rev_shop), 2)
+
     spesa_media = round(total_revenue / total_fans, 2) if total_fans else 0
     return {
         "total_fans": total_fans,
@@ -238,10 +247,44 @@ def dashboard_top_spenders(db: Session, club_id: int, limit: int = 10) -> list[d
 
 
 def dashboard_cross_source(db: Session, club_id: int) -> dict:
-    fans = get_all_fans_raw(db, club_id)
-    single = sum(1 for f in fans if _fan_n_sources(f) == 1)
-    multi = sum(1 for f in fans if _fan_n_sources(f) >= 2)
-    triple = sum(1 for f in fans if _fan_n_sources(f) >= 3)
+    from sqlalchemy import case, literal
+
+    has_abb = (
+        db.query(Abbonamento.fan_id)
+        .filter(Abbonamento.club_id == club_id)
+        .distinct()
+        .subquery()
+    )
+    has_big = (
+        db.query(Biglietto.fan_id)
+        .filter(Biglietto.club_id == club_id)
+        .distinct()
+        .subquery()
+    )
+    has_shop = (
+        db.query(ShopOrder.fan_id)
+        .filter(ShopOrder.club_id == club_id)
+        .distinct()
+        .subquery()
+    )
+
+    n_sources = (
+        case((Fan.id.in_(db.query(has_abb.c.fan_id)), 1), else_=0)
+        + case((Fan.id.in_(db.query(has_big.c.fan_id)), 1), else_=0)
+        + case((Fan.id.in_(db.query(has_shop.c.fan_id)), 1), else_=0)
+    )
+
+    rows = (
+        db.query(n_sources.label("n"), func.count(Fan.id).label("cnt"))
+        .filter(Fan.club_id == club_id)
+        .group_by(n_sources)
+        .all()
+    )
+
+    counts = {row.n: row.cnt for row in rows}
+    single = counts.get(1, 0)
+    multi = sum(v for k, v in counts.items() if k >= 2)
+    triple = counts.get(3, 0)
     return {"single_source": single, "multi_source": multi, "all_three": triple}
 
 
