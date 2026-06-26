@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -39,20 +40,23 @@ def get_renewal_scores(
 ):
     results = calculate_renewal_scores_bulk(club.id, db)
 
-    # Arricchisce con nome/cognome
-    fans = db.query(Fan).filter(Fan.club_id == club.id).all()
-    fan_map = {f.id: f for f in fans}
+    rows = db.execute(
+        text("SELECT id, nome, cognome, email FROM fans WHERE club_id = :cid"),
+        {"cid": club.id},
+    ).fetchall()
+    fan_map = {row[0]: (row[1], row[2], row[3]) for row in rows}
 
     enriched = []
     for r in results:
-        fan = fan_map.get(r["fan_id"])
-        if not fan:
+        fan_data = fan_map.get(r["fan_id"])
+        if not fan_data:
             continue
+        nome, cognome, email = fan_data
         enriched.append({
             "fan_id": r["fan_id"],
-            "nome": fan.nome,
-            "cognome": fan.cognome,
-            "email": fan.email,
+            "nome": nome,
+            "cognome": cognome,
+            "email": email,
             "score_pct": r["score_pct"],
             "has_incomplete_data": r["has_incomplete_data"],
         })
