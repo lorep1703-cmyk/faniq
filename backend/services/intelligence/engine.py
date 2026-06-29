@@ -6,6 +6,8 @@ import time
 from datetime import date
 from typing import Optional
 
+INTELLIGENCE_BATCH_SIZE = 200  # fan per batch — mantiene il picco RAM sotto controllo
+
 from sqlalchemy.orm import Session, selectinload
 
 from intelligence_config import (
@@ -226,33 +228,59 @@ def compute_fan_intelligence(fan_id: int, club_id: int, db: Session) -> FanIntel
 
 
 def compute_club_intelligence(club_id: int, db: Session) -> list[FanIntelligence]:
-    """Pipeline batch per tutti i fan del club — usa bulk loading."""
+    """Pipeline batch per tutti i fan del club — processa INTELLIGENCE_BATCH_SIZE fan alla volta."""
     t0 = time.monotonic()
 
     today = date.today()
+    # Partite: caricate una volta sola, condivise tra tutti i batch
     past_matches = _load_past_match_dates(club_id, today, db)
     current_season = _current_season()
 
-    fans = (
-        db.query(Fan)
-        .filter(Fan.club_id == club_id)
-        .options(
-            selectinload(Fan.abbonamenti),
-            selectinload(Fan.biglietti),
-            selectinload(Fan.shop_orders),
-        )
-        .all()
-    )
+    from sqlalchemy import func
+    total = db.query(func.count(Fan.id)).filter(Fan.club_id == club_id).scalar() or 0
 
-    results = []
-    for fan in fans:
-        raw = _extract_fan_raw(fan, past_matches, current_season)
-        results.append(_run_pipeline(raw))
+    results: list[FanIntelligence] = []
+    offset = 0
+    while offset < total:
+        # 1. Carica solo gli ID del batch
+        id_rows = (
+            db.query(Fan.id)
+            .filter(Fan.club_id == club_id)
+            .order_by(Fan.id)
+            .offset(offset)
+            .limit(INTELLIGENCE_BATCH_SIZE)
+            .all()
+        )
+        fan_ids = [row[0] for row in id_rows]
+        if not fan_ids:
+            break
+
+        # 2. Carica i Fan completi (con relationship) solo per questo batch
+        fans = (
+            db.query(Fan)
+            .filter(Fan.id.in_(fan_ids))
+            .options(
+                selectinload(Fan.abbonamenti),
+                selectinload(Fan.biglietti),
+                selectinload(Fan.shop_orders),
+            )
+            .all()
+        )
+
+        # 3. Estrai dati puri Python ed esegui pipeline — nessun riferimento ORM rimane
+        for fan in fans:
+            raw = _extract_fan_raw(fan, past_matches, current_season)
+            results.append(_run_pipeline(raw))
+
+        # 4. Libera gli oggetti ORM del batch dalla identity map di SQLAlchemy
+        db.expunge_all()
+
+        offset += INTELLIGENCE_BATCH_SIZE
 
     elapsed = time.monotonic() - t0
     logger.info(
-        "compute_club_intelligence club_id=%s fans=%d elapsed=%.2fs",
-        club_id, len(fans), elapsed
+        "compute_club_intelligence club_id=%s fans=%d batch_size=%d elapsed=%.2fs",
+        club_id, total, INTELLIGENCE_BATCH_SIZE, elapsed,
     )
     return results
 
