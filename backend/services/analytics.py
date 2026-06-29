@@ -11,11 +11,6 @@ from models import Abbonamento, Biglietto, Fan, ShopOrder
 from services.cache import get as cache_get, set as cache_set
 
 
-def _norm_email(email: str | None) -> str | None:
-    if not email:
-        return None
-    return email.strip().lower() or None
-
 
 def _fan_activity_dates(fan: Fan) -> list[date]:
     dates: list[date] = []
@@ -189,34 +184,31 @@ def dashboard_stats(db: Session, club_id: int) -> dict:
 
 
 def dashboard_citta(db: Session, club_id: int) -> list[dict]:
-    fans = db.query(Fan).filter(Fan.club_id == club_id).all()
-    counts = Counter(f.citta or "Non indicata" for f in fans)
+    rows = (
+        db.query(Fan.citta, func.count(Fan.id))
+        .filter(Fan.club_id == club_id)
+        .group_by(Fan.citta)
+        .all()
+    )
+    counts = Counter({(c or "Non indicata"): n for c, n in rows})
     return [{"citta": c, "count": n} for c, n in counts.most_common(5)]
 
 
 def dashboard_presenze(db: Session, club_id: int) -> list[dict]:
-    biglietti = (
-        db.query(Biglietto)
+    rows = (
+        db.query(Biglietto.data_partita, func.count(Biglietto.id))
         .filter(Biglietto.club_id == club_id, Biglietto.data_partita.isnot(None))
+        .group_by(Biglietto.data_partita)
+        .order_by(Biglietto.data_partita)
         .all()
     )
-    by_date = Counter(b.data_partita for b in biglietti)
-    return [{"data": d.isoformat(), "presenze": n} for d, n in sorted(by_date.items())]
+    return [{"data": d.isoformat(), "presenze": n} for d, n in rows]
 
 
 def dashboard_revenue_breakdown(db: Session, club_id: int) -> list[dict]:
-    abbonamenti = sum(
-        a.importo_pagato or 0
-        for a in db.query(Abbonamento).filter(Abbonamento.club_id == club_id).all()
-    )
-    biglietti = sum(
-        b.prezzo or 0
-        for b in db.query(Biglietto).filter(Biglietto.club_id == club_id).all()
-    )
-    shop = sum(
-        o.importo or 0
-        for o in db.query(ShopOrder).filter(ShopOrder.club_id == club_id).all()
-    )
+    abbonamenti = db.query(func.sum(Abbonamento.importo_pagato)).filter(Abbonamento.club_id == club_id).scalar() or 0
+    biglietti   = db.query(func.sum(Biglietto.prezzo)).filter(Biglietto.club_id == club_id).scalar() or 0
+    shop        = db.query(func.sum(ShopOrder.importo)).filter(ShopOrder.club_id == club_id).scalar() or 0
     return [
         {"fonte": "Abbonamenti", "importo": round(abbonamenti, 2)},
         {"fonte": "Biglietteria", "importo": round(biglietti, 2)},
@@ -289,15 +281,21 @@ def dashboard_cross_source(db: Session, club_id: int) -> dict:
 
 
 def dashboard_retention(db: Session, club_id: int) -> list[dict]:
-    abbonamenti = db.query(Abbonamento).filter(Abbonamento.club_id == club_id).all()
-    by_season = Counter(a.stagione or "N/D" for a in abbonamenti)
+    rows = (
+        db.query(Abbonamento.stagione, func.count(Abbonamento.id))
+        .filter(Abbonamento.club_id == club_id)
+        .group_by(Abbonamento.stagione)
+        .all()
+    )
+    by_season = Counter({(s or "N/D"): n for s, n in rows})
     return [{"stagione": s, "count": n} for s, n in sorted(by_season.items())]
 
 
 def dashboard_seasons(db: Session, club_id: int) -> list[str]:
-    seasons = {
-        a.stagione
-        for a in db.query(Abbonamento).filter(Abbonamento.club_id == club_id).all()
-        if a.stagione
-    }
-    return sorted(seasons)
+    rows = (
+        db.query(Abbonamento.stagione.distinct())
+        .filter(Abbonamento.club_id == club_id)
+        .order_by(Abbonamento.stagione.desc())
+        .all()
+    )
+    return sorted(s for (s,) in rows if s)

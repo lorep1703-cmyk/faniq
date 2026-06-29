@@ -11,6 +11,7 @@ from services.analytics import (
     dashboard_revenue_breakdown,
     dashboard_stats,
 )
+from services.cache import get as cache_get, set as cache_set
 from services.data_readiness import compute_data_readiness
 
 
@@ -25,7 +26,11 @@ def _apply_intelligence_penalties(score: int, segments: list, db: Session, club_
         from services.intelligence.engine import compute_club_intelligence
         from fan_intelligence import AnomalySeverity
 
-        intelligence = compute_club_intelligence(club_id, db)
+        _raw_key = f"intelligence_raw_{club_id}"
+        intelligence = cache_get(_raw_key)
+        if intelligence is None:
+            intelligence = compute_club_intelligence(club_id, db)
+            cache_set(_raw_key, intelligence)
         if not intelligence:
             return score
 

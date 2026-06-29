@@ -11,10 +11,15 @@ from models import Abbonamento, Biglietto, Fan, Partita, ShopOrder, UploadHistor
 from services.cache import invalidate
 
 
-def _norm_email(email: str | None) -> str | None:
-    if not email:
-        return None
-    return email.strip().lower() or None
+from services.utils import _norm_email
+
+
+_FORMULA_PREFIXES = ('=', '+', '-', '@', '\t', '\r')
+
+def _sanitize_cell(value: str | None) -> str | None:
+    if value and isinstance(value, str) and value[0] in _FORMULA_PREFIXES:
+        return "'" + value
+    return value
 
 
 def _parse_date(value: str):
@@ -87,7 +92,7 @@ def import_csv(db: Session, club_id: int, csv_type: str, content: bytes, filenam
 
     if csv_type == "abbonati":
         for row in reader:
-            fan = _find_or_create_fan(db, club_id, row.get("nome"), row.get("cognome"), row.get("email"), row.get("citta"))
+            fan = _find_or_create_fan(db, club_id, _sanitize_cell(row.get("nome")), _sanitize_cell(row.get("cognome")), row.get("email"), _sanitize_cell(row.get("citta")))
             db.add(Abbonamento(
                 club_id=club_id,
                 fan_id=fan.id,
@@ -99,13 +104,13 @@ def import_csv(db: Session, club_id: int, csv_type: str, content: bytes, filenam
 
     elif csv_type == "biglietteria":
         for row in reader:
-            fan = _find_or_create_fan(db, club_id, row.get("nome"), row.get("cognome"), row.get("email"))
+            fan = _find_or_create_fan(db, club_id, _sanitize_cell(row.get("nome")), _sanitize_cell(row.get("cognome")), row.get("email"))
             db.add(Biglietto(
                 club_id=club_id,
                 fan_id=fan.id,
                 upload_id=upload.id,
                 data_partita=_parse_date(row.get("data_partita")),
-                settore=row.get("settore"),
+                settore=_sanitize_cell(row.get("settore")),
                 prezzo=_parse_float(row.get("prezzo")),
             ))
             count += 1
@@ -117,7 +122,7 @@ def import_csv(db: Session, club_id: int, csv_type: str, content: bytes, filenam
                 club_id=club_id,
                 fan_id=fan.id,
                 upload_id=upload.id,
-                prodotto=row.get("prodotto"),
+                prodotto=_sanitize_cell(row.get("prodotto")),
                 importo=_parse_float(row.get("importo")),
                 data=_parse_date(row.get("data")),
             ))

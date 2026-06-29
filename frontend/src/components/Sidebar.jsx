@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Upload, Users, FileBarChart2, Lightbulb, ShieldCheck, LogOut, Bell, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Upload, Users, FileBarChart2, Lightbulb, ShieldCheck, LogOut, Bell, TrendingUp, Calendar } from "lucide-react";
 import { fetchIntelligenceSummary } from "../api/client";
 
 const links = [
@@ -10,6 +10,7 @@ const links = [
   { to: "/upload", label: "Carica dati", icon: Upload },
   { to: "/privacy", label: "Privacy & GDPR", icon: ShieldCheck },
   { to: "/simulatore", label: "Simulatore", icon: TrendingUp },
+  { to: "/calendario", label: "Calendario", icon: Calendar },
 ];
 
 export default function Sidebar() {

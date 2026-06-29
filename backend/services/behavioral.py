@@ -6,6 +6,7 @@ from datetime import date
 from sqlalchemy.orm import Session
 
 from models import Biglietto, Partita
+from services.cache import get as cache_get, set as cache_set
 
 
 def _badge(away_rate: float, total_away: int) -> str:
@@ -25,6 +26,11 @@ def compute_behavioral(db: Session, club_id: int) -> dict:
     Restituisce analisi comportamentale basata sul calendario partite.
     Ritorna {} se nessuna partita è stata caricata.
     """
+    cache_key = f"behavioral_{club_id}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+
     partite = db.query(Partita).filter(Partita.club_id == club_id).all()
     if not partite:
         return {}
@@ -76,7 +82,7 @@ def compute_behavioral(db: Session, club_id: int) -> dict:
     for s in fan_scores.values():
         badge_counts[s["badge"]] = badge_counts.get(s["badge"], 0) + 1
 
-    return {
+    result = {
         "total_partite": len(partite),
         "total_home": len(home_dates),
         "total_away": len(away_dates),
@@ -87,3 +93,5 @@ def compute_behavioral(db: Session, club_id: int) -> dict:
         "fan_scores": fan_scores,
         "fan_dates": fan_dates,
     }
+    cache_set(cache_key, result)
+    return result

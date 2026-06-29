@@ -33,7 +33,6 @@ ANALYTICS_CACHE_TTL = int(os.environ.get("FANIQ_CACHE_TTL", "900"))
 LOG_LEVEL = os.environ.get("FANIQ_LOG_LEVEL", "INFO").upper()
 
 # Auth JWT
-import secrets as _secrets
 _jwt_secret = os.environ.get("FANIQ_JWT_SECRET")
 if not _jwt_secret:
     raise RuntimeError("FANIQ_JWT_SECRET non configurato — imposta la variabile d'ambiente")

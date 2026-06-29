@@ -10,6 +10,7 @@ import Privacy from "./pages/Privacy";
 import Login from "./pages/Login";
 import AlertsPage from "./pages/AlertsPage";
 import Simulatore from "./pages/Simulatore";
+import Calendario from "./pages/Calendario";
 import ChatWidget from "./components/ChatWidget";
 
 function PrivateRoute({ children }) {
@@ -38,6 +39,7 @@ export default function App() {
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/alerts" element={<AlertsPage />} />
                     <Route path="/simulatore" element={<Simulatore />} />
+                    <Route path="/calendario" element={<Calendario />} />
                   </Routes>
                 </ErrorBoundary>
               </main>

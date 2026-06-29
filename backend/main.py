@@ -1,6 +1,7 @@
 """FanIQ API — backend principale."""
 import logging
 import os
+import secrets
 
 import time
 from collections import defaultdict
@@ -10,7 +11,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
@@ -211,7 +212,8 @@ def _seed_default_club():
         if not orphan_count:
             return
 
-        demo = Club(nome="Demo Club", slug="demo", password_hash=hash_password("demo1234"))
+        demo_password = secrets.token_urlsafe(16)
+        demo = Club(nome="Demo Club", slug="demo", password_hash=hash_password(demo_password))
         db.add(demo)
         db.flush()
         cid = demo.id
@@ -223,9 +225,8 @@ def _seed_default_club():
             )
         db.commit()
         logger.warning(
-            "Migrati %d record al club demo (slug='demo', password='demo1234') — "
-            "cambia la password dal pannello!",
-            orphan_count,
+            "SEED: club demo creato con password temporanea: %s — CAMBIALA SUBITO",
+            demo_password,
         )
     except Exception as exc:
         logger.error("Errore seed club: %s", exc)

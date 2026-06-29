@@ -38,7 +38,6 @@ export const fetchRevenueBreakdown = () => api.get("/dashboard/revenue-breakdown
 export const fetchRetention = () => api.get("/dashboard/retention").then((r) => r.data);
 export const fetchSegments = () => api.get("/dashboard/segments").then((r) => r.data);
 export const fetchTopSpenders = () => api.get("/dashboard/top-spenders").then((r) => r.data);
-export const fetchCrossSource = () => api.get("/dashboard/cross-source").then((r) => r.data);
 export const fetchSeasons = () => api.get("/dashboard/seasons").then((r) => r.data);
 export const fetchAllFans = (stagione = null) =>
   api.get("/dashboard/fans", stagione ? { params: { stagione } } : {}).then((r) => r.data);
