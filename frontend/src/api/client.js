@@ -52,8 +52,10 @@ export const fetchHealth = () => api.get("/health", { timeout: 4000 }).then((r) 
 export const uploadCsv = (type, file) => {
   const form = new FormData();
   form.append("file", file);
-  return api.post(`/upload/${type}`, form, { timeout: 60000 }).then((r) => r.data);
+  return api.post(`/upload/${type}`, form, { timeout: 15000 }).then((r) => r.data);
 };
+
+export const getUploadStatus = (jobId) => api.get(`/upload/status/${jobId}`).then(r => r.data);
 
 export const fetchUploadHistory = () => api.get("/upload/history").then((r) => r.data);
 export const undoUpload = (id) => api.delete(`/upload/${id}`).then((r) => r.data);

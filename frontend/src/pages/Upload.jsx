@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Upload as UploadIcon, CheckCircle, XCircle, FileText, Download, CalendarDays, Trash2, Clock } from "lucide-react";
-import { uploadCsv, uploadPartite, API_URL, fetchUploadHistory, undoUpload, resetAllData } from "../api/client";
+import { uploadCsv, uploadPartite, getUploadStatus, API_URL, fetchUploadHistory, undoUpload, resetAllData } from "../api/client";
 
 const CSV_TYPES = [
   {
@@ -69,10 +69,39 @@ function UploadCard({ type }) {
   const handleUpload = async () => {
     if (!file) return;
     setStatus("loading");
+    setMessage("Caricamento in corso...");
     try {
-      const result = await uploadCsv(type.id, file);
-      setStatus("success");
-      setMessage(result.message);
+      const { job_id } = await uploadCsv(type.id, file);
+      // polling
+      const deadline = Date.now() + 5 * 60 * 1000;
+      await new Promise((resolve) => {
+        const interval = setInterval(async () => {
+          try {
+            const job = await getUploadStatus(job_id);
+            if (job.status === "done") {
+              clearInterval(interval);
+              setStatus("success");
+              setMessage(job.message || `${job.rows} righe importate`);
+              resolve();
+            } else if (job.status === "error") {
+              clearInterval(interval);
+              setStatus("error");
+              setMessage("Errore durante l'importazione. Riprova.");
+              resolve();
+            } else if (Date.now() > deadline) {
+              clearInterval(interval);
+              setStatus("error");
+              setMessage("L'operazione sta richiedendo più tempo del previsto. Controlla lo storico tra qualche minuto.");
+              resolve();
+            }
+          } catch {
+            clearInterval(interval);
+            setStatus("error");
+            setMessage("Errore durante l'importazione. Riprova.");
+            resolve();
+          }
+        }, 2000);
+      });
     } catch (err) {
       setStatus("error");
       setMessage(err.response?.data?.detail || "Errore durante il caricamento");

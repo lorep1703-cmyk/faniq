@@ -1,11 +1,14 @@
-import logging
+from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+import logging
+import uuid
+
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse, PlainTextResponse
 from sqlalchemy.orm import Session
 
 from config import MAX_UPLOAD_SIZE_BYTES
-from database import get_db
+from database import SessionLocal, get_db
 from models import Abbonamento, Biglietto, Club, Fan, Partita, ShopOrder, UploadHistory
 from tenant import get_current_club
 from services.cache import invalidate
@@ -15,10 +18,31 @@ logger = logging.getLogger("faniq")
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
+_upload_jobs: dict[str, dict] = {}
 
-@router.post("/{csv_type}")
+
+def _run_upload(job_id: str, csv_type: str, content: bytes, club_id: int, filename: str) -> None:
+    _upload_jobs[job_id]["status"] = "running"
+    db = SessionLocal()
+    try:
+        result = import_csv(db, club_id, csv_type, content, filename)
+        _upload_jobs[job_id].update({
+            "status": "done",
+            "message": result.get("message", ""),
+            "rows": result.get("rows", 0),
+            "upload_id": result.get("upload_id"),
+        })
+    except Exception as e:
+        logger.error("Errore background upload job %s: %s", job_id, e, exc_info=True)
+        _upload_jobs[job_id]["status"] = "error"
+    finally:
+        db.close()
+
+
+@router.post("/{csv_type}", status_code=202)
 async def upload_file(
     csv_type: str,
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     club: Club = Depends(get_current_club),
@@ -33,10 +57,18 @@ async def upload_file(
     if not file.filename or not file.filename.lower().endswith(".csv"):
         raise HTTPException(status_code=400, detail="Solo file CSV")
 
-    try:
-        return import_csv(db, club.id, csv_type, content, file.filename)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    job_id = str(uuid.uuid4())
+    _upload_jobs[job_id] = {"status": "queued", "csv_type": csv_type}
+    background_tasks.add_task(_run_upload, job_id, csv_type, content, club.id, file.filename)
+    return {"job_id": job_id, "status": "queued"}
+
+
+@router.get("/status/{job_id}")
+def upload_status(job_id: str, club: Club = Depends(get_current_club)):
+    job = _upload_jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job non trovato")
+    return job
 
 
 @router.get("/template/{csv_type}")
