@@ -1,5 +1,6 @@
 import csv
 import io
+import re
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
@@ -50,7 +51,8 @@ def export_fans(
     output.seek(0)
 
     suffix = "_consenzienti" if solo_consenzienti else ""
-    filename = f"faniq_{segment or 'tutti'}{suffix}.csv".lower().replace(" ", "_")
+    safe_segment = re.sub(r'[^a-zA-Z0-9_\-]', '_', segment) if segment else 'tutti'
+    filename = f"faniq_{safe_segment}{suffix}.csv"
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv; charset=utf-8",

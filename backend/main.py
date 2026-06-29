@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
-from config import CORS_ORIGINS, LOG_LEVEL
+from config import CORS_ORIGINS, FANIQ_ENV, LOG_LEVEL
 from database import Base, SessionLocal, _IS_POSTGRES, engine
 from routers import chat, dashboard, export, fans, insights, intelligence, partite, privacy, renewal, simulator, upload
 from routers.auth import router as auth_router
@@ -29,6 +29,8 @@ app = FastAPI(
     title="FanIQ API",
     description="Analytics e intelligence per tifosi — piattaforma multi-club",
     version="3.0.0",
+    docs_url="/docs" if FANIQ_ENV != "production" else None,
+    redoc_url="/redoc" if FANIQ_ENV != "production" else None,
 )
 
 # Rate limiting in-memory per IP sugli endpoint di auth
@@ -36,6 +38,9 @@ _rate_store: dict = defaultdict(list)
 _RATE_LIMITS = {
     "/auth/register": (5, 60),
     "/auth/login": (10, 60),
+    "/chat/": (20, 60),
+    "/upload/": (5, 60),
+    "/api/intelligence/club/refresh": (3, 60),
 }
 _CLEANUP_INTERVAL = 300  # pulisci chiavi scadute ogni 5 minuti
 _last_cleanup = time.time()
@@ -99,7 +104,7 @@ async def db_error_handler(request: Request, exc: OperationalError):
 
 @app.exception_handler(Exception)
 async def generic_error_handler(request: Request, exc: Exception):
-    logger.error("Errore non gestito su %s: %s", request.url, exc, exc_info=True)
+    logger.error("Errore non gestito su %s: %s", request.url.path, exc, exc_info=True)
     return JSONResponse(
         status_code=500,
         content={"detail": "Errore interno del server."},
@@ -114,6 +119,10 @@ async def security_headers(request: Request, call_next):
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:"
+    )
     return response
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -121,8 +130,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 app.include_router(auth_router)

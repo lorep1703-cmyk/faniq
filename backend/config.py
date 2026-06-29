@@ -38,4 +38,5 @@ if not _jwt_secret:
     raise RuntimeError("FANIQ_JWT_SECRET non configurato — imposta la variabile d'ambiente")
 JWT_SECRET_KEY = _jwt_secret
 JWT_ALGORITHM = "HS256"
-JWT_EXPIRE_MINUTES = int(os.environ.get("FANIQ_JWT_EXPIRE_MINUTES", "10080"))  # 7 giorni
+JWT_EXPIRE_MINUTES = int(os.environ.get("FANIQ_JWT_EXPIRE_MINUTES", "480"))  # 8 ore
+FANIQ_ENV: str = os.environ.get("FANIQ_ENV", "development")

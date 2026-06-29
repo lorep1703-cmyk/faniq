@@ -118,8 +118,12 @@ async def upload_partite(
                 competizione=row.get("competizione", "").strip() or None,
             ))
             imported += 1
-        except Exception as e:
+        except (ValueError, KeyError) as e:
             errors.append(f"Riga {i}: {e}")
+        except Exception as e:
+            import logging as _log
+            _log.getLogger("faniq").error("Errore imprevisto import partite riga %d: %s", i, e, exc_info=True)
+            errors.append(f"Riga {i}: errore di formato imprevisto")
 
     db.commit()
     return {"imported": imported, "errors": errors, "message": f"{imported} partite importate"}

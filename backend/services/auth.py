@@ -19,7 +19,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 def create_token(club_id: int, club_slug: str, club_nome: str) -> str:
     expire = datetime.utcnow() + timedelta(minutes=JWT_EXPIRE_MINUTES)
     return jwt.encode(
-        {"sub": str(club_id), "slug": club_slug, "nome": club_nome, "exp": expire},
+        {"sub": str(club_id), "exp": expire},
         JWT_SECRET_KEY,
         algorithm=JWT_ALGORITHM,
     )

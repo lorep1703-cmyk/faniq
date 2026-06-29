@@ -1,5 +1,8 @@
 """Chat AI contestuale sui dati del club."""
+import logging
 import os
+
+logger = logging.getLogger("faniq")
 
 from sqlalchemy.orm import Session
 
@@ -69,4 +72,5 @@ def chat_with_ai(db: Session, club_id: int, club_nome: str, messages: list[dict]
         )
         return {"reply": response.choices[0].message.content or "", "model": OPENAI_MODEL}
     except Exception as e:
-        return {"reply": f"Errore AI: {str(e)}", "model": OPENAI_MODEL}
+        logger.error("Errore OpenAI: %s", e)
+        return {"reply": "Si è verificato un errore. Riprova tra qualche momento.", "model": OPENAI_MODEL}
