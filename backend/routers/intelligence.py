@@ -175,10 +175,14 @@ _refresh_jobs: dict[int, str] = {}  # club_id → status
 
 def _do_refresh(club_id: int) -> None:
     from database import SessionLocal
+    from sqlalchemy import text
     import logging
     db = SessionLocal()
     try:
         _refresh_jobs[club_id] = "running"
+        # Necessario su PostgreSQL: il background task apre una sessione nuova
+        # senza il middleware RLS → lo settiamo esplicitamente.
+        db.execute(text("SET app.current_club_id = :cid"), {"cid": str(club_id)})
         items = _build_cache(club_id, db)
         cache_set(_intel_cache_key(club_id), items)
         _refresh_jobs[club_id] = "done"
