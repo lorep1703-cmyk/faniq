@@ -112,3 +112,5 @@ export const fetchIntelligenceSummary = () =>
 export const fetchAlertsRaw = () =>
   api.get("/api/intelligence/club", { params: { per_page: 5000 }, timeout: 60000 })
     .then((r) => r.data.items.filter((fi) => fi.subscription_anomaly != null));
+
+export const resetAllData = () => api.delete('/upload/reset-all').then(r => r.data);

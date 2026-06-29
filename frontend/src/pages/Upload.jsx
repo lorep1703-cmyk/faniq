@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Upload as UploadIcon, CheckCircle, XCircle, FileText, Download, CalendarDays, Trash2, Clock } from "lucide-react";
-import { uploadCsv, uploadPartite, API_URL, fetchUploadHistory, undoUpload } from "../api/client";
+import { uploadCsv, uploadPartite, API_URL, fetchUploadHistory, undoUpload, resetAllData } from "../api/client";
 
 const CSV_TYPES = [
   {
@@ -347,6 +347,56 @@ function UploadHistory() {
   );
 }
 
+function ResetSection() {
+  const [status, setStatus] = useState(null); // null | 'loading' | 'success' | 'error'
+
+  const handleReset = async () => {
+    const confirmed = window.confirm(
+      "Sei sicuro? Questa azione elimina TUTTI i fan, abbonamenti, biglietti, shop e partite del club. Non è reversibile."
+    );
+    if (!confirmed) return;
+    setStatus("loading");
+    try {
+      await resetAllData();
+      setStatus("success");
+      setTimeout(() => window.location.reload(), 1500);
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  return (
+    <div className="mt-10 border border-red-200 bg-red-50 rounded-xl p-5">
+      <h3 className="text-sm font-semibold text-red-700 mb-1">Zona pericolosa</h3>
+      <p className="text-xs text-red-500 mb-4">
+        Elimina permanentemente tutti i dati del club (fan, abbonamenti, biglietti, shop, partite). Azione irreversibile.
+      </p>
+
+      {status === "success" && (
+        <div className="mb-3 flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+          <CheckCircle size={16} />
+          <span className="text-sm">Dati eliminati con successo</span>
+        </div>
+      )}
+      {status === "error" && (
+        <div className="mb-3 flex items-center gap-2 text-red-700 bg-red-100 border border-red-200 rounded-lg px-3 py-2">
+          <XCircle size={16} />
+          <span className="text-sm">Errore durante il reset. Riprova.</span>
+        </div>
+      )}
+
+      <button
+        onClick={handleReset}
+        disabled={status === "loading" || status === "success"}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <Trash2 size={15} />
+        {status === "loading" ? "Eliminazione in corso..." : "Reset dati"}
+      </button>
+    </div>
+  );
+}
+
 export default function Upload() {
   return (
     <div className="flex-1 p-8 overflow-auto">
@@ -374,6 +424,7 @@ export default function Upload() {
       </div>
 
       <UploadHistory />
+      <ResetSection />
     </div>
   );
 }

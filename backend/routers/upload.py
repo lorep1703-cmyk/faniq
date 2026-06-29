@@ -1,12 +1,17 @@
+import logging
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from sqlalchemy.orm import Session
 
 from config import MAX_UPLOAD_SIZE_BYTES
 from database import get_db
-from models import Club, UploadHistory
+from models import Abbonamento, Biglietto, Club, Fan, Partita, ShopOrder, UploadHistory
 from tenant import get_current_club
+from services.cache import invalidate
 from services.csv_import import CSV_TEMPLATES, import_csv, undo_upload
+
+logger = logging.getLogger("faniq")
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
@@ -63,6 +68,24 @@ def upload_history(db: Session = Depends(get_db), club: Club = Depends(get_curre
         }
         for u in uploads
     ]
+
+
+@router.delete("/reset-all")
+def reset_all_data(db: Session = Depends(get_db), club: Club = Depends(get_current_club)):
+    try:
+        db.query(ShopOrder).filter(ShopOrder.club_id == club.id).delete(synchronize_session=False)
+        db.query(Biglietto).filter(Biglietto.club_id == club.id).delete(synchronize_session=False)
+        db.query(Abbonamento).filter(Abbonamento.club_id == club.id).delete(synchronize_session=False)
+        db.query(Partita).filter(Partita.club_id == club.id).delete(synchronize_session=False)
+        db.query(UploadHistory).filter(UploadHistory.club_id == club.id).delete(synchronize_session=False)
+        db.query(Fan).filter(Fan.club_id == club.id).delete(synchronize_session=False)
+        db.commit()
+        invalidate(club.id)
+        return {"deleted": True, "message": "Tutti i dati del club sono stati eliminati"}
+    except Exception as e:
+        db.rollback()
+        logger.error("Errore reset-all club %d: %s", club.id, e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Errore durante il reset dei dati")
 
 
 @router.delete("/{upload_id}")
