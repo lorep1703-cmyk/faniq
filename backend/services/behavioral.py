@@ -85,4 +85,5 @@ def compute_behavioral(db: Session, club_id: int) -> dict:
         "next_match": next_match,
         "badge_counts": badge_counts,
         "fan_scores": fan_scores,
+        "fan_dates": fan_dates,
     }

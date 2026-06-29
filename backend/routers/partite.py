@@ -216,13 +216,8 @@ def get_predizione(
     )
     streak_dates = [p.data for p in partite_tipo]  # più recente prima
 
-    # Biglietti per fan: {fan_id: set(date)}
-    from models import Biglietto
-    biglietti = db.query(Biglietto).filter(Biglietto.club_id == club.id).all()
-    fan_ticket_dates: dict[int, set] = {}
-    for b in biglietti:
-        if b.data_partita:
-            fan_ticket_dates.setdefault(b.fan_id, set()).add(b.data_partita)
+    # Biglietti per fan: già caricati da compute_behavioral — zero query aggiuntive
+    fan_ticket_dates: dict[int, set] = behavioral.get("fan_dates", {})
 
     def build_streak(fan_id: int) -> list[bool]:
         dates = fan_ticket_dates.get(fan_id, set())
