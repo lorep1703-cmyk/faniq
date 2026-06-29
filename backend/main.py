@@ -39,7 +39,7 @@ _RATE_LIMITS = {
     "/auth/register": (5, 60),
     "/auth/login": (10, 60),
     "/chat/": (20, 60),
-    "/upload/": (5, 60),
+    "POST:/upload/": (5, 60),          # solo POST — il polling GET /upload/status/ non viene contato
     "/api/intelligence/club/refresh": (3, 60),
 }
 _CLEANUP_INTERVAL = 300  # pulisci chiavi scadute ogni 5 minuti
@@ -60,17 +60,29 @@ async def rate_limit_auth(request: Request, call_next):
             del _rate_store[k]
         _last_cleanup = now
 
-    if path in _RATE_LIMITS:
-        max_calls, window = _RATE_LIMITS[path]
+    # Trova la chiave di rate limit: prima tenta "METHOD:/prefix/", poi path esatto
+    matched_key = None
+    for rl_key in _RATE_LIMITS:
+        if ":" in rl_key:
+            method_prefix, path_prefix = rl_key.split(":", 1)
+            if request.method == method_prefix and path.startswith(path_prefix):
+                matched_key = rl_key
+                break
+        elif path == rl_key:
+            matched_key = rl_key
+            break
+
+    if matched_key is not None:
+        max_calls, window = _RATE_LIMITS[matched_key]
         ip = request.client.host if request.client else "unknown"
-        key = f"{ip}:{path}"
-        _rate_store[key] = [t for t in _rate_store[key] if now - t < window]
-        if len(_rate_store[key]) >= max_calls:
+        bucket = f"{ip}:{matched_key}"
+        _rate_store[bucket] = [t for t in _rate_store[bucket] if now - t < window]
+        if len(_rate_store[bucket]) >= max_calls:
             return JSONResponse(
                 status_code=429,
                 content={"detail": "Troppi tentativi. Riprova tra un minuto."},
             )
-        _rate_store[key].append(now)
+        _rate_store[bucket].append(now)
     return await call_next(request)
 
 
