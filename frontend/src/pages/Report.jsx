@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import FanDetailPanel from "../components/FanDetailPanel";
 import { Download, Search, RefreshCw } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import RfmDistributionWidget from "../components/RfmDistributionWidget";
@@ -9,6 +10,7 @@ import {
   fetchSegments,
   fetchStats,
   fetchTopSpenders,
+  fetchSeasons,
   exportFans,
   fetchRenewalScores,
   fetchClubIntelligence,
@@ -82,17 +84,32 @@ export default function Report() {
   const [ambassadorSort, setAmbassadorSort] = useState(false);
   const [decaySort, setDecaySort] = useState(false);
   const [expandedFanId, setExpandedFanId] = useState(null);
+  const [selectedFanId, setSelectedFanId] = useState(null);
+  const [seasons, setSeasons] = useState([]);
+  const [seasonFilter, setSeasonFilter] = useState("");
 
   useEffect(() => {
-    Promise.all([fetchAllFans(), fetchSegments(), fetchTopSpenders(), fetchStats()])
-      .then(([f, seg, top, s]) => {
+    Promise.all([fetchAllFans(), fetchSegments(), fetchTopSpenders(), fetchStats(), fetchSeasons()])
+      .then(([f, seg, top, s, seas]) => {
         setFans(f);
         setSegments(seg);
         setTopSpenders(top);
         setStats(s);
+        setSeasons(seas || []);
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const handleSeasonChange = async (stagione) => {
+    setSeasonFilter(stagione);
+    setLoading(true);
+    try {
+      const f = await fetchAllFans(stagione || null);
+      setFans(f);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadRenewal = async () => {
     setRenewalLoading(true);
@@ -224,6 +241,19 @@ export default function Report() {
             ))}
           </select>
 
+          {seasons.length > 0 && (
+            <select
+              value={seasonFilter}
+              onChange={(e) => handleSeasonChange(e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300"
+            >
+              <option value="">Tutte le stagioni</option>
+              {seasons.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          )}
+
           <select
             value={journeyFilter}
             onChange={(e) => {
@@ -322,7 +352,7 @@ export default function Report() {
                   <>
                     <tr
                       key={f.id}
-                      onClick={() => setExpandedFanId(isExpanded ? null : f.id)}
+                      onClick={() => { setExpandedFanId(isExpanded ? null : f.id); setSelectedFanId(f.id); }}
                       className={`border-b border-slate-50 cursor-pointer ${
                         isExpanded ? "bg-slate-50" : "hover:bg-slate-50"
                       } ${isRecuperato ? "border-l-2 border-l-violet-400" : ""}`}
@@ -394,6 +424,8 @@ export default function Report() {
           )}
         </div>
       </div>
+
+      <FanDetailPanel fanId={selectedFanId} onClose={() => setSelectedFanId(null)} />
     </div>
   );
 }

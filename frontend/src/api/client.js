@@ -40,16 +40,14 @@ export const fetchSegments = () => api.get("/dashboard/segments").then((r) => r.
 export const fetchTopSpenders = () => api.get("/dashboard/top-spenders").then((r) => r.data);
 export const fetchCrossSource = () => api.get("/dashboard/cross-source").then((r) => r.data);
 export const fetchSeasons = () => api.get("/dashboard/seasons").then((r) => r.data);
-export const fetchAllFans = () => api.get("/dashboard/fans").then((r) => r.data);
-export const fetchFansBySegment = (segment) =>
-  api.get("/dashboard/fans").then((r) => r.data.filter((f) => f.segment === segment));
+export const fetchAllFans = (stagione = null) =>
+  api.get("/dashboard/fans", stagione ? { params: { stagione } } : {}).then((r) => r.data);
 export const fetchInsights = () => api.get("/insights/overview").then((r) => r.data);
 export const fetchDataReadiness = () => api.get("/insights/data-readiness").then((r) => r.data);
 
 export const fetchSuggestedBase = () => api.get("/simulate/base").then((r) => r.data);
 export const fetchAttendance = (params) =>
   api.get("/simulate/attendance", { params }).then((r) => r.data);
-export const fetchFanDetail = (id) => api.get(`/insights/fan/${id}`).then((r) => r.data);
 export const fetchHealth = () => api.get("/health", { timeout: 4000 }).then((r) => r.data);
 
 export const uploadCsv = (type, file) => {
@@ -58,20 +56,6 @@ export const uploadCsv = (type, file) => {
   return api.post(`/upload/${type}`, form, { timeout: 60000 }).then((r) => r.data);
 };
 
-export const downloadTemplate = (type) => {
-  const token = localStorage.getItem("faniq_token");
-  return api.get(`/upload/template/${type}`, {
-    responseType: "blob",
-    headers: { Authorization: `Bearer ${token}` },
-  }).then((r) => {
-    const url = URL.createObjectURL(r.data);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `template_${type}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-};
 export const fetchUploadHistory = () => api.get("/upload/history").then((r) => r.data);
 export const undoUpload = (id) => api.delete(`/upload/${id}`).then((r) => r.data);
 
@@ -115,6 +99,8 @@ export const uploadPartite      = (file)   => {
 export const fetchBehavioral    = ()       => api.get("/partite/behavioral").then((r) => r.data);
 export const fetchPredizione    = (id)     => api.get(`/partite/predizione/${id}`).then((r) => r.data);
 export const fetchRenewalScores = (params = {}) => api.get("/fans/renewal-scores", { params: { per_page: 5000, ...params } }).then((r) => r.data);
+
+export const fetchFanDetailPanel = (id) => api.get(`/fans/${id}/detail`).then((r) => r.data);
 
 // Intelligence Engine
 export const fetchFanIntelligence   = (fanId) => api.get(`/api/intelligence/fan/${fanId}`).then((r) => r.data);

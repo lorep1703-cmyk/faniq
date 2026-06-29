@@ -7,6 +7,7 @@ import {
   fetchAllFans,
   fetchFanGdprData,
   deleteFanGdpr,
+  updateFanConsent,
 } from "../api/client";
 
 export default function Privacy() {
@@ -17,6 +18,8 @@ export default function Privacy() {
   const [selectedFan, setSelectedFan] = useState("");
   const [exportData, setExportData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [consentFeedback, setConsentFeedback] = useState(null); // { type: 'success'|'error', message: string }
+  const [consentSaving, setConsentSaving] = useState(null); // 'marketing'|'profilazione'|null
 
   useEffect(() => {
     Promise.all([
@@ -38,6 +41,25 @@ export default function Privacy() {
     if (!selectedFan) return;
     const data = await fetchFanGdprData(selectedFan);
     setExportData(data);
+  };
+
+  const handleConsentChange = async (tipo, nuovoValore) => {
+    if (!selectedFan) return;
+    setConsentSaving(tipo);
+    setConsentFeedback(null);
+    try {
+      await updateFanConsent(Number(selectedFan), tipo, nuovoValore);
+      setFans(fans.map((f) =>
+        f.id === Number(selectedFan)
+          ? { ...f, [tipo]: nuovoValore }
+          : f
+      ));
+      setConsentFeedback({ type: "success", message: "Consenso aggiornato e registrato nel log privacy." });
+    } catch (err) {
+      setConsentFeedback({ type: "error", message: err.userMessage || "Errore durante l'aggiornamento del consenso." });
+    } finally {
+      setConsentSaving(null);
+    }
   };
 
   const handleDelete = async () => {
@@ -96,7 +118,7 @@ export default function Privacy() {
           <div className="space-y-3">
             <select
               value={selectedFan}
-              onChange={(e) => setSelectedFan(e.target.value)}
+              onChange={(e) => { setSelectedFan(e.target.value); setConsentFeedback(null); }}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
             >
               <option value="">Seleziona un tifoso...</option>
@@ -129,6 +151,54 @@ export default function Privacy() {
                 {JSON.stringify(exportData, null, 2)}
               </pre>
             )}
+
+            {selectedFan && (() => {
+              const fan = fans.find((f) => f.id === Number(selectedFan));
+              if (!fan) return null;
+              return (
+                <div className="pt-3 border-t border-slate-100 space-y-3">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Consensi</p>
+
+                  {[
+                    { key: "consenso_marketing", label: "Consenso marketing" },
+                    { key: "consenso_profilazione", label: "Consenso profilazione" },
+                  ].map(({ key, label }) => {
+                    const current = fan[key] ?? false;
+                    const saving = consentSaving === key;
+                    return (
+                      <label
+                        key={key}
+                        className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-slate-200 cursor-pointer select-none transition-colors ${saving ? "opacity-60" : "hover:bg-slate-50"}`}
+                      >
+                        <span className="text-sm text-slate-700">{label}</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {fan[key] === null || fan[key] === undefined ? (
+                            <span className="text-xs text-slate-400 italic">non registrato</span>
+                          ) : null}
+                          <button
+                            type="button"
+                            disabled={saving}
+                            onClick={() => handleConsentChange(key, !current)}
+                            aria-label={`${label}: ${current ? "attivo" : "inattivo"}`}
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-1 ${current ? "bg-emerald-500" : "bg-slate-300"}`}
+                          >
+                            <span
+                              className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${current ? "translate-x-4" : "translate-x-0.5"}`}
+                            />
+                          </button>
+                        </div>
+                      </label>
+                    );
+                  })}
+
+                  {consentFeedback && (
+                    <p className={`text-xs px-3 py-2 rounded-lg ${consentFeedback.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+                      {consentFeedback.message}
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
 

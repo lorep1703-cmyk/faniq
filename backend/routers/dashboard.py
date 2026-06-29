@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Club, Fan, ShopOrder
+from models import Abbonamento, Club, Fan, ShopOrder
 from tenant import get_current_club
 from services.analytics import (
     compute_fan_segments,
@@ -69,8 +69,21 @@ def get_seasons(db: Session = Depends(get_db), club: Club = Depends(get_current_
 
 
 @router.get("/fans")
-def get_fans(db: Session = Depends(get_db), club: Club = Depends(get_current_club)):
-    return compute_fan_segments(db, club.id)
+def get_fans(
+    stagione: str | None = Query(None, description="Filtra per stagione abbonamento"),
+    db: Session = Depends(get_db),
+    club: Club = Depends(get_current_club),
+):
+    fans = compute_fan_segments(db, club.id)
+    if stagione:
+        fan_ids = {
+            row[0]
+            for row in db.query(Abbonamento.fan_id)
+            .filter(Abbonamento.club_id == club.id, Abbonamento.stagione == stagione)
+            .all()
+        }
+        fans = [f for f in fans if f["id"] in fan_ids]
+    return fans
 
 
 @router.get("/summary")
