@@ -96,7 +96,7 @@ def get_fan_intelligence(
 @router.get("/club")
 def get_club_intelligence(
     page: int = Query(1, ge=1),
-    per_page: int = Query(50, ge=1, le=200),  # paginazione in-memory; DB-level è ottimizzazione futura
+    per_page: int = Query(50, ge=1, le=5000),  # paginazione in-memory; DB-level è ottimizzazione futura
     min_renewal: float = Query(0.0, ge=0.0, le=1.0),
     max_renewal: float = Query(1.0, ge=0.0, le=1.0),
     journey_stage: Optional[str] = Query(None),

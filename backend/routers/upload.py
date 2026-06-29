@@ -8,7 +8,8 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from sqlalchemy.orm import Session
 
 from config import MAX_UPLOAD_SIZE_BYTES
-from database import SessionLocal, get_db
+from database import SessionLocal, _IS_POSTGRES, get_db
+from sqlalchemy import text
 from models import Abbonamento, Biglietto, Club, Fan, Partita, ShopOrder, UploadHistory
 from tenant import get_current_club
 from services.cache import invalidate
@@ -25,6 +26,8 @@ def _run_upload(job_id: str, csv_type: str, content: bytes, club_id: int, filena
     _upload_jobs[job_id]["status"] = "running"
     db = SessionLocal()
     try:
+        if _IS_POSTGRES:
+            db.execute(text("SET LOCAL app.current_club_id = :cid"), {"cid": str(club_id)})
         result = import_csv(db, club_id, csv_type, content, filename)
         _upload_jobs[job_id].update({
             "status": "done",
