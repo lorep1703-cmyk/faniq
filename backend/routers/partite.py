@@ -10,10 +10,11 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Club, Fan, Partita
+from models import Club, Fan, Partita, UploadHistory
 from tenant import get_current_club
 from services.behavioral import compute_behavioral
 from services.analytics import compute_fan_segments
+from services.cache import invalidate
 
 router = APIRouter(prefix="/partite", tags=["partite"])
 
@@ -125,7 +126,15 @@ async def upload_partite(
             _log.getLogger("faniq").error("Errore imprevisto import partite riga %d: %s", i, e, exc_info=True)
             errors.append(f"Riga {i}: errore di formato imprevisto")
 
+    # A differenza degli altri import (abbonati/biglietteria/shop), questo upload
+    # non registrava mai una riga in UploadHistory né invalidava la cache — quindi
+    # non compariva nello storico e l'Intelligence Engine continuava a servire
+    # risultati calcolati prima del caricamento (cache fino a 15 minuti).
+    upload = UploadHistory(club_id=club.id, type="partite", filename=file.filename, rows_imported=imported)
+    db.add(upload)
     db.commit()
+    invalidate(club.id)
+
     return {"imported": imported, "errors": errors, "message": f"{imported} partite importate"}
 
 
