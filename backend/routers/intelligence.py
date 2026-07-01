@@ -1,6 +1,7 @@
 """Endpoint Fan Intelligence Engine."""
 from __future__ import annotations
 
+import threading
 from collections import Counter
 from typing import Optional
 
@@ -18,6 +19,24 @@ from tenant import get_current_club
 
 def _intel_cache_key(club_id: int) -> str:
     return f"intelligence_{club_id}"
+
+
+# Un lock per club_id: evita che più richieste concorrenti sulla stessa cache
+# "fredda" (es. subito dopo un riavvio, quando sidebar e pagina chiedono i dati
+# quasi nello stesso istante) ricalcolino l'intelligence in parallelo, ognuna
+# per conto proprio. Scoped per club_id — un club non aspetta mai per colpa
+# di un altro club.
+_compute_locks: dict[int, threading.Lock] = {}
+_compute_locks_guard = threading.Lock()
+
+
+def _get_compute_lock(club_id: int) -> threading.Lock:
+    with _compute_locks_guard:
+        lock = _compute_locks.get(club_id)
+        if lock is None:
+            lock = threading.Lock()
+            _compute_locks[club_id] = lock
+        return lock
 
 
 def _build_cache(club_id: int, db) -> list[dict]:
@@ -44,9 +63,17 @@ def _get_or_compute(club_id: int, db) -> list[dict]:
     cached = cache_get(key)
     if cached is not None:
         return cached
-    items = _build_cache(club_id, db)
-    cache_set(key, items)
-    return items
+
+    lock = _get_compute_lock(club_id)
+    with lock:
+        # Ricontrolla: un'altra richiesta potrebbe aver già calcolato e messo
+        # in cache il risultato mentre aspettavamo il lock.
+        cached = cache_get(key)
+        if cached is not None:
+            return cached
+        items = _build_cache(club_id, db)
+        cache_set(key, items)
+        return items
 
 router = APIRouter(prefix="/api/intelligence", tags=["intelligence"])
 
