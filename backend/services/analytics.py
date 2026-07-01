@@ -5,7 +5,7 @@ from collections import Counter
 from datetime import date
 
 from sqlalchemy import func
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, selectinload
 
 from models import Abbonamento, Biglietto, Fan, ShopOrder
 from services.cache import get as cache_get, set as cache_set
@@ -132,9 +132,14 @@ def compute_fan_segments(db: Session, club_id: int, force: bool = False) -> list
         db.query(Fan)
         .filter(Fan.club_id == club_id)
         .options(
-            joinedload(Fan.abbonamenti),
-            joinedload(Fan.biglietti),
-            joinedload(Fan.shop_orders),
+            # selectinload invece di joinedload: con più collection caricate insieme,
+            # joinedload produce un unico JOIN che moltiplica le righe (abbonamenti ×
+            # biglietti × shop per ogni fan), diventato molto lento con volumi reali
+            # di biglietteria. selectinload fa una query separata per collection
+            # (via IN), stesso risultato, niente esplosione combinatoria.
+            selectinload(Fan.abbonamenti),
+            selectinload(Fan.biglietti),
+            selectinload(Fan.shop_orders),
         )
         .all()
     )
@@ -152,9 +157,14 @@ def get_all_fans_raw(db: Session, club_id: int) -> list[Fan]:
         db.query(Fan)
         .filter(Fan.club_id == club_id)
         .options(
-            joinedload(Fan.abbonamenti),
-            joinedload(Fan.biglietti),
-            joinedload(Fan.shop_orders),
+            # selectinload invece di joinedload: con più collection caricate insieme,
+            # joinedload produce un unico JOIN che moltiplica le righe (abbonamenti ×
+            # biglietti × shop per ogni fan), diventato molto lento con volumi reali
+            # di biglietteria. selectinload fa una query separata per collection
+            # (via IN), stesso risultato, niente esplosione combinatoria.
+            selectinload(Fan.abbonamenti),
+            selectinload(Fan.biglietti),
+            selectinload(Fan.shop_orders),
         )
         .all()
     )
