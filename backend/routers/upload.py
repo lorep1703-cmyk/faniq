@@ -38,8 +38,19 @@ def _run_upload(job_id: str, csv_type: str, content: bytes, club_id: int, filena
     except Exception as e:
         logger.error("Errore background upload job %s: %s", job_id, e, exc_info=True)
         _upload_jobs[job_id]["status"] = "error"
+        return
     finally:
         db.close()
+
+    # Riscalda subito la cache Intelligence invece di lasciarla fredda fino
+    # alla prossima richiesta utente (siamo già in un background task, nessun
+    # bisogno di aprirne un altro). Sessione separata dalla import_csv sopra,
+    # già chiusa.
+    try:
+        from routers.intelligence import _do_refresh
+        _do_refresh(club_id)
+    except Exception as e:
+        logger.error("Errore refresh proattivo intelligence dopo upload %s: %s", job_id, e, exc_info=True)
 
 
 @router.post("/{csv_type}", status_code=202)
@@ -124,8 +135,19 @@ def reset_all_data(db: Session = Depends(get_db), club: Club = Depends(get_curre
 
 
 @router.delete("/{upload_id}")
-def delete_upload(upload_id: int, db: Session = Depends(get_db), club: Club = Depends(get_current_club)):
+def delete_upload(
+    upload_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    club: Club = Depends(get_current_club),
+):
     try:
-        return undo_upload(db, club.id, upload_id)
+        result = undo_upload(db, club.id, upload_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+    # Stesso motivo dell'upload: riscalda la cache invece di lasciarla fredda.
+    from routers.intelligence import _do_refresh
+    background_tasks.add_task(_do_refresh, club.id)
+
+    return result

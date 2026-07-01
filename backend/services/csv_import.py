@@ -192,7 +192,7 @@ def undo_upload(db: Session, club_id: int, upload_id: int) -> dict:
     elif upload.type == "shop":
         db.query(ShopOrder).filter(ShopOrder.upload_id == upload_id).delete()
     elif upload.type == "partite":
-        db.query(Partita).filter(Partita.club_id == club_id).delete()
+        db.query(Partita).filter(Partita.upload_id == upload_id).delete()
 
     # Rimuove i fan che non hanno più nessuna transazione collegata
     orphan_fans = (

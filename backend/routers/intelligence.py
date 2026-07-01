@@ -201,17 +201,23 @@ _refresh_jobs: dict[int, str] = {}  # club_id → status
 
 
 def _do_refresh(club_id: int) -> None:
-    from database import SessionLocal
+    from database import SessionLocal, _IS_POSTGRES
     from sqlalchemy import text
     import logging
     db = SessionLocal()
     try:
         _refresh_jobs[club_id] = "running"
         # Necessario su PostgreSQL: il background task apre una sessione nuova
-        # senza il middleware RLS → lo settiamo esplicitamente.
-        db.execute(text("SET app.current_club_id = :cid"), {"cid": str(club_id)})
-        items = _build_cache(club_id, db)
-        cache_set(_intel_cache_key(club_id), items)
+        # senza il middleware RLS → lo settiamo esplicitamente. Su SQLite (dev
+        # locale) RLS non esiste, saltare la sintassi Postgres-only.
+        if _IS_POSTGRES:
+            db.execute(text("SET app.current_club_id = :cid"), {"cid": str(club_id)})
+        # Stesso lock di _get_or_compute: senza, un refresh proattivo (dopo
+        # upload/undo) potrebbe girare in parallelo con una richiesta utente
+        # su cache fredda e ricalcolare due volte la stessa cosa.
+        with _get_compute_lock(club_id):
+            items = _build_cache(club_id, db)
+            cache_set(_intel_cache_key(club_id), items)
         _refresh_jobs[club_id] = "done"
     except Exception:
         logging.exception("Errore durante il refresh intelligence per club_id=%s", club_id)

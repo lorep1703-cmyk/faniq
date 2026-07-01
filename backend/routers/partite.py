@@ -4,7 +4,7 @@ import csv
 import io
 from datetime import date
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -96,6 +96,7 @@ def add_partita(
 
 @router.post("/upload")
 async def upload_partite(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     club: Club = Depends(get_current_club),
@@ -103,6 +104,13 @@ async def upload_partite(
     content = await file.read()
     text = content.decode("utf-8-sig")
     reader = csv.DictReader(io.StringIO(text))
+
+    # Creata subito (con flush per avere l'id) così ogni Partita puo' essere
+    # collegata al proprio upload — permette ad "Annulla" di cancellare solo
+    # le partite di QUESTO caricamento, non tutte quelle del club.
+    upload = UploadHistory(club_id=club.id, type="partite", filename=file.filename, rows_imported=0)
+    db.add(upload)
+    db.flush()
 
     imported, errors = 0, []
     for i, row in enumerate(reader, 1):
@@ -113,6 +121,7 @@ async def upload_partite(
                 continue
             db.add(Partita(
                 club_id=club.id,
+                upload_id=upload.id,
                 data=date.fromisoformat(row["data"].strip()),
                 avversario=row["avversario"].strip(),
                 casa_trasferta=ct,
@@ -126,14 +135,15 @@ async def upload_partite(
             _log.getLogger("faniq").error("Errore imprevisto import partite riga %d: %s", i, e, exc_info=True)
             errors.append(f"Riga {i}: errore di formato imprevisto")
 
-    # A differenza degli altri import (abbonati/biglietteria/shop), questo upload
-    # non registrava mai una riga in UploadHistory né invalidava la cache — quindi
-    # non compariva nello storico e l'Intelligence Engine continuava a servire
-    # risultati calcolati prima del caricamento (cache fino a 15 minuti).
-    upload = UploadHistory(club_id=club.id, type="partite", filename=file.filename, rows_imported=imported)
-    db.add(upload)
+    upload.rows_imported = imported
     db.commit()
     invalidate(club.id)
+
+    # Riscalda subito la cache Intelligence in background invece di lasciarla
+    # fredda fino alla prossima richiesta utente (che altrimenti aspetta ~30s
+    # a vuoto e vede la pagina "sparire" temporaneamente).
+    from routers.intelligence import _do_refresh
+    background_tasks.add_task(_do_refresh, club.id)
 
     return {"imported": imported, "errors": errors, "message": f"{imported} partite importate"}
 

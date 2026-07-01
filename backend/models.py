@@ -165,6 +165,10 @@ class Partita(Base):
     casa_trasferta = Column(String(20), nullable=False)   # "casa" | "trasferta"
     competizione   = Column(String(100), nullable=True)
     created_at     = Column(DateTime, default=datetime.utcnow)
+    # Nullable: le partite aggiunte manualmente (POST /partite/) non hanno un
+    # upload di riferimento. Serve per far funzionare "Annulla" in modo scoped
+    # al singolo caricamento invece di cancellare tutte le partite del club.
+    upload_id      = Column(Integer, ForeignKey("upload_history.id"), nullable=True)
 
 
 class PrivacyLog(Base):
