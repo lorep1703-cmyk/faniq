@@ -41,7 +41,9 @@ export const fetchTopSpenders = () => api.get("/dashboard/top-spenders").then((r
 export const fetchSeasons = () => api.get("/dashboard/seasons").then((r) => r.data);
 export const fetchAllFans = (stagione = null) =>
   api.get("/dashboard/fans", stagione ? { params: { stagione } } : {}).then((r) => r.data);
-export const fetchInsights = () => api.get("/insights/overview").then((r) => r.data);
+// Timeout alto come le altre chiamate intelligence: a cache fredda questo
+// endpoint ricalcola l'intelligence internamente (può metterci 20-35s).
+export const fetchInsights = () => api.get("/insights/overview", { timeout: 60000 }).then((r) => r.data);
 export const fetchDataReadiness = () => api.get("/insights/data-readiness").then((r) => r.data);
 
 export const fetchSuggestedBase = () => api.get("/simulate/base").then((r) => r.data);

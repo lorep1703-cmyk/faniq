@@ -25,12 +25,22 @@ def _apply_intelligence_penalties(score: int, segments: list, db: Session, club_
     try:
         from services.intelligence.engine import compute_club_intelligence
         from fan_intelligence import AnomalySeverity
+        # Stesso lock per-club_id usato in routers/intelligence.py: questo
+        # percorso calcola l'intelligence in un formato diverso (dataclass
+        # raw, non serializzato) e con una cache propria, ma è comunque la
+        # stessa identica computazione pesante — senza lock condiviso poteva
+        # correre in parallelo con gli altri due percorsi già protetti,
+        # rallentando tutto sotto carico (cache fredda dopo un riavvio).
+        from routers.intelligence import _get_compute_lock
 
         _raw_key = f"intelligence_raw_{club_id}"
         intelligence = cache_get(_raw_key)
         if intelligence is None:
-            intelligence = compute_club_intelligence(club_id, db)
-            cache_set(_raw_key, intelligence)
+            with _get_compute_lock(club_id):
+                intelligence = cache_get(_raw_key)
+                if intelligence is None:
+                    intelligence = compute_club_intelligence(club_id, db)
+                    cache_set(_raw_key, intelligence)
         if not intelligence:
             return score
 
