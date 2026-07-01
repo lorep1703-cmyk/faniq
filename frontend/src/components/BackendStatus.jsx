@@ -30,7 +30,7 @@ export default function BackendStatus() {
   return (
     <div className="bg-red-600 text-white text-sm font-medium px-4 py-2.5 flex items-center justify-center gap-2">
       <WifiOff size={15} />
-      Backend non raggiungibile — avvialo con <code className="bg-red-700 px-1.5 py-0.5 rounded text-xs">uvicorn main:app</code> nella cartella backend
+      Backend non raggiungibile — riprova tra qualche secondo
     </div>
   );
 }
