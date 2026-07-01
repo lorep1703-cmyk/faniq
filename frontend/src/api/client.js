@@ -52,7 +52,9 @@ export const fetchHealth = () => api.get("/health", { timeout: 4000 }).then((r) 
 export const uploadCsv = (type, file) => {
   const form = new FormData();
   form.append("file", file);
-  return api.post(`/upload/${type}`, form, { timeout: 15000 }).then((r) => r.data);
+  // Timeout alto: il backend Render free tier va in sleep dopo inattività e
+  // il cold start può richiedere 30-60s prima di rispondere al POST iniziale.
+  return api.post(`/upload/${type}`, form, { timeout: 60000 }).then((r) => r.data);
 };
 
 export const getUploadStatus = (jobId) => api.get(`/upload/status/${jobId}`).then(r => r.data);
@@ -95,7 +97,8 @@ export const deletePartita      = (id)     => api.delete(`/partite/${id}`).then(
 export const uploadPartite      = (file)   => {
   const form = new FormData();
   form.append("file", file);
-  return api.post("/partite/upload", form).then((r) => r.data);
+  // Stesso motivo di uploadCsv: endpoint sincrono, deve sopravvivere al cold start Render.
+  return api.post("/partite/upload", form, { timeout: 60000 }).then((r) => r.data);
 };
 export const fetchBehavioral    = ()       => api.get("/partite/behavioral").then((r) => r.data);
 export const fetchPredizione    = (id)     => api.get(`/partite/predizione/${id}`).then((r) => r.data);

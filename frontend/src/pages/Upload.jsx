@@ -74,10 +74,13 @@ function UploadCard({ type }) {
       const { job_id } = await uploadCsv(type.id, file);
       // polling
       const deadline = Date.now() + 5 * 60 * 1000;
+      const MAX_CONSECUTIVE_POLL_FAILURES = 3; // tollera blip di rete transitori (cold start / restart Render)
+      let consecutiveFailures = 0;
       await new Promise((resolve) => {
         const interval = setInterval(async () => {
           try {
             const job = await getUploadStatus(job_id);
+            consecutiveFailures = 0;
             if (job.status === "done") {
               clearInterval(interval);
               setStatus("success");
@@ -94,17 +97,32 @@ function UploadCard({ type }) {
               setMessage("L'operazione sta richiedendo più tempo del previsto. Controlla lo storico tra qualche minuto.");
               resolve();
             }
-          } catch {
-            clearInterval(interval);
-            setStatus("error");
-            setMessage("Errore durante l'importazione. Riprova.");
-            resolve();
+          } catch (err) {
+            // Job non trovato (404): il processo backend è stato riavviato e ha perso
+            // lo stato del job — questo è un fallimento reale, non un blip di rete.
+            const jobLost = err?.response?.status === 404;
+            consecutiveFailures += 1;
+            if (jobLost || consecutiveFailures >= MAX_CONSECUTIVE_POLL_FAILURES || Date.now() > deadline) {
+              clearInterval(interval);
+              setStatus("error");
+              setMessage(
+                jobLost
+                  ? "Il server si è riavviato durante il caricamento. Controlla lo storico prima di ricaricare il file."
+                  : "Errore durante l'importazione. Riprova."
+              );
+              resolve();
+            }
+            // altrimenti: errore transitorio, il prossimo tick riprova
           }
         }, 2000);
       });
     } catch (err) {
       setStatus("error");
-      setMessage(err.response?.data?.detail || "Errore durante il caricamento");
+      if (err.code === "ECONNABORTED") {
+        setMessage("Il server si sta riattivando (può richiedere fino a un minuto dopo un periodo di inattività). Riprova tra poco.");
+      } else {
+        setMessage(err.response?.data?.detail || err.userMessage || "Errore durante il caricamento");
+      }
     }
   };
 
@@ -205,7 +223,11 @@ function PartiteUploadCard() {
       setMessage(result.message);
     } catch (err) {
       setStatus("error");
-      setMessage(err.response?.data?.detail || "Errore durante il caricamento");
+      if (err.code === "ECONNABORTED") {
+        setMessage("Il server si sta riattivando (può richiedere fino a un minuto dopo un periodo di inattività). Riprova tra poco.");
+      } else {
+        setMessage(err.response?.data?.detail || err.userMessage || "Errore durante il caricamento");
+      }
     }
   };
 
