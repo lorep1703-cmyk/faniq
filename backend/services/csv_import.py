@@ -44,20 +44,29 @@ def _parse_float(value: str) -> float:
 
 
 def _find_or_create_fan(
-    db: Session, club_id: int, nome: str | None, cognome: str | None, email: str | None, citta: str | None = None
+    db: Session,
+    club_id: int,
+    nome: str | None,
+    cognome: str | None,
+    email: str | None,
+    fan_cache_by_email: dict,
+    fan_cache_by_name: dict,
+    citta: str | None = None,
 ) -> Fan:
+    """
+    Cerca il fan nelle cache in memoria (precaricate una sola volta in import_csv)
+    invece di interrogare il database per ogni riga del CSV. Con file da migliaia
+    di righe questo evita altrettante query di lookup: l'unico accesso al DB resta
+    il flush necessario per assegnare un id ai fan nuovi.
+    """
     norm_email = _norm_email(email)
     fan = None
 
     if norm_email:
-        fan = db.query(Fan).filter(Fan.club_id == club_id, Fan.email == norm_email).first()
+        fan = fan_cache_by_email.get(norm_email)
 
     if not fan and nome and cognome:
-        fan = (
-            db.query(Fan)
-            .filter(Fan.club_id == club_id, Fan.nome.ilike(nome.strip()), Fan.cognome.ilike(cognome.strip()))
-            .first()
-        )
+        fan = fan_cache_by_name.get((nome.strip().lower(), cognome.strip().lower()))
 
     if not fan:
         fan = Fan(
@@ -75,6 +84,13 @@ def _find_or_create_fan(
         if norm_email and not fan.email:
             fan.email = norm_email
 
+    # Registra il fan (nuovo o appena aggiornato) nelle cache, così le righe
+    # successive dello stesso file lo trovano senza tornare sul database.
+    if fan.email:
+        fan_cache_by_email[fan.email] = fan
+    if fan.nome and fan.cognome:
+        fan_cache_by_name[(fan.nome.strip().lower(), fan.cognome.strip().lower())] = fan
+
     return fan
 
 
@@ -88,11 +104,29 @@ def import_csv(db: Session, club_id: int, csv_type: str, content: bytes, filenam
     db.add(upload)
     db.flush()
 
+    # Precarica una sola volta tutti i fan esistenti del club, invece di
+    # interrogare il database per ogni riga del CSV (il vero collo di
+    # bottiglia sui file grandi come biglietteria). Il commit resta unico
+    # a fine funzione: stessa atomicità di prima, nessun rischio di
+    # importazione parziale.
+    fan_cache_by_email: dict[str, Fan] = {}
+    fan_cache_by_name: dict[tuple[str, str], Fan] = {}
+    for f in db.query(Fan).filter(Fan.club_id == club_id).all():
+        if f.email:
+            fan_cache_by_email[f.email] = f
+        if f.nome and f.cognome:
+            fan_cache_by_name[(f.nome.strip().lower(), f.cognome.strip().lower())] = f
+
     count = 0
 
     if csv_type == "abbonati":
         for row in reader:
-            fan = _find_or_create_fan(db, club_id, _sanitize_cell(row.get("nome")), _sanitize_cell(row.get("cognome")), row.get("email"), _sanitize_cell(row.get("citta")))
+            fan = _find_or_create_fan(
+                db, club_id,
+                _sanitize_cell(row.get("nome")), _sanitize_cell(row.get("cognome")), row.get("email"),
+                fan_cache_by_email, fan_cache_by_name,
+                _sanitize_cell(row.get("citta")),
+            )
             db.add(Abbonamento(
                 club_id=club_id,
                 fan_id=fan.id,
@@ -104,7 +138,11 @@ def import_csv(db: Session, club_id: int, csv_type: str, content: bytes, filenam
 
     elif csv_type == "biglietteria":
         for row in reader:
-            fan = _find_or_create_fan(db, club_id, _sanitize_cell(row.get("nome")), _sanitize_cell(row.get("cognome")), row.get("email"))
+            fan = _find_or_create_fan(
+                db, club_id,
+                _sanitize_cell(row.get("nome")), _sanitize_cell(row.get("cognome")), row.get("email"),
+                fan_cache_by_email, fan_cache_by_name,
+            )
             db.add(Biglietto(
                 club_id=club_id,
                 fan_id=fan.id,
@@ -117,7 +155,10 @@ def import_csv(db: Session, club_id: int, csv_type: str, content: bytes, filenam
 
     elif csv_type == "shop":
         for row in reader:
-            fan = _find_or_create_fan(db, club_id, None, None, row.get("email"))
+            fan = _find_or_create_fan(
+                db, club_id, None, None, row.get("email"),
+                fan_cache_by_email, fan_cache_by_name,
+            )
             db.add(ShopOrder(
                 club_id=club_id,
                 fan_id=fan.id,
