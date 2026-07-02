@@ -38,7 +38,7 @@ rm -f .git/index.lock .git/packed-refs.lock .git/refs/heads/test-write-check.loc
 - [x] Branch feature/agent-upgrade creato (nel clone sandbox), BRIEF.md + STATO-PIANO.md al primo commit
 - [x] Benchmark before definito con Lorenzo (task: piano refactoring fittizio Report.jsx) ed eseguito → baseline onesta in shortlist-A.md (5 metriche di confronto)
 - [x] Ricerca area A: marketplace ufficiale Anthropic → 3 candidati in shortlist-A.md (feature-dev, hookify, soluzione nativa zero-dipendenze)
-- [x] Uscita sessione: shortlist presentata a Lorenzo — IN ATTESA DEL SUO OK (condizione di ingresso Sessione 2)
+- [x] Uscita sessione: shortlist presentata a Lorenzo → **OK ricevuto** su hookify + reviewer nativo (v. Decisioni). Condizione d'ingresso Sessione 2 soddisfatta.
 - [x] Nota area B: trovato plugin ufficiale Anthropic `frontend-design` ("avoids generic AI aesthetics") — non installato, da valutare in Sessione 2
 
 ### Sessione 2 — non iniziata
@@ -59,6 +59,7 @@ rm -f .git/index.lock .git/packed-refs.lock .git/refs/heads/test-write-check.loc
 | 07-02 | Permesso cancellazione file: **NEGATO** (definitivo) | Non richiederlo più. Workaround clone+bundle adottato. |
 | 07-02 | Modifiche non committate su main: **stash** | Scelto da Lorenzo; esecuzione non confermata. Irrilevante per il clone (parte da main committato). |
 | 07-02 | Stile di lavoro: **autonomia con avvisi sui pericoli** | Lorenzo non vuole fare da esecutore comando-per-comando. Checkpoint solo su decisioni vere (installazioni, scelte). Spiegare i rischi in linguaggio semplice, poi procedere. |
+| 07-02 | **Shortlist A: OK esplicito** su hookify + reviewer nativo | Divisione senza sovrapposizioni: conferme→hookify, critica→subagente reviewer nativo, pianificazione→plan mode. L'hook di conferma scritto a mano (parte del candidato 3) è ESCLUSO per non duplicare hookify. Vincolo verificato da fonti primarie e promesso a Lorenzo: abilitazione hookify SOLO nel `.claude/settings.json` di progetto (versionato) — MAI a livello utente; regole in `.claude/hookify.*.md` nel branch; unico residuo globale = download inerte in ~/.claude, rimovibile con `/plugin uninstall hookify`. |
 
 ## Cosa è installato e dove
 
@@ -72,4 +73,9 @@ Niente ancora. (Regola: dichiarare sempre "questo va in [percorso], che è [vers
 
 ## Prossimo passo previsto
 
-Sessione 2 — ingresso vincolato all'ok esplicito di Lorenzo sulla shortlist A (da registrare qui). Poi: installazione candidato scelto (regola del DOVE, commit atomico), benchmark after, analisi statica dashboard, ricerca B.
+Sessione 2 (ingresso OK):
+1. Installazione hookify — checkpoint prima dell'installazione; leggere per intero gli script Python del plugin prima di attivarlo (cautela di sicurezza del brief); abilitazione solo project-level; verifica subito dopo con azione banale che l'hook si comporti come atteso.
+2. Creazione `.claude/agents/reviewer.md` (subagente reviewer, planModeBehavior force) — commit atomico separato.
+3. Benchmark AFTER: stesso identico task (piano refactoring fittizio Report.jsx) + confronto sulle 5 metriche in shortlist-A.md.
+4. Verifica da fare: capire se gli hook di hookify agiscono anche nelle sessioni Cowork o solo in Claude Code CLI — documentare l'esito.
+5. Analisi statica dashboard (area B) + ricerca riferimenti; valutare plugin ufficiale `frontend-design`.
