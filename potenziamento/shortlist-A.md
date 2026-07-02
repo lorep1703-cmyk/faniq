@@ -24,6 +24,38 @@
 4. Passaggio di auto-critica/review documentato prima della consegna (sì/no + cosa ha trovato)
 5. Numero di claim non verificati nel deliverable finale
 
-## Candidati (max 3) — DA COMPILARE dopo la ricerca
+## Candidati (max 3) — ricerca 2026-07-02
 
-_Nessuna installazione prima dell'ok di Lorenzo._
+Fonte primaria: marketplace ufficiale Anthropic `anthropics/claude-plugins-official` (built-in in Claude Code, ~101 plugin, mantenuto attivamente). Community valutata e scartata (v. fondo).
+
+### Candidato 1 — Plugin ufficiale `feature-dev` (Anthropic)
+Workflow di sviluppo con agenti specializzati: esplorazione codebase → design architetturale → **quality review**. Copre 2 dei 3 obiettivi A: disciplina di pianificazione prima di modifiche multi-file + reviewer separato dall'esecutore.
+- **Futuribilità: alta** — Anthropic-managed, nel marketplace ufficiale.
+- **Attinenza: alta** — è esattamente "pianifica, poi fai criticare l'output".
+- **Efficienza: media** — installazione via marketplace; abilitazione per-progetto in `.claude/settings.json` (versionato ✓), ma la cache del plugin vive in `~/.claude` (globale — da dichiarare a Lorenzo prima).
+
+### Candidato 2 — Plugin ufficiale `hookify` (Anthropic)
+Crea hook da regole scritte in semplici file markdown: "prima di scrivere file / eseguire shell / installare, chiedi conferma". Copre il terzo obiettivo A (conferme prima di azioni con effetti collaterali).
+- **Futuribilità: alta** — Anthropic-managed.
+- **Attinenza: alta** — regole di conferma senza scrivere codice hook a mano.
+- **Efficienza: alta** — le regole markdown sono file di progetto versionabili ✓. Stessa nota cache `~/.claude` del candidato 1.
+- Complementare al candidato 1 o 3 (non si sovrappongono → possono convivere, come da brief).
+
+### Candidato 3 — Soluzione nativa zero-dipendenze (nessun plugin)
+Solo feature native documentate di Claude Code, tutte in file versionati nel branch:
+- `.claude/agents/reviewer.md` — subagente reviewer custom con `planModeBehavior: "force"` (sempre in sola-lettura/critica, mai esecuzione);
+- hook `PreToolUse` minimale scritto a mano in `.claude/settings.json` che chiede conferma su Write/Edit/Bash;
+- plan mode incoraggiata via CLAUDE.md per modifiche multi-file.
+- **Futuribilità: massima** — nessun codice di terzi, solo API native documentate.
+- **Attinenza: alta** — copre tutti e 3 gli obiettivi A, ma al livello di sofisticazione che scriviamo noi.
+- **Efficienza: media** — costo iniziale di scrittura nostro; zero dipendenze da mantenere; tutto rimovibile buttando il branch ✓.
+
+### Scartati
+- `code-review` / `pr-review-toolkit` (Anthropic): ottimi ma centrati su review di PR GitHub — FanIQ non usa PR nel flusso attuale; attinenza minore di feature-dev.
+- `VoltAgent/awesome-claude-code-subagents` e simili raccolte community (100+ subagenti generici): futuribilità e qualità disomogenee vs canali ufficiali; attinenza dispersiva.
+
+### Nota per l'area B (trovata durante questa ricerca, NON installata)
+Plugin ufficiale Anthropic `frontend-design`: "create distinctive frontend interfaces… avoids generic AI aesthetics" — descrizione perfettamente sovrapponibile all'obiettivo B del brief. Registrata qui e in STATO-PIANO.md per la Sessione 2.
+
+### Raccomandazione
+**hookify + candidato 3** (convivono, coprono tutti gli obiettivi A, massima quota di file versionati) oppure **feature-dev da solo** se si preferisce un solo strumento mantenuto da Anthropic. Decide Lorenzo.

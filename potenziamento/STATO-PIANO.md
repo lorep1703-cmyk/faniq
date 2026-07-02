@@ -3,7 +3,7 @@
 > Memoria del piano. Aggiornato a ogni checkpoint e a ogni fine sessione.
 > A inizio sessione: leggere PRIMA `potenziamento/BRIEF.md`, poi questo file.
 
-**Ultimo aggiornamento:** 2026-07-02 — Sessione 1 in corso
+**Ultimo aggiornamento:** 2026-07-02 — Sessione 1 conclusa (uscita raggiunta)
 
 ---
 
@@ -36,10 +36,10 @@ rm -f .git/index.lock .git/packed-refs.lock .git/refs/heads/test-write-check.loc
 - [x] Connector MCP GitHub: **non disponibile** nel registry → ricerca candidati via web (previsto dal brief, non bloccante)
 - [x] Mappa struttura presentata a Lorenzo (checkpoint 1)
 - [x] Branch feature/agent-upgrade creato (nel clone sandbox), BRIEF.md + STATO-PIANO.md al primo commit
-- [ ] Definizione benchmark before con Lorenzo
-- [ ] Esecuzione benchmark before → registrata in shortlist-A.md
-- [ ] Ricerca area A → shortlist max 3 candidati
-- [ ] Uscita sessione: shortlist presentata, STATO-PIANO aggiornato
+- [x] Benchmark before definito con Lorenzo (task: piano refactoring fittizio Report.jsx) ed eseguito → baseline onesta in shortlist-A.md (5 metriche di confronto)
+- [x] Ricerca area A: marketplace ufficiale Anthropic → 3 candidati in shortlist-A.md (feature-dev, hookify, soluzione nativa zero-dipendenze)
+- [x] Uscita sessione: shortlist presentata a Lorenzo — IN ATTESA DEL SUO OK (condizione di ingresso Sessione 2)
+- [x] Nota area B: trovato plugin ufficiale Anthropic `frontend-design` ("avoids generic AI aesthetics") — non installato, da valutare in Sessione 2
 
 ### Sessione 2 — non iniziata
 ### Sessione 3 — non iniziata
@@ -72,4 +72,4 @@ Niente ancora. (Regola: dichiarare sempre "questo va in [percorso], che è [vers
 
 ## Prossimo passo previsto
 
-Definire con Lorenzo il task di benchmark before (area A), eseguirlo, poi ricerca candidati area A.
+Sessione 2 — ingresso vincolato all'ok esplicito di Lorenzo sulla shortlist A (da registrare qui). Poi: installazione candidato scelto (regola del DOVE, commit atomico), benchmark after, analisi statica dashboard, ricerca B.
