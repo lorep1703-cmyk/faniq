@@ -21,7 +21,7 @@
 1. Piano esplicito dichiarato prima dell'azione (sì/no)
 2. Copertura di lettura dei file coinvolti (% e file aperti)
 3. Conferme richieste nei punti con effetti collaterali
-4. Passaggio di auto-critica/review documentato prima della consegna (sì/no + cosa ha trovato)
+4. Presenza di un passaggio di revisione esplicito e separato prima della consegna finale a Lorenzo (sì/no + cosa ha trovato) — riformulata su richiesta di Lorenzo (2026-07-02): misura ciò che gli strumenti offrono davvero (review dopo la stesura, prima della consegna), non un'auto-critica "prima della scrittura" che nessun candidato soddisfa alla lettera
 5. Numero di claim non verificati nel deliverable finale
 
 ## Candidati (max 3) — ricerca 2026-07-02

@@ -41,7 +41,13 @@ rm -f .git/index.lock .git/packed-refs.lock .git/refs/heads/test-write-check.loc
 - [x] Uscita sessione: shortlist presentata a Lorenzo → **OK ricevuto** su hookify + reviewer nativo (v. Decisioni). Condizione d'ingresso Sessione 2 soddisfatta.
 - [x] Nota area B: trovato plugin ufficiale Anthropic `frontend-design` ("avoids generic AI aesthetics") — non installato, da valutare in Sessione 2
 
-### Sessione 2 — non iniziata
+### Sessione 2 — 2026-07-02 (aperta, stessa giornata)
+Richieste di Lorenzo all'ingresso (tutte registrate):
+- [x] Metrica 4 del benchmark riformulata come da sua indicazione (v. shortlist-A.md)
+- [ ] **Test roundtrip bundle** nel repo reale PRIMA di accumulare altri commit — bloccante per l'installazione di hookify
+- [ ] Anomalie aperte con scadenza: lock orfani → servono SUBITO (bloccano il fetch del roundtrip); stash → entro fine Sessione 2
+- [ ] Hookify e non-persistenza sandbox: gestione documentata (v. sotto)
+- [ ] Installazione hookify (checkpoint pre-installazione) + reviewer nativo + benchmark after
 ### Sessione 3 — non iniziata
 
 ---
@@ -67,9 +73,11 @@ Niente ancora. (Regola: dichiarare sempre "questo va in [percorso], che è [vers
 
 ## Anomalie aperte
 
-1. Lock orfani in .git/ del repo di Lorenzo — attende rm -f da parte sua.
-2. Stash scelto ma non confermato come eseguito.
+1. Lock orfani in .git/ del repo di Lorenzo — **scadenza: subito**, bloccano il fetch del roundtrip (un file .lock preesistente fa fallire ogni operazione git anche sulla sua macchina).
+2. Stash non confermato — **scadenza: entro fine Sessione 2**. ATTENZIONE: consigliare `git stash` SENZA `-u`: con `-u` verrebbero accantonati anche i file untracked di potenziamento/ (bundle incluso!). Gli untracked preesistenti sono inerti, possono restare.
 3. A fine ciclo: ricordare a Lorenzo l'eventuale git stash pop.
+
+**Hookify e non-persistenza del sandbox (risposta alla richiesta 4 di Lorenzo):** il download in ~/.claude del sandbox svanisce a ogni sessione, ed è previsto: ciò che conta è versionato (abilitazione in `.claude/settings.json` di progetto + regole `.claude/hookify.*.md`). Sulla macchina di Lorenzo, Claude Code legge quei file e scarica il plugin una volta nel SUO ~/.claude, che persiste. Nel sandbox Cowork la riattivazione a inizio sessione — se necessaria — è un passo previsto del ripristino, non una scoperta a metà sessione. Punto ancora da verificare all'installazione: se gli hook dei plugin agiscono nelle sessioni Cowork o solo in Claude Code CLI; se solo CLI, il benchmark after andrà eseguito lì e lo si documenta.
 
 ## Prossimo passo previsto
 
