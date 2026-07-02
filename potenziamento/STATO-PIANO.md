@@ -1,0 +1,75 @@
+# STATO-PIANO — Potenziamento Claude Code + Cowork
+
+> Memoria del piano. Aggiornato a ogni checkpoint e a ogni fine sessione.
+> A inizio sessione: leggere PRIMA `potenziamento/BRIEF.md`, poi questo file.
+
+**Ultimo aggiornamento:** 2026-07-02 — Sessione 1 in corso
+
+---
+
+## Setup tecnico — LEGGERE PER PRIMO A OGNI NUOVA SESSIONE
+
+Il sandbox Cowork **non può cancellare file** nella cartella montata `faniq` (permesso negato da Lorenzo, due volte, decisione definitiva — **non richiederlo più**). Git necessita di cancellare i propri lock temporanei, quindi le operazioni Git di scrittura falliscono nella cartella montata.
+
+**Soluzione adottata (funzionante):**
+1. Clone di lavoro nel sandbox: `~/faniq-work` (pieni permessi, branch `feature/agent-upgrade` attivo qui). Il sandbox NON persiste tra sessioni.
+2. Il branch persiste tramite **bundle**: `potenziamento/agent-upgrade.bundle` nella cartella montata, rigenerato a ogni commit.
+3. **Ripristino a inizio nuova sessione:**
+   git clone --no-hardlinks <mnt>/faniq ~/faniq-work
+   cd ~/faniq-work
+   git fetch <mnt>/faniq/potenziamento/agent-upgrade.bundle feature/agent-upgrade:refs/heads/feature/agent-upgrade
+   git checkout feature/agent-upgrade
+4. I deliverable sono **mirrorati** nella cartella montata `faniq/potenziamento/` (copie di convenienza per Lorenzo — la fonte di verità è il branch nel bundle).
+5. Lettura git nella cartella montata: usare `git --no-optional-locks` per evitare lock orfani.
+6. Lorenzo può importare il branch nel suo repo quando vuole:
+   git fetch potenziamento/agent-upgrade.bundle feature/agent-upgrade:feature/agent-upgrade
+
+**Lock orfani nel repo di Lorenzo** (da mio test fallito, bloccano il SUO git, da rimuovere a mano):
+rm -f .git/index.lock .git/packed-refs.lock .git/refs/heads/test-write-check.lock
+
+---
+
+## Sessioni
+
+### Sessione 1 — 2026-07-02 (in corso)
+- [x] Prerequisito zero: repo valido, monorepo unico (frontend+backend), origin github.com/lorep1703-cmyk/faniq
+- [x] Connector MCP GitHub: **non disponibile** nel registry → ricerca candidati via web (previsto dal brief, non bloccante)
+- [x] Mappa struttura presentata a Lorenzo (checkpoint 1)
+- [x] Branch feature/agent-upgrade creato (nel clone sandbox), BRIEF.md + STATO-PIANO.md al primo commit
+- [ ] Definizione benchmark before con Lorenzo
+- [ ] Esecuzione benchmark before → registrata in shortlist-A.md
+- [ ] Ricerca area A → shortlist max 3 candidati
+- [ ] Uscita sessione: shortlist presentata, STATO-PIANO aggiornato
+
+### Sessione 2 — non iniziata
+### Sessione 3 — non iniziata
+
+---
+
+## Mappa FanIQ (checkpoint 1 — presentata)
+
+- **Monorepo unico**: frontend/ (React 18 + Vite + Tailwind + Recharts) + backend/ (FastAPI + SQLAlchemy) → un solo branch.
+- **Deploy verificati dai file**: Vercel (frontend/vercel.json), Render (backend/render.yaml), Neon PostgreSQL (backend/.env.example), OpenAI API (opzionale, chat).
+- **Anomalie segnalate**: render.yaml dichiara PYTHON_VERSION=3.9.18 vs CLAUDE.md che impone 3.11 (solo segnalato, FanIQ in pausa); working tree di main sporco (docs marketing modificati, CSV demo cancellati, ~12 untracked — preesistenti, non miei).
+
+## Decisioni di Lorenzo
+
+| Data | Decisione | Nota |
+|------|-----------|------|
+| 07-02 | Permesso cancellazione file: **NEGATO** (definitivo) | Non richiederlo più. Workaround clone+bundle adottato. |
+| 07-02 | Modifiche non committate su main: **stash** | Scelto da Lorenzo; esecuzione non confermata. Irrilevante per il clone (parte da main committato). |
+| 07-02 | Stile di lavoro: **autonomia con avvisi sui pericoli** | Lorenzo non vuole fare da esecutore comando-per-comando. Checkpoint solo su decisioni vere (installazioni, scelte). Spiegare i rischi in linguaggio semplice, poi procedere. |
+
+## Cosa è installato e dove
+
+Niente ancora. (Regola: dichiarare sempre "questo va in [percorso], che è [versionato/non versionato/globale]".)
+
+## Anomalie aperte
+
+1. Lock orfani in .git/ del repo di Lorenzo — attende rm -f da parte sua.
+2. Stash scelto ma non confermato come eseguito.
+3. A fine ciclo: ricordare a Lorenzo l'eventuale git stash pop.
+
+## Prossimo passo previsto
+
+Definire con Lorenzo il task di benchmark before (area A), eseguirlo, poi ricerca candidati area A.
