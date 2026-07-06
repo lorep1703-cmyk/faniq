@@ -3,7 +3,7 @@
 > Memoria del piano. Aggiornato a ogni checkpoint e a ogni fine sessione.
 > A inizio sessione: leggere PRIMA `potenziamento/BRIEF.md`, poi questo file.
 
-**Ultimo aggiornamento:** 2026-07-06 — Sessione 3 conclusa (ciclo chiuso, decisione merge a Lorenzo)
+**Ultimo aggiornamento:** 2026-07-06 (sera) — Sessione 4 conclusa (autoverifica del riepilogo, consolidamento azioni, checklist merge)
 
 ---
 
@@ -23,6 +23,11 @@ Il sandbox Cowork **non può cancellare file** nella cartella montata `faniq` (p
 5. Lettura git nella cartella montata: usare `git --no-optional-locks` per evitare lock orfani.
 6. Lorenzo può importare il branch nel suo repo quando vuole:
    git fetch potenziamento/agent-upgrade.bundle feature/agent-upgrade:feature/agent-upgrade
+
+> **AGGIORNAMENTO Sessione 4 (2026-07-06) — il setup sopra è superato in parte, lasciato per storia:**
+> - Lorenzo ha **importato il branch nel repo reale e lo ha checked out**: la cartella montata È ora il branch `feature/agent-upgrade`. Il vecchio bundle è stato rimosso da lui; il ripristino a inizio sessione ora è solo: `git clone --no-hardlinks <mnt>/faniq ~/faniq-work && cd ~/faniq-work && git checkout feature/agent-upgrade` (il branch arriva col clone, niente fetch da bundle). Un bundle aggiornato viene comunque rigenerato a fine sessione come veicolo dei commit sandbox → repo reale.
+> - **Nuova regola operativa** (`potenziamento/regole-autonomia-commit.md`, commit `41c3e1e` di Lorenzo): Cowork committa in autonomia nel proprio clone sandbox su file dentro `potenziamento/` e `.claude/`; push e cambio branch restano SEMPRE di Lorenzo. Decade al merge.
+> - Il divieto di cancellazione nella cartella montata resta attivo e riverificato con test reale in S4 (`rm` → Operation not permitted): niente operazioni git di scrittura nella cartella montata, mai.
 
 **Lock orfani nel repo di Lorenzo** (da mio test fallito, bloccano il SUO git, da rimuovere a mano):
 rm -f .git/index.lock .git/packed-refs.lock .git/refs/heads/test-write-check.lock
@@ -62,6 +67,18 @@ Richieste di Lorenzo all'ingresso (tutte registrate):
 - [x] riepilogo-finale.md redatto e committato (6 sezioni obbligatorie, sez. 5 = analisi rischi/benefici, nessuna decisione)
 - [x] Mirroring: aggiunto SOLO riepilogo-finale.md alla cartella reale (+ aggiornamento del mirror STATO-PIANO già esistente) — aggrava di 1 file il conflitto checkout noto, registrato in riepilogo §4.1
 
+### Sessione 4 — 2026-07-06 (conclusa)
+Mandato: Brief Sessione 4 (salvato in `potenziamento/BRIEF-SESSIONE4.md`) + addendum di Lorenzo con verifiche già eseguite da lui la mattina stessa (salvato in `potenziamento/ADDENDUM-PRE-SESSIONE4.md` — dove contraddice il brief, vince l'addendum, più recente e verificato con comandi reali).
+
+- [x] Ripristino sandbox ADATTATO: bundle inesistente (rimosso da Lorenzo) ma branch già presente nel repo montato (checked out da lui) → clone diretto, tip di partenza `41c3e1e`, discrepanza col §2 del brief documentata nel recap
+- [x] Blocco A: quasi interamente già chiuso da Lorenzo (v. ADDENDUM-PRE-SESSIONE4.md) — registrato, non rieseguito. Unico lavoro residuo eseguito: correzione "11 → 13 commit" in riepilogo-finale.md con nota visibile e datata + tabella commit→deliverable nell'Addendum S4 (riconteggio indipendente nel clone: 13 a chiusura S3, 15 attuali con i 2 commit post-S3 di Lorenzo `e982b8f` e `41c3e1e`)
+- [x] Punto 3.4 del brief NON applicato deliberatamente: l'incoerenza date ipotizzata era infondata (verificata da Lorenzo con grep reale, ADDENDUM §4) — correggere avrebbe introdotto un errore
+- [x] riepilogo-finale.md aggiornato: correzione conteggio, metrica 3 chiusa (test CLI di Lorenzo, esito positivo), tabella aggiornamento anomalie (1 risolta de facto, 2 aperta, 3 chiusa, 4 aperta/aggiornata, 5 chiusa, 6 chiusa, 7 aperta), Addendum Sessione 4 (sezioni A-E, incluse 8 incertezze dichiarate)
+- [x] `potenziamento/azioni-lorenzo.md` creato: fonte unica azioni pendenti, 9 voci in ordine di dipendenza, con autocritica e nota futuribilità
+- [x] `potenziamento/checklist-merge.md` creato: 12 condizioni SODDISFATTA/NON SODDISFATTA/NON VERIFICABILE, avvertenza anti-falso-senso-di-completezza in testa, 5 rischi residui, nessun verdetto
+- [x] Novità osservate e documentate: `main` ha un commit di Lorenzo estraneo al piano (`7c2fe43`, fix launch.json) non presente sul branch → merge futuro non-fast-forward; file sporchi preesistenti migrati sul working tree del branch, stash mai eseguito; file residuo `.tmp-unlink-probe` creato dal test cancellazione S4 (rimozione a Lorenzo)
+- [x] Commit atomici nel clone sandbox (come da regole-autonomia-commit.md) + bundle rigenerato in `potenziamento/agent-upgrade.bundle` — adozione nel repo reale: azione 1 di azioni-lorenzo.md, a Lorenzo
+
 ---
 
 ## Mappa FanIQ (checkpoint 1 — presentata)
@@ -97,7 +114,4 @@ Niente ancora. (Regola: dichiarare sempre "questo va in [percorso], che è [vers
 
 ## Prossimo passo previsto
 
-Ciclo CONCLUSO. Nessuna sessione successiva pianificata. In mano a Lorenzo:
-1. Leggere `potenziamento/riepilogo-finale.md` e decidere il merge (o il test del branch in CLI prima di decidere).
-2. Anomalie aperte: elenco completo con comandi in riepilogo-finale.md §4 (conflitto checkout mirror, render.yaml 3.9.18, lock test-write-check, stash, metrica 3 in CLI, discrepanza 11 vs 12 commit, Area C senza scope).
-3. A fine ciclo: rimuovere la regola temporanea `pausa-faniq` (riepilogo §6).
+Ciclo CONCLUSO e autoverificato (Sessione 4). Nessuna sessione successiva pianificata. **Fonte unica delle azioni in mano a Lorenzo: `potenziamento/azioni-lorenzo.md`** (9 voci in ordine di dipendenza; la prima — adottare i commit S4 — sblocca le altre). Per la decisione merge: `potenziamento/checklist-merge.md` + riepilogo-finale.md §5 e Addendum Sessione 4.
