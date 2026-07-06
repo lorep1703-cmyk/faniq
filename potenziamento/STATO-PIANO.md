@@ -44,10 +44,13 @@ rm -f .git/index.lock .git/packed-refs.lock .git/refs/heads/test-write-check.loc
 ### Sessione 2 — 2026-07-02 (aperta, stessa giornata)
 Richieste di Lorenzo all'ingresso (tutte registrate):
 - [x] Metrica 4 del benchmark riformulata come da sua indicazione (v. shortlist-A.md)
-- [ ] **Test roundtrip bundle** nel repo reale PRIMA di accumulare altri commit — bloccante per l'installazione di hookify
-- [ ] Anomalie aperte con scadenza: lock orfani → servono SUBITO (bloccano il fetch del roundtrip); stash → entro fine Sessione 2
-- [ ] Hookify e non-persistenza sandbox: gestione documentata (v. sotto)
-- [ ] Installazione hookify (checkpoint pre-installazione) + reviewer nativo + benchmark after
+- [x] **Roundtrip bundle VERIFICATO**: feature/agent-upgrade importato nel repo reale di Lorenzo, 5 commit [potenziamento] presenti sopra 1437a0f
+- [x] Lock orfani rimossi da Lorenzo. NUOVA anomalia minore: il suo `git branch -D test-write-check` è fallito ricreando `refs/heads/test-write-check.lock` → per Lorenzo: `rm -f .git/refs/heads/test-write-check.lock && git branch -D test-write-check` (non bloccante)
+- [ ] Stash → entro fine Sessione 2 (comando di Lorenzo, serve solo se/quando lavorerà sul branch nella cartella reale)
+- [x] **Hookify INSTALLATO** — checkpoint eseguito: 896 righe di Python lette per intero (stdlib pura, zero rete/scritture/subprocess, legge solo `.claude/hookify.*.local.md` del cwd). Sorprese dichiarate a Lorenzo: (1) fail-open — in caso di errore dello script l'operazione PASSA (guardrail, non cassaforte); (2) le regole devono chiamarsi `*.local.md`, non escluse dal .gitignore di FanIQ → versionate nel branch. Test funzionale: 6/6 casi ok (deny su rm -rf / push main / npm install / scrittura frontend-src; pass su potenziamento/, backend/tests/, npm run build).
+- [x] **DOVE installato**: `.claude/settings.json` (enabledPlugins hookify@claude-plugins-official — VERSIONATO) + 3 regole `.claude/hookify.*.local.md` (VERSIONATE): conferma-distruttivi, conferma-installazioni, pausa-faniq (quest'ultima TEMPORANEA, da rimuovere a fine ciclo). Codice plugin: scaricato da Claude Code in ~/.claude alla prima sessione sulla macchina di Lorenzo (globale ma inerte, rimozione: /plugin uninstall hookify).
+- [x] **Reviewer nativo creato**: `.claude/agents/reviewer.md` (VERSIONATO) — sola lettura (Read/Grep/Glob), planModeBehavior force, checklist: claim non verificati, coerenza interna, copertura, vincoli CLAUDE.md, rischi.
+- [x] **Verifica Cowork vs CLI (punto 4)**: gli hook di hookify NON agiscono nella sessione Cowork corrente (test empirico: comando contenente il pattern eseguito senza blocco — il plugin non è caricato dal sandbox). Agiranno in Claude Code CLI sulla macchina di Lorenzo alla prossima apertura del progetto sul branch (download plugin al primo avvio). CONSEGUENZA per il benchmark after: misurabili qui le metriche 1-2-4-5 (pianificazione, copertura, revisione separata, claim); la metrica 3 (conferme via hook) va verificata da Lorenzo in Claude Code CLI — annotato come pendente, non dichiarato "fatto".
 ### Sessione 3 — non iniziata
 
 ---
