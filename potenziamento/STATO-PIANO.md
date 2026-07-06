@@ -3,7 +3,7 @@
 > Memoria del piano. Aggiornato a ogni checkpoint e a ogni fine sessione.
 > A inizio sessione: leggere PRIMA `potenziamento/BRIEF.md`, poi questo file.
 
-**Ultimo aggiornamento:** 2026-07-02 — Sessione 1 conclusa (uscita raggiunta)
+**Ultimo aggiornamento:** 2026-07-06 — Sessione 3 conclusa (ciclo chiuso, decisione merge a Lorenzo)
 
 ---
 
@@ -53,7 +53,14 @@ Richieste di Lorenzo all'ingresso (tutte registrate):
 - [x] **DOVE installato**: `.claude/settings.json` (enabledPlugins hookify@claude-plugins-official — VERSIONATO) + 3 regole `.claude/hookify.*.local.md` (VERSIONATE): conferma-distruttivi, conferma-installazioni, pausa-faniq (quest'ultima TEMPORANEA, da rimuovere a fine ciclo). Codice plugin: scaricato da Claude Code in ~/.claude alla prima sessione sulla macchina di Lorenzo (globale ma inerte, rimozione: /plugin uninstall hookify).
 - [x] **Reviewer nativo creato**: `.claude/agents/reviewer.md` (VERSIONATO) — sola lettura (Read/Grep/Glob), planModeBehavior force, checklist: claim non verificati, coerenza interna, copertura, vincoli CLAUDE.md, rischi.
 - [x] **Verifica Cowork vs CLI (punto 4)**: gli hook di hookify NON agiscono nella sessione Cowork corrente (test empirico: comando contenente il pattern eseguito senza blocco — il plugin non è caricato dal sandbox). Agiranno in Claude Code CLI sulla macchina di Lorenzo alla prossima apertura del progetto sul branch (download plugin al primo avvio). CONSEGUENZA per il benchmark after: misurabili qui le metriche 1-2-4-5 (pianificazione, copertura, revisione separata, claim); la metrica 3 (conferme via hook) va verificata da Lorenzo in Claude Code CLI — annotato come pendente, non dichiarato "fatto".
-### Sessione 3 — non iniziata
+### Sessione 3 — 2026-07-06 (conclusa)
+- [x] Ripristino sandbox da bundle: branch feature/agent-upgrade, working tree pulito, file attesi presenti
+- [x] Checkpoint 1 commit: **11** commit [potenziamento] sopra 1437a0f (il brief di Sessione 3 ne dichiarava 12 — discrepanza segnalata a Lorenzo; STATO-PIANO non dichiarava un totale e gli 11 mappano 1:1 sui deliverable → base considerata verificata)
+- [x] Smoke test frontend: ⚠️ successo con warning (build ok exit 0; warning Vite chunk 894 kB > 500 kB, riportato testualmente in riepilogo-finale.md §2)
+- [x] Smoke test backend: ✅ successo pieno (venv isolato, uvicorn main:app, /health → 200, SQLite, nessuna connessione Neon). Eseguito su Python 3.10.12 del sandbox — non chiude l'anomalia render.yaml 3.9.18 vs CLAUDE.md 3.11
+- [x] Area C: NON affrontata — scope mai definito da Lorenzo, vietato dedurlo (segnalato a inizio e fine sessione)
+- [x] riepilogo-finale.md redatto e committato (6 sezioni obbligatorie, sez. 5 = analisi rischi/benefici, nessuna decisione)
+- [x] Mirroring: aggiunto SOLO riepilogo-finale.md alla cartella reale (+ aggiornamento del mirror STATO-PIANO già esistente) — aggrava di 1 file il conflitto checkout noto, registrato in riepilogo §4.1
 
 ---
 
@@ -90,9 +97,7 @@ Niente ancora. (Regola: dichiarare sempre "questo va in [percorso], che è [vers
 
 ## Prossimo passo previsto
 
-Sessione 2 (ingresso OK):
-1. Installazione hookify — checkpoint prima dell'installazione; leggere per intero gli script Python del plugin prima di attivarlo (cautela di sicurezza del brief); abilitazione solo project-level; verifica subito dopo con azione banale che l'hook si comporti come atteso.
-2. Creazione `.claude/agents/reviewer.md` (subagente reviewer, planModeBehavior force) — commit atomico separato.
-3. Benchmark AFTER: stesso identico task (piano refactoring fittizio Report.jsx) + confronto sulle 5 metriche in shortlist-A.md.
-4. Verifica da fare: capire se gli hook di hookify agiscono anche nelle sessioni Cowork o solo in Claude Code CLI — documentare l'esito.
-5. Analisi statica dashboard (area B) + ricerca riferimenti; valutare plugin ufficiale `frontend-design`.
+Ciclo CONCLUSO. Nessuna sessione successiva pianificata. In mano a Lorenzo:
+1. Leggere `potenziamento/riepilogo-finale.md` e decidere il merge (o il test del branch in CLI prima di decidere).
+2. Anomalie aperte: elenco completo con comandi in riepilogo-finale.md §4 (conflitto checkout mirror, render.yaml 3.9.18, lock test-write-check, stash, metrica 3 in CLI, discrepanza 11 vs 12 commit, Area C senza scope).
+3. A fine ciclo: rimuovere la regola temporanea `pausa-faniq` (riepilogo §6).
