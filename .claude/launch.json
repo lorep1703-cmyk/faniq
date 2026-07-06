@@ -5,6 +5,7 @@
       "name": "faniq-frontend",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
+      "cwd": "frontend",
       "port": 3000
     }
   ]
