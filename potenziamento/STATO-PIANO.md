@@ -46,7 +46,9 @@ Richieste di Lorenzo all'ingresso (tutte registrate):
 - [x] Metrica 4 del benchmark riformulata come da sua indicazione (v. shortlist-A.md)
 - [x] **Roundtrip bundle VERIFICATO**: feature/agent-upgrade importato nel repo reale di Lorenzo, 5 commit [potenziamento] presenti sopra 1437a0f
 - [x] Lock orfani rimossi da Lorenzo. NUOVA anomalia minore: il suo `git branch -D test-write-check` è fallito ricreando `refs/heads/test-write-check.lock` → per Lorenzo: `rm -f .git/refs/heads/test-write-check.lock && git branch -D test-write-check` (non bloccante)
-- [ ] Stash → entro fine Sessione 2 (comando di Lorenzo, serve solo se/quando lavorerà sul branch nella cartella reale)
+- [ ] Stash → richiesto a Lorenzo nel recap finale (comando suo: `git stash` SENZA -u; serve solo se/quando lavorerà sul branch nella cartella reale)
+- [x] **Benchmark AFTER eseguito e confrontato** (v. shortlist-A.md): piano esplicito SÌ, copertura 431/431+file collegati, reviewer separato con verdetto DA RIVEDERE e 7 problemi intercettati (incluso 1 claim errato corretto prima della consegna), claim non verificati 3→0. Metrica 3 (hook) pendente in Claude Code CLI.
+- [x] **Area B completata**: `dossier-UX/00-stato-attuale.md` (analisi statica: Inter globale, viola #534AB7 triplicato hardcoded, emoji badge, densità consumer) + 3 direzioni ancorate a file reali (terminale-di-club, broadcast-sportivo, quiete-editoriale) + valutazione frontend-design (raccomandato, NON installato — decisione a Lorenzo).
 - [x] **Hookify INSTALLATO** — checkpoint eseguito: 896 righe di Python lette per intero (stdlib pura, zero rete/scritture/subprocess, legge solo `.claude/hookify.*.local.md` del cwd). Sorprese dichiarate a Lorenzo: (1) fail-open — in caso di errore dello script l'operazione PASSA (guardrail, non cassaforte); (2) le regole devono chiamarsi `*.local.md`, non escluse dal .gitignore di FanIQ → versionate nel branch. Test funzionale: 6/6 casi ok (deny su rm -rf / push main / npm install / scrittura frontend-src; pass su potenziamento/, backend/tests/, npm run build).
 - [x] **DOVE installato**: `.claude/settings.json` (enabledPlugins hookify@claude-plugins-official — VERSIONATO) + 3 regole `.claude/hookify.*.local.md` (VERSIONATE): conferma-distruttivi, conferma-installazioni, pausa-faniq (quest'ultima TEMPORANEA, da rimuovere a fine ciclo). Codice plugin: scaricato da Claude Code in ~/.claude alla prima sessione sulla macchina di Lorenzo (globale ma inerte, rimozione: /plugin uninstall hookify).
 - [x] **Reviewer nativo creato**: `.claude/agents/reviewer.md` (VERSIONATO) — sola lettura (Read/Grep/Glob), planModeBehavior force, checklist: claim non verificati, coerenza interna, copertura, vincoli CLAUDE.md, rischi.
@@ -74,7 +76,11 @@ Richieste di Lorenzo all'ingresso (tutte registrate):
 
 Niente ancora. (Regola: dichiarare sempre "questo va in [percorso], che è [versionato/non versionato/globale]".)
 
-## Anomalie aperte
+## Anomalie aperte (aggiornate a fine Sessione 2)
+
+**NUOVA — conflitto checkout futuro (colpa del mirroring, mia):** i file mirror nella cartella reale (`potenziamento/*`, `.claude/settings.json`, `.claude/hookify.*.local.md`, `.claude/agents/reviewer.md`) sono untracked su main ma identici a file tracciati nel branch → `git checkout feature/agent-upgrade` verrà RIFIUTATO da git ("untracked working tree files would be overwritten"). Rimedio quando Lorenzo vorrà lavorare sul branch: cancellare prima i mirror (`rm -rf potenziamento && rm .claude/settings.json .claude/hookify.*.local.md && rm -r .claude/agents`) — nessuna perdita: sono copie identiche di file nel branch. Io non posso farlo (niente permesso di cancellazione).
+
+## Anomalie storiche
 
 1. Lock orfani in .git/ del repo di Lorenzo — **scadenza: subito**, bloccano il fetch del roundtrip (un file .lock preesistente fa fallire ogni operazione git anche sulla sua macchina).
 2. Stash non confermato — **scadenza: entro fine Sessione 2**. ATTENZIONE: consigliare `git stash` SENZA `-u`: con `-u` verrebbero accantonati anche i file untracked di potenziamento/ (bundle incluso!). Gli untracked preesistenti sono inerti, possono restare.
