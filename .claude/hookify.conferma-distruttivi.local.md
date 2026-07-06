@@ -2,7 +2,7 @@
 name: conferma-comandi-distruttivi
 enabled: true
 event: bash
-pattern: rm\s+-rf|git\s+push\s+(--force|-f)|git\s+push\s+\S*\s+main|dd\s+if=|chmod\s+-R\s+777|git\s+reset\s+--hard
+pattern: rm\s+-rf|git\s+push|dd\s+if=|chmod\s+-R\s+777|git\s+reset\s+--hard
 action: block
 ---
 🛑 **Comando con effetti distruttivi o su main.**
