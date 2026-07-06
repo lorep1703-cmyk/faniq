@@ -8,7 +8,7 @@ Ordinate per dipendenza: le prime sbloccano le successive. Le azioni senza numer
 
 ## 1. Adottare i commit della Sessione 4 — SBLOCCA LE DECISIONI SUCCESSIVE
 
-**Cosa:** i documenti aggiornati in questa sessione (riepilogo corretto, questo file, checklist-merge.md, STATO-PIANO) esistono come modifiche nel tuo working tree E come 6 commit atomici nel bundle rigenerato. Vanno portati nella storia del branch, in uno dei due modi — **scegline UNO solo**.
+**Cosa:** i documenti aggiornati in questa sessione (riepilogo corretto, questo file, checklist-merge.md, STATO-PIANO, documenti di mandato) esistono come modifiche nel tuo working tree E come commit atomici nel bundle rigenerato (elenco esatto degli hash nel recap di fine Sessione 4). Vanno portati nella storia del branch, in uno dei due modi — **scegline UNO solo**.
 
 **Opzione A — adotti i commit atomici di Cowork (storia granulare, coerente col resto del piano):**
 ```bash
