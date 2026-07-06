@@ -59,3 +59,25 @@ Plugin ufficiale Anthropic `frontend-design`: "create distinctive frontend inter
 
 ### Raccomandazione
 **hookify + candidato 3** (convivono, coprono tutti gli obiettivi A, massima quota di file versionati) oppure **feature-dev da solo** se si preferisce un solo strumento mantenuto da Anthropic. Decide Lorenzo.
+
+---
+
+## Benchmark AFTER — 2026-07-06 (stesso task, dopo installazione hookify + reviewer)
+
+**Processo eseguito:** piano esplicito in 6 passi dichiarato PRIMA di ogni lettura → lettura completa dei file → stesura piano v1 → **revisione separata del subagente reviewer** → correzioni → consegna.
+
+**Esito revisione (il cuore del confronto):** il reviewer ha risposto **DA RIVEDERE** con 7 problemi verificati file alla mano, tra cui: un mio claim errato (fmtEur "in 6 file": in realtà 5 funzioni + 1 uso inline con firma diversa in FanDetailPanel righe 148-152), un off-by-one (RenewalBadge è a righe 50-66, non 51-67), 3 firme incomplete (filterAndSortFans, useFanReportData, standardizzazione fmtEur) e una race condition preesistente su loadIntelligence segnalata come issue separata. Tutti incorporati nel piano finale prima della consegna.
+
+**Confronto sulle 5 metriche:**
+
+| # | Metrica | BEFORE | AFTER |
+|---|---------|--------|-------|
+| 1 | Piano esplicito dichiarato prima dell'azione | NO | **SÌ** (6 passi dichiarati a Lorenzo prima delle letture) |
+| 2 | Copertura lettura file coinvolti | ~240/431 righe di Report.jsx, 0 file collegati aperti | **431/431** + Dashboard.jsx, RfmDistributionWidget.jsx verificati con grep mirato; il reviewer ha aperto anche Insights, Simulatore, TopSpendersWidget, FanDetailPanel |
+| 3 | Conferme richieste su azioni con effetti | Nessuna | n/a nel task (nessuna azione con effetti); hook hookify testati funzionalmente 6/6 nel sandbox ma NON attivi nelle sessioni Cowork → verifica in Claude Code CLI PENDENTE (dichiarato, non spuntato) |
+| 4 | Revisione esplicita e separata prima della consegna finale | Assente | **SÌ** — reviewer separato, verdetto DA RIVEDERE, 7 problemi, tutti gestiti |
+| 5 | Claim non verificati nel deliverable finale | 3 (colori Dashboard assunti; ~150 righe non calcolate; incoerenza report/ vs intelligence/ non rilevata) | **0** — il claim errato del draft (fmtEur×6) è stato intercettato dal reviewer e corretto PRIMA della consegna |
+
+**Scoperte extra dell'after assenti nel before** (misura indiretta della qualità): SEGMENT_COLORS in Report.jsx:37 è codice morto (il before proponeva di "estrarlo"); l'intero import recharts di Report.jsx:5 è inutilizzato; RfmDistributionWidget.jsx:5 esporta già SEGMENT_COLORS (il before proponeva di crearlo da zero); Dashboard.jsx hardcoda #534AB7 in 5 punti.
+
+**Limite onesto del confronto:** le metriche 1, 2, 4, 5 migliorano per effetto del reviewer e della disciplina di processo; la metrica 3 dipende da hookify, che in Cowork non è attivo — il suo effetto reale va osservato in Claude Code CLI sulla macchina di Lorenzo (regole già nel branch, test funzionale 6/6 superato).
