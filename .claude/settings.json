@@ -5,6 +5,12 @@
         "source": "github",
         "repo": "anthropics/knowledge-work-plugins"
       }
+    },
+    "marketingskills": {
+      "source": {
+        "source": "github",
+        "repo": "coreyhaines31/marketingskills"
+      }
     }
   },
   "enabledPlugins": {
@@ -13,6 +19,7 @@
     "security-guidance@claude-plugins-official": true,
     "claude-security@claude-plugins-official": true,
     "claude-md-management@claude-plugins-official": true,
-    "marketing@knowledge-work-plugins": true
+    "marketing@knowledge-work-plugins": true,
+    "marketing-skills@marketingskills": true
   }
 }
