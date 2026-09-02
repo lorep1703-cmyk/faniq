@@ -25,4 +25,4 @@ services:
       - key: OPENAI_API_KEY
         sync: false          # opzionale
       - key: PYTHON_VERSION
-        value: "3.9.18"
+        value: "3.11.0"
