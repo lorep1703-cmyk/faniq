@@ -233,15 +233,14 @@ Tutte le funzioni sono in `frontend/src/api/client.js`:
 
 ## Deploy — regola obbligatoria
 
-Dopo ogni fix o sessione di lavoro, **committa e pusha sempre su `main`**:
+Dopo ogni fix o sessione di lavoro, **committa sempre** (non lasciare mai modifiche non committate a fine sessione):
 
 ```bash
 git add backend/  # o i file modificati
 git commit -m "fix: descrizione"
-git push origin main
 ```
 
-Render si aggiorna automaticamente ad ogni push. Non lasciare mai modifiche non committate a fine sessione.
+Il **push** su `main` è bloccato in modo assoluto dalla regola hookify `.claude/hookify.conferma-distruttivi.local.md` (pattern `git\s+push`, `action: block`): è un divieto tecnico, non aggirabile con una conferma in chat — Claude Code non può eseguirlo in nessun caso, nemmeno se Lorenzo dice "vai" nello stesso turno. Claude Code annuncia sempre chiaramente cosa sta per pushare (commit inclusi) e poi si ferma lì: il push effettivo — che fa scattare il deploy automatico su Render — lo esegue sempre Lorenzo dal proprio terminale con `git push origin main`. Nessun workaround per aggirare il blocco (niente flag alternativi, niente comandi equivalenti).
 
 ---
 
