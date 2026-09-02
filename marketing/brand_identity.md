@@ -138,3 +138,25 @@ Alternative disponibili in marketing/positioning.md (Q-04 in decisions/open_ques
 
 *File creato il 22 giugno 2026. Gestito dalla sessione settimanale Brand Identity (ogni giovedì).*
 *Fonte: distillato dall'intervista di setup del workspace.*
+
+---
+
+## Aggiornamento — 2026-07-17
+*Sessione: Brand Identity (automatica)*
+
+**Fase deadline:** URGENCY PHASE — 14 giorni al 31 luglio 2026. Per regola di sessione, niente nuove definizioni: solo audit di coerenza e fix urgenti.
+
+**Fase maturità brand:** Fase 1/2 — tutti gli elementi (mission, vision, valori, tono, tagline) sono definiti come proposte dal 22/06, ma nessuno è ancora stato approvato da Lorenzo dopo 25 giorni. Nessun contenuto nuovo proposto oggi.
+
+**Audit di coerenza eseguito su:**
+- `gtm/pitch.md` → coerente. Nessuna parola vietata, tono calcistico rispettato ("verticale sul calcio", niente gergo tech).
+- `sales_assets/outreach_pro_vercelli.md` → coerente. Nessuna parola vietata, tono diretto/vicino, CTA unica.
+- `marketing/landing_page.md` → coerente (copy già riscritto in sessione 22/06, "insight" già rimosso dalla FAQ pubblica).
+
+**Fix applicato (gravità bassa):**
+- `context/overview.md`: "FanIQ li trasforma in insight azionabili" → "FanIQ li trasforma in azioni concrete" (chiude Q-08, aperta dal 22/06).
+
+**Incoerenza di gravità media rilevata (non un problema di testo, ma di processo):**
+- Le 5 proposte di brand identity sono ferme da 25 giorni senza revisione di Lorenzo. Vedi escalation in `decisions/open_questions.md` (Aggiornamento 2026-07-17). Non è stato modificato lo stato "Proposta" di nessun elemento in questa sessione — serve una decisione esplicita di Lorenzo, non un'azione dell'assistente.
+
+**Prossima priorità brand (entro 7 giorni):** Ottenere da Lorenzo l'approvazione (o le modifiche) su mission/vision/valori/tono/tagline — è un blocco a costo zero che sta rallentando la produzione di materiali pubblici (landing, one-pager).
