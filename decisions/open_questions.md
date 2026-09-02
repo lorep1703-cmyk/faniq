@@ -95,13 +95,34 @@ Quando una domanda viene risolta, spostarla in `decisions/decisions_log.md`.
 ## Domande aperte — Brand
 
 ### Q-08 — [BRAND] Fix parola vietata in context/overview.md
-**Priorità:** Bassa
-**Scadenza:** Prima della prossima sessione brand
-**Contesto:** La riga "FanIQ li trasforma in insight azionabili" in context/overview.md usa la parola vietata "insight". È un documento interno ma è incoerente con il brand voice ufficiale.
-**Opzioni:** Sostituire con "FanIQ li trasforma in azioni concrete" o simile.
-**Prossima azione:** Correggere inline nel prossimo aggiornamento di overview.md.
+**Priorità:** ✅ Risolta
+**Risposta:** Corretto inline il 2026-07-17 — "insight azionabili" → "azioni concrete" in `context/overview.md`.
+**Chiusa il:** 2026-07-17
 **Aperta dal:** 2026-06-22
 
 ---
 
 *Aggiornato il 22 giugno 2026.*
+
+---
+
+## Aggiornamento — 2026-07-15
+*Sessione: Marketing (automatica) — URGENCY PHASE, 16 giorni al 31 luglio 2026*
+
+### Q-01/Q-02/Q-03 — escalation critica
+
+Le proposte pricing (€299/mese, 3 mesi gratuiti pilot) sono ferme in stato "da validare" da 21 giorni (proposte il 24/06, scadenza originale 28/06). Nessuna decisione registrata in `decisions/decisions_log.md`. Con 16 giorni alla deadline M1 (22 luglio) e M2 (31 luglio), questo è ora il rischio più alto del piano insieme al mancato invio dell'outreach.
+
+**Prossima azione:** Lorenzo deve confermare o modificare Q-01/Q-02/Q-03 entro il 17 luglio 2026 — non c'è più margine per rimandare senza compromettere M1/M2. Vedi anche `sales_assets/outreach_pro_vercelli.md` (Aggiornamento 2026-07-15).
+
+---
+
+## Aggiornamento — 2026-07-17
+*Sessione: Brand Identity (automatica) — URGENCY PHASE, 14 giorni al 31 luglio 2026*
+
+### [BRAND] Escalation — approvazioni brand ferme da 25 giorni
+
+Mission, Vision, Valori, Tono di voce e Tagline in `marketing/brand_identity.md` sono ancora tutti in stato "Proposta — non approvata" dal 2026-06-22 (25 giorni). Nessuna di queste proposte è stata modificata o bocciata da Lorenzo — semplicemente non è mai stata revisionata. Stesso pattern di stallo già segnalato per Q-01/Q-02/Q-03 (pricing) e per l'invio dell'outreach.
+**Rischio:** con 14 giorni alla deadline, se Pro Vercelli chiede materiali (one-pager, landing) prima della demo, questi verrebbero costruiti su un brand ancora "proposta" e non ufficiale.
+**Prossima azione:** Lorenzo approva (anche in blocco, senza modifiche) mission/vision/valori/tono/tagline — non richiede lavoro, solo una conferma. Se non risponde entro pochi giorni, trattarle come de facto valide per non bloccare la produzione di materiali (landing, one-pager).
+**Aperta dal:** 2026-07-17

@@ -11,7 +11,7 @@
 
 ## Cos'è FanIQ
 
-FanIQ è una piattaforma di fan intelligence per club sportivi. I club caricano i dati dei loro tifosi (abbonamenti, biglietti, acquisti shop) e FanIQ li trasforma in insight azionabili.
+FanIQ è una piattaforma di fan intelligence per club sportivi. I club caricano i dati dei loro tifosi (abbonamenti, biglietti, acquisti shop) e FanIQ li trasforma in azioni concrete.
 
 **Il problema che risolve:** I club sportivi hanno dati sui tifosi ma non hanno gli strumenti per analizzarli, segmentarli e usarli per decisioni commerciali. I CRM generici non capiscono il contesto sportivo.
 
