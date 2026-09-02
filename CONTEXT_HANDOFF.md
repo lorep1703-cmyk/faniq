@@ -5,7 +5,12 @@
 
 ## Stato attuale
 
-Sessione lunghissima di audit + fix sul Fan Intelligence Engine e sulla coerenza generale dell'app. **Nessun commit fatto oggi** — tutte le modifiche sono ancora locali (24 file modificati, 3 eliminati, 4 nuovi). Da committare prima di continuare o deployare — vedi in fondo.
+Sessione lunghissima di audit + fix sul Fan Intelligence Engine e sulla coerenza generale dell'app. **Committato e pushato**: commit [`9bd966e`](https://github.com/lorep1703-cmyk/faniq/commit/9bd966e) su `main`, deploy automatico su Render + Vercel completato e **verificato live**:
+- `faniq-backend.onrender.com/health` → `{"status":"ok"}`
+- `/fans/renewal-scores` (motore di rinnovo duplicato, eliminato oggi) → `404` in produzione — conferma che il deploy ha preso il commit di oggi, non una versione precedente
+- Frontend Vercel (`faniq-seven.vercel.app`) carica pulito, nessun errore console
+
+Tutto il lavoro descritto sotto è quindi **in produzione**, non solo in locale.
 
 **Ambiente locale**: la cartella è stata spostata da iCloud (`~/Desktop/corso ia/faniq`, causa di rallentamenti gravi) a `~/Developer/faniq`, non più sincronizzata. Il venv del backend era rotto dopo lo spostamento (path assoluti nei binari) — **ricreato**, ora funziona. Il DB SQLite locale (`backend/faniq.db`) è stato ricreato da zero durante il fix di uno schema disallineato — è **vuoto** salvo un club di test creato oggi per le verifiche ("Verify E2E", 50 fan sintetici da `sample_csv/dashtest_*`).
 
@@ -78,6 +83,6 @@ Tutto verificato punto per punto con dati reali nel browser (non solo unit test)
 
 ## Prima di continuare
 
-1. **Committare** le modifiche di oggi (CLAUDE.md dice sempre di non lasciare sessioni con modifiche pendenti) — non ancora fatto su richiesta esplicita, chiedere conferma.
-2. Il DB locale è vuoto — ricaricare `sample_csv/dashtest_*` sul club di test se serve continuare a verificare dal vivo, o registrarne uno nuovo.
-3. Riprendere dal backlog aperto sopra, punto per punto, con lo stesso approccio di oggi (analisi → discussione → fix → verifica dal vivo).
+1. ~~Committare le modifiche di oggi~~ — fatto: commit `9bd966e`, pushato e verificato live (vedi "Stato attuale").
+2. Il DB locale è vuoto — ricaricare `sample_csv/dashtest_*` sul club di test se serve continuare a verificare dal vivo, o registrarne uno nuovo. Il DB di produzione (Postgres su Neon) non è stato toccato oggi — solo lo SQLite locale.
+3. Riprendere dal backlog aperto sopra, punto per punto, con lo stesso approccio di oggi (analisi → discussione → fix → verifica dal vivo). Priorità consigliata: il bug RFM "Occasionale" (#1) — alto impatto, basso rischio di fix, ora anche in produzione.
