@@ -5,20 +5,30 @@ from typing import Optional
 
 from intelligence_config import (
     ANOMALY_CRITICAL_ABSENCES,
+    ANOMALY_CRITICAL_ABSENCES_MAX,
+    ANOMALY_CRITICAL_ABSENCES_MIN,
+    ANOMALY_DECAY_MARGIN,
     ANOMALY_HIGH_ABSENCES,
+    ANOMALY_LOYALTY_SEASONS_PER_MARGIN,
+    ANOMALY_MARGIN_MAX,
+    ANOMALY_MARGIN_MIN,
     ANOMALY_MEDIUM_ABSENCES,
 )
-from fan_intelligence import AnomalyAlert, AnomalySeverity, JourneyStage
+from fan_intelligence import AnomalyAlert, AnomalySeverity, DecayProfile, JourneyStage
 
 
 def calculate_anomaly(
     presence_flags: list[bool],      # dal più antico al più recente
     has_active_subscription: bool,
-    journey_stage: JourneyStage,
+    journey_stage: JourneyStage,     # solo per il testo del messaggio
+    decay_profile: DecayProfile,     # modula la soglia di allarme
+    n_subscription_seasons: int,     # modula la soglia di allarme
 ) -> Optional[AnomalyAlert]:
     """
     Genera un AnomalyAlert solo se il fan è abbonato e ha assenze consecutive.
-    Severity scala con journey_stage: un RISCHIO è più urgente di un FEDELTA.
+    Le soglie di severity si adattano a decay profile e storico abbonamenti:
+    un fan solido/fedele ha più margine prima di essere segnalato, uno nuovo
+    o storicamente volatile ne ha meno — vedi _effective_thresholds.
     """
     if not has_active_subscription:
         return None
@@ -29,7 +39,7 @@ def calculate_anomaly(
     if consecutive == 0:
         return None
 
-    severity = _compute_severity(consecutive, journey_stage)
+    severity = _compute_severity(consecutive, decay_profile, n_subscription_seasons)
     if severity is None:
         return None
 
@@ -54,32 +64,38 @@ def _count_trailing_absences(flags: list[bool]) -> int:
     return count
 
 
+def _effective_thresholds(
+    decay_profile: DecayProfile,
+    n_subscription_seasons: int,
+) -> tuple[int, int, int]:
+    """Soglie (critica, alta, media) spostate da un margine calcolato su
+    decay profile + storico abbonamenti. Il gap tra le soglie resta quello
+    base (2 e 1), solo il blocco si sposta."""
+    decay_margin = ANOMALY_DECAY_MARGIN.get(decay_profile.value, 0)
+    loyalty_margin = n_subscription_seasons // ANOMALY_LOYALTY_SEASONS_PER_MARGIN
+    margin = max(ANOMALY_MARGIN_MIN, min(ANOMALY_MARGIN_MAX, decay_margin + loyalty_margin))
+
+    critica = max(
+        ANOMALY_CRITICAL_ABSENCES_MIN,
+        min(ANOMALY_CRITICAL_ABSENCES_MAX, ANOMALY_CRITICAL_ABSENCES + margin),
+    )
+    alta = max(1, critica - (ANOMALY_CRITICAL_ABSENCES - ANOMALY_HIGH_ABSENCES))
+    media = max(1, alta - (ANOMALY_HIGH_ABSENCES - ANOMALY_MEDIUM_ABSENCES))
+    return critica, alta, media
+
+
 def _compute_severity(
     absences: int,
-    stage: JourneyStage,
+    decay_profile: DecayProfile,
+    n_subscription_seasons: int,
 ) -> Optional[AnomalySeverity]:
-    # RISCHIO + 5 assenze → CRITICA; con meno assenze scala
-    if stage == JourneyStage.RISCHIO:
-        if absences >= ANOMALY_CRITICAL_ABSENCES:
-            return AnomalySeverity.CRITICA
-        if absences >= ANOMALY_HIGH_ABSENCES:
-            return AnomalySeverity.ALTA
-        if absences >= ANOMALY_MEDIUM_ABSENCES:
-            return AnomalySeverity.MEDIA
-    elif stage == JourneyStage.FEDELTA:
-        # FEDELTA + 3 assenze → già ALTA (fan fedele che sparisce è preoccupante)
-        if absences >= ANOMALY_HIGH_ABSENCES:
-            return AnomalySeverity.ALTA
-        if absences >= ANOMALY_MEDIUM_ABSENCES:
-            return AnomalySeverity.MEDIA
-    else:
-        # Tutti gli altri stage: soglie standard
-        if absences >= ANOMALY_CRITICAL_ABSENCES:
-            return AnomalySeverity.CRITICA
-        if absences >= ANOMALY_HIGH_ABSENCES:
-            return AnomalySeverity.ALTA
-        if absences >= ANOMALY_MEDIUM_ABSENCES:
-            return AnomalySeverity.MEDIA
+    critica, alta, media = _effective_thresholds(decay_profile, n_subscription_seasons)
+    if absences >= critica:
+        return AnomalySeverity.CRITICA
+    if absences >= alta:
+        return AnomalySeverity.ALTA
+    if absences >= media:
+        return AnomalySeverity.MEDIA
     return None
 
 
@@ -89,7 +105,7 @@ def _stage_label(stage: JourneyStage) -> str:
         JourneyStage.ABITUDINE: "Abitudine",
         JourneyStage.FEDELTA:   "Fedeltà",
         JourneyStage.PICCO:     "Picco",
-        JourneyStage.RISCHIO:   "Rischio",
+        JourneyStage.RISCHIO:   "Declino",
         JourneyStage.DORMIENTE: "Dormiente",
         JourneyStage.RECUPERATO: "Recuperato",
     }

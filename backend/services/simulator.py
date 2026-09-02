@@ -1,28 +1,11 @@
-"""Simulatore affluenza stadio."""
-from sqlalchemy.orm import Session
-
-from models import Biglietto
+"""Simulatore scenari ipotetici — moltiplicatori su una base reale già nota
+(presenze/revenue di Predizione Presenze), non più su una media storica
+grezza indovinata: quel calcolo (suggested_base) è stato ritirato quando il
+Simulatore è stato unito a Calendario & Presenze."""
 
 MATCH_MULTIPLIERS = {"standard": 1.0, "importante": 1.25, "derby": 1.5, "finale": 1.4}
 WEATHER_MULTIPLIERS = {"sole": 1.0, "nuvoloso": 0.95, "pioggia": 0.75, "neve": 0.6}
 PROMO_MULTIPLIERS = {"nessuna": 1.0, "sconto_10": 1.1, "sconto_20": 1.2, "family_pack": 1.15}
-
-
-def suggested_base(db: Session, club_id: int) -> dict:
-    biglietti = db.query(Biglietto).filter(Biglietto.club_id == club_id).all()
-    if not biglietti:
-        return {"base": 1500, "source": "default", "avg_per_match": 0, "matches": 0}
-
-    by_date: dict = {}
-    for b in biglietti:
-        if b.data_partita:
-            by_date[b.data_partita] = by_date.get(b.data_partita, 0) + 1
-
-    if not by_date:
-        return {"base": 1500, "source": "default", "avg_per_match": 0, "matches": 0}
-
-    avg = sum(by_date.values()) / len(by_date)
-    return {"base": round(avg), "source": "historical", "avg_per_match": round(avg), "matches": len(by_date)}
 
 
 def simulate_attendance(

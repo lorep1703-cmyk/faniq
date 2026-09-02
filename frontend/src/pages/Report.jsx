@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import FanDetailPanel from "../components/FanDetailPanel";
-import { Download, Search, RefreshCw } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import RfmDistributionWidget from "../components/RfmDistributionWidget";
 import TopSpendersWidget from "../components/TopSpendersWidget";
 import {
@@ -11,7 +11,6 @@ import {
   fetchTopSpenders,
   fetchSeasons,
   exportFans,
-  fetchRenewalScores,
   fetchClubIntelligence,
   fetchBehavioral,
 } from "../api/client";
@@ -29,7 +28,7 @@ const JOURNEY_STAGES = [
   { value: "ABITUDINE",  label: "📈 Abitudine" },
   { value: "FEDELTA",    label: "💪 Fedeltà" },
   { value: "PICCO",      label: "⭐ Picco" },
-  { value: "RISCHIO",    label: "⚠️ A rischio" },
+  { value: "RISCHIO",    label: "⚠️ Declino" },
   { value: "DORMIENTE",  label: "😴 Dormiente" },
   { value: "RECUPERATO", label: "🔄 Recuperato" },
 ];
@@ -58,7 +57,7 @@ function RenewalBadge({ score }) {
     : { bg: "bg-red-50",     text: "text-red-700",     dot: "bg-red-500" };
   return (
     <span
-      title="Basato su presenze, trend e storico abbonamenti"
+      title="Fan Intelligence Engine — segmento RFM, presenze, trend, decay profile e anomalie"
       className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.text}`}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
@@ -94,8 +93,6 @@ export default function Report() {
   const [segmentFilter, setSegmentFilter] = useState("tutti");
   const [journeyFilter, setJourneyFilter] = useState("");
   const [soloRischio, setSoloRischio] = useState(false);
-  const [renewalMap, setRenewalMap] = useState({});
-  const [renewalLoading, setRenewalLoading] = useState(false);
   const [intelligenceMap, setIntelligenceMap] = useState({});
   const [intelligenceLoading, setIntelligenceLoading] = useState(false);
   const [intelligenceError, setIntelligenceError] = useState(null);
@@ -128,17 +125,6 @@ export default function Report() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const loadRenewal = async () => {
-    setRenewalLoading(true);
-    try {
-      const data = await fetchRenewalScores();
-      const map = {};
-      for (const item of data.items) map[item.fan_id] = item;
-      setRenewalMap(map);
-    } catch { /* silenzioso */ }
-    finally { setRenewalLoading(false); }
   };
 
   const loadIntelligence = async (stage = "") => {
@@ -190,15 +176,14 @@ export default function Report() {
     );
   }
 
-  const hasRenewal = Object.keys(renewalMap).length > 0;
   const hasIntelligence = Object.keys(intelligenceMap).length > 0;
   const hasBehavioral = Object.keys(behavioralMap).length > 0;
 
   const SORTERS = {
     rinnovo: (a, b) => {
-      if (!hasRenewal) return 0;
-      const sa = renewalMap[a.id]?.score_pct ?? 100;
-      const sb = renewalMap[b.id]?.score_pct ?? 100;
+      if (!hasIntelligence) return 0;
+      const sa = intelligenceMap[a.id]?.renewal_probability ?? 1;
+      const sb = intelligenceMap[b.id]?.renewal_probability ?? 1;
       return sa - sb;
     },
     presenze: (a, b) => {
@@ -225,13 +210,13 @@ export default function Report() {
       const matchSeg = segmentFilter === "tutti" || f.segment === segmentFilter;
       const q = filter.toLowerCase();
       const matchText = !q || `${f.nome} ${f.cognome} ${f.email} ${f.citta}`.toLowerCase().includes(q);
-      const matchRischio = !soloRischio || (renewalMap[f.id]?.score_pct ?? 100) < 40;
+      const matchRischio = !soloRischio || (intelligenceMap[f.id]?.renewal_probability ?? 1) < 0.4;
       const matchJourney = !journeyFilter || intelligenceMap[f.id]?.journey_stage === journeyFilter;
       return matchSeg && matchText && matchRischio && matchJourney;
     })
     .sort(SORTERS[sortBy] || (() => 0));
 
-  const colSpan = 6 + (hasRenewal ? 1 : 0) + (hasIntelligence ? 1 : 0);
+  const colSpan = 6 + (hasIntelligence ? 2 : 0);
 
   return (
     <div className="flex-1 p-8 overflow-auto">
@@ -331,27 +316,17 @@ export default function Report() {
             <span className="text-xs text-red-500">{intelligenceError}</span>
           )}
 
-          {!hasRenewal ? (
-            <button
-              onClick={loadRenewal}
-              disabled={renewalLoading}
-              className="flex items-center gap-2 text-xs border border-slate-200 rounded-lg px-3 py-1.5 text-slate-500 hover:bg-slate-50 disabled:opacity-50"
-            >
-              <RefreshCw size={12} className={renewalLoading ? "animate-spin" : ""} />
-              {renewalLoading ? "Calcolo..." : "Calcola prob. rinnovo"}
-            </button>
-          ) : (
-            <button
-              onClick={() => setSoloRischio((v) => !v)}
-              className={`flex items-center gap-2 text-xs rounded-lg px-3 py-1.5 font-medium border transition-colors ${
-                soloRischio
-                  ? "bg-red-50 border-red-200 text-red-700"
-                  : "border-slate-200 text-slate-500 hover:bg-slate-50"
-              }`}
-            >
-              {soloRischio ? "✕ Solo a rischio rinnovo" : "Mostra solo a rischio rinnovo"}
-            </button>
-          )}
+          <button
+            onClick={() => setSoloRischio((v) => !v)}
+            disabled={intelligenceLoading}
+            className={`flex items-center gap-2 text-xs rounded-lg px-3 py-1.5 font-medium border transition-colors disabled:opacity-50 ${
+              soloRischio
+                ? "bg-red-50 border-red-200 text-red-700"
+                : "border-slate-200 text-slate-500 hover:bg-slate-50"
+            }`}
+          >
+            {soloRischio ? "✕ Solo a rischio rinnovo" : "Mostra solo a rischio rinnovo"}
+          </button>
         </div>
 
         <div className="overflow-x-auto">
@@ -366,7 +341,7 @@ export default function Report() {
                   % Presenze
                 </th>
                 <th className="pb-3 pr-4">Spesa</th>
-                {hasRenewal && <th className="pb-3 pr-4">Prob. rinnovo</th>}
+                {hasIntelligence && <th className="pb-3 pr-4">Prob. rinnovo</th>}
                 {hasIntelligence && (
                   <th className="pb-3" title="Impatto community e profilo fedeltà — dettagli aprendo la riga">
                     Community
@@ -417,9 +392,9 @@ export default function Report() {
                         <PresenzeBadge score={behav} />
                       </td>
                       <td className="py-2.5 pr-4 font-semibold text-slate-800">{fmtEur(f.total_spend)}</td>
-                      {hasRenewal && (
+                      {hasIntelligence && (
                         <td className="py-2.5 pr-4">
-                          <RenewalBadge score={renewalMap[f.id]?.score_pct} />
+                          <RenewalBadge score={intel?.renewal_probability != null ? Math.round(intel.renewal_probability * 100) : null} />
                         </td>
                       )}
                       {hasIntelligence && (
@@ -447,7 +422,7 @@ export default function Report() {
                               <span><span className="text-slate-400">Trasferte:</span> {behav.away_rate}% ({behav.away_attended})</span>
                             )}
                           </div>
-                          <FanDecayProfile profile={intel?.decay_profile} />
+                          <FanDecayProfile profile={intel?.decay_profile} halfLifeValue={intel?.half_life_value} />
                           <FanCommunityImpact score={ambassadorScore} />
                         </td>
                       </tr>

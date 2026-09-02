@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Upload, Users, FileBarChart2, Lightbulb, ShieldCheck, LogOut, Bell, TrendingUp, Calendar } from "lucide-react";
+import { LayoutDashboard, Upload, Users, FileBarChart2, Lightbulb, ShieldCheck, LogOut, Bell, Calendar } from "lucide-react";
 import { fetchIntelligenceSummary } from "../api/client";
 
 const links = [
@@ -9,13 +9,12 @@ const links = [
   { to: "/report", label: "Report & Segmenti", icon: FileBarChart2 },
   { to: "/upload", label: "Carica dati", icon: Upload },
   { to: "/privacy", label: "Privacy & GDPR", icon: ShieldCheck },
-  { to: "/simulatore", label: "Simulatore", icon: TrendingUp },
-  { to: "/calendario", label: "Calendario", icon: Calendar },
+  { to: "/calendario", label: "Calendario & Presenze", icon: Calendar },
 ];
 
 export default function Sidebar() {
   const navigate = useNavigate();
-  const [criticalCount, setCriticalCount] = useState(0);
+  const [toContactCount, setToContactCount] = useState(0);
 
   const club = (() => {
     try { return JSON.parse(localStorage.getItem("faniq_club") || "{}"); }
@@ -26,7 +25,7 @@ export default function Sidebar() {
     const token = localStorage.getItem("faniq_token");
     if (!token) return;
     fetchIntelligenceSummary()
-      .then((data) => setCriticalCount(data.fans_critical_anomaly ?? 0))
+      .then((data) => setToContactCount(data.fans_to_contact ?? 0))
       .catch(() => {/* badge non critico — fallisce silenziosamente */});
   }, []);
 
@@ -67,7 +66,7 @@ export default function Sidebar() {
           </NavLink>
         ))}
 
-        {/* Link "Da contattare" con badge anomalie critiche */}
+        {/* Link "Da contattare" con badge — stesso conteggio della pagina (tutte le severità) */}
         <NavLink
           to="/alerts"
           className={({ isActive }) =>
@@ -80,9 +79,9 @@ export default function Sidebar() {
         >
           <div className="relative">
             <Bell size={18} />
-            {criticalCount > 0 && (
+            {toContactCount > 0 && (
               <span className="absolute -top-2 -right-2 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
-                {criticalCount > 99 ? "99+" : criticalCount}
+                {toContactCount > 99 ? "99+" : toContactCount}
               </span>
             )}
           </div>

@@ -6,7 +6,7 @@ import { exportFans } from "../api/client";
 
 const ACTIONS = [
   {
-    label: "Vedi anomalie critiche",
+    label: "Vedi tifosi da contattare",
     description: "Abbonati che non usano il posto",
     icon: AlertCircle,
     color: "#ef4444",
@@ -15,7 +15,7 @@ const ACTIONS = [
   },
   {
     label: "Abbonati a rischio rinnovo",
-    description: "Probabilità rinnovo < 50%",
+    description: "Probabilità rinnovo < 40%",
     icon: RefreshCw,
     color: "#f97316",
     type: "navigate",

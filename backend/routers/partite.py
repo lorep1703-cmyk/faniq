@@ -10,11 +10,12 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Club, Fan, Partita, UploadHistory
+from models import Abbonamento, Club, Fan, Partita, UploadHistory
 from tenant import get_current_club
 from services.behavioral import compute_behavioral
 from services.analytics import compute_fan_segments
 from services.cache import invalidate
+from services.intelligence.engine import current_season_str
 
 router = APIRouter(prefix="/partite", tags=["partite"])
 
@@ -279,13 +280,48 @@ def get_predizione(
 
     totale_previsto = round(len(alta) * 0.85 + len(media) * 0.50 + len(bassa) * 0.15)
 
+    # Revenue biglietteria stimato: per ogni fan del tier, prezzo medio storico
+    # (suo se disponibile, altrimenti la media del club) pesato per la
+    # probabilità del tier. Non include abbonamenti (già incassati prima
+    # della partita) né shop — è solo l'incasso atteso da vendita biglietti.
+    fan_avg_price: dict[int, float] = behavioral.get("fan_avg_price", {})
+    club_avg_price: float = behavioral.get("club_avg_price", 0.0)
+
+    def price_for(fan_id: int) -> float:
+        return fan_avg_price.get(fan_id, club_avg_price)
+
+    def tier_revenue(fans: list[dict], prob: float) -> float:
+        return round(sum(price_for(f["id"]) for f in fans) * prob, 2)
+
+    revenue_alta  = tier_revenue(alta, 0.85)
+    revenue_media = tier_revenue(media, 0.50)
+    revenue_bassa = tier_revenue(bassa, 0.15)
+    revenue_previsto = round(revenue_alta + revenue_media + revenue_bassa, 2)
+
+    # "totale_previsto" copre solo chi compra biglietti singoli: compute_behavioral
+    # guarda solo Biglietto, mai Abbonamento — un abbonato non genera un
+    # Biglietto per ogni partita a cui va. Senza questo conteggio, "Presenze
+    # stimate" sembra il totale in stadio ma è solo una fetta. Non sappiamo
+    # SE un abbonato specifico verrà a QUESTA partita (nessuna presenza
+    # per-partita tracciata per gli abbonati), quindi qui è un conteggio
+    # onesto — "abbonati attivi in questa stagione" — non una previsione
+    # per-fan come i tier sopra.
+    abbonati_stagione_corrente = (
+        db.query(Abbonamento.fan_id)
+        .filter(Abbonamento.club_id == club.id, Abbonamento.stagione == current_season_str())
+        .distinct()
+        .count()
+    )
+
     return {
         "partita": partita_out,
+        "abbonati_stagione_corrente": abbonati_stagione_corrente,
         "totale_previsto": totale_previsto,
+        "revenue_previsto": revenue_previsto,
         "tiers": {
-            "alta":       {"fans": alta[:20],        "count": len(alta),       "label": "Verranno quasi sicuramente", "color": "#059669", "prob": 85},
-            "media":      {"fans": media[:20],       "count": len(media),      "label": "Probabile presenza",         "color": "#2563eb", "prob": 50},
-            "bassa":      {"fans": bassa[:20],       "count": len(bassa),      "label": "Presenza incerta",           "color": "#d97706", "prob": 15},
-            "nessun_dato":{"fans": nessun_dato[:10], "count": len(nessun_dato),"label": "Nessun dato storico",        "color": "#6b7280", "prob": 0},
+            "alta":       {"fans": alta[:20],        "count": len(alta),       "label": "Verranno quasi sicuramente", "color": "#059669", "prob": 85, "revenue": revenue_alta},
+            "media":      {"fans": media[:20],       "count": len(media),      "label": "Probabile presenza",         "color": "#2563eb", "prob": 50, "revenue": revenue_media},
+            "bassa":      {"fans": bassa[:20],       "count": len(bassa),      "label": "Presenza incerta",           "color": "#d97706", "prob": 15, "revenue": revenue_bassa},
+            "nessun_dato":{"fans": nessun_dato[:10], "count": len(nessun_dato),"label": "Nessun dato storico",        "color": "#6b7280", "prob": 0,  "revenue": 0},
         },
     }

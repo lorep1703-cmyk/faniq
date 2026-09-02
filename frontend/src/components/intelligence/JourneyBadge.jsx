@@ -1,9 +1,13 @@
+// Label "Declino" (non "A rischio") apposta: il segmento RFM ha già quel nome
+// per un calcolo diverso (recency di spesa) — le due cose comparivano fianco a
+// fianco nella stessa riga di Report.jsx senza che fosse chiaro non fossero lo
+// stesso dato ripetuto due volte.
 const STAGE_CONFIG = {
   SCOPERTA:   { label: "Scoperta",   icon: "🌱", color: "#6366f1", bg: "#eef2ff" },
   ABITUDINE:  { label: "Abitudine",  icon: "📈", color: "#3b82f6", bg: "#eff6ff" },
   FEDELTA:    { label: "Fedeltà",    icon: "💪", color: "#10b981", bg: "#ecfdf5" },
   PICCO:      { label: "Picco",      icon: "⭐", color: "#f59e0b", bg: "#fffbeb" },
-  RISCHIO:    { label: "A rischio",  icon: "⚠️", color: "#f97316", bg: "#fff7ed" },
+  RISCHIO:    { label: "Declino",    icon: "⚠️", color: "#f97316", bg: "#fff7ed" },
   DORMIENTE:  { label: "Dormiente",  icon: "😴", color: "#94a3b8", bg: "#f8fafc" },
   RECUPERATO: { label: "Recuperato", icon: "🔄", color: "#8b5cf6", bg: "#f5f3ff" },
 };

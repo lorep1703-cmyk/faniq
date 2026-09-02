@@ -1,61 +1,68 @@
 # FanIQ — Context Handoff
-> Aggiornato: 2026-06-29 | Da leggere all'inizio di ogni nuova sessione Cowork
+> Aggiornato: 2026-09-02 | Da leggere all'inizio della prossima sessione
 
 ---
 
 ## Stato attuale
 
-Il backend è **live su Render** e il frontend su **Vercel**. Stiamo cercando di caricare i dati di test (CSV sintetici) nella piattaforma. Il caricamento degli abbonati è **in corso in background** su Render in questo momento.
+Sessione lunghissima di audit + fix sul Fan Intelligence Engine e sulla coerenza generale dell'app. **Nessun commit fatto oggi** — tutte le modifiche sono ancora locali (24 file modificati, 3 eliminati, 4 nuovi). Da committare prima di continuare o deployare — vedi in fondo.
 
-**App live:** https://faniq-seven.vercel.app  
-**Repository:** https://github.com/lorep1703-cmyk/faniq.git  
-**Ultimo commit significativo:** `e66ad09` (batch processing intelligence engine)
+**Ambiente locale**: la cartella è stata spostata da iCloud (`~/Desktop/corso ia/faniq`, causa di rallentamenti gravi) a `~/Developer/faniq`, non più sincronizzata. Il venv del backend era rotto dopo lo spostamento (path assoluti nei binari) — **ricreato**, ora funziona. Il DB SQLite locale (`backend/faniq.db`) è stato ricreato da zero durante il fix di uno schema disallineato — è **vuoto** salvo un club di test creato oggi per le verifiche ("Verify E2E", 50 fan sintetici da `sample_csv/dashtest_*`).
 
 ---
 
-## Problema attivo — caricamento CSV
+## Fix critici di oggi (i più importanti)
 
-Il caricamento dei CSV su Render Free tier (512MB RAM) è lento e complesso. Abbiamo risolto:
-- ✅ Timeout HTTP → upload asincrono con `BackgroundTasks` + polling frontend
-- ✅ OOM intelligence engine → batch processing 200 fan alla volta
-- ✅ RLS non attiva nel background task → `SET LOCAL` nella sessione del task
-- ✅ Rate limiter bloccava il polling → ora conta solo `POST /upload/`
-- ⚠️ Il caricamento abbonati è in corso — attendere storico Upload prima di procedere
-
-**Ordine corretto di caricamento CSV:**
-1. Abbonati (`abbonati_test.csv`)
-2. Biglietteria (`biglietteria_test.csv`) ← il più pesante, 1.2MB
-3. Shop (`shop_test.csv`)
-4. Partite (`partite_test.csv`)
+| Cosa | Impatto |
+|---|---|
+| `_current_season()` generava "2026/27" invece di "2026/2027" (formato reale in DB) | **Lo Stadio 3 (Subscription Anomaly) non ha mai generato un alert, per nessun fan, in nessun club, da sempre.** Fix da 1 riga in `engine.py`. Sul club di test: alert 0 → 10 immediatamente. |
+| Due motori indipendenti di "Probabilità di rinnovo" (`services/renewal.py` vecchio + Fan Intelligence Engine Stadio 5) | Stessa scheda fan mostrava due numeri diversi sotto lo stesso nome. Consolidati su un solo motore (Stadio 5); `services/renewal.py`/`routers/renewal.py`/test relativi **eliminati**. |
+| Chat AI: `services/chat.py` leggeva `insights["insights"]`, chiave che non esiste mai | Il contesto "Insights" per il modello era sempre vuoto, silenziosamente. Fixato per leggere Business Score/Revenue Watch/Opportunità/Azioni reali. |
+| RFM Distribution Widget esclude "Occasionale" dalla `DISPLAY_ORDER` | **24 fan su 50 (quasi metà del club test) invisibili** in "Segmenti RFM" — su Dashboard e Report. "N tifosi analizzati" e tutte le percentuali sono sbagliate. **Trovato ma non ancora fixato.** |
 
 ---
 
-## Cosa fare subito (appena abbonati finisce)
+## Lavoro completato oggi
 
-1. Verificare che lo storico Upload mostri la riga abbonati con numero importati
-2. Caricare biglietteria, poi shop, poi partite nell'ordine
-3. Verificare che Dashboard e Report mostrino dati
-4. Verificare che Intelligence Engine mostri dati (fan > 0)
+**Riorganizzazione Calendario/Intelligence/Simulatore:**
+- Calendario + Predizione Presenze uniti in "Calendario & Presenze"
+- Simulatore ritirato come pagina standalone (`/simulatore` ora redirige), unito come sezione "Scenario ipotetico" dentro Calendario & Presenze — parte dai numeri reali (non più da una media storica indovinata)
+- Scoperto: "Presenze stimate" non includeva mai gli abbonati (solo `Biglietto`, mai `Abbonamento`) — ora mostrato onesto: biglietti singoli + abbonati stagione separati
+
+**Coerenza taxonomy/copy:**
+- Journey Stage "RISCHIO" rinominato "Declino" ovunque (badge, filtri, messaggi di anomalia) — non più identico al segmento RFM "A rischio"
+- "Da contattare" (badge Sidebar + card Dashboard) allineato alla pagina Alerts (tutte le severità, non solo CRITICA)
+- QuickActionsWidget: soglia dichiarata corretta (era 50%, applicata 40%)
+- Ambassador: nome vero al posto di "Fan #N" (bug `fan_name` inesistente in API); soglia 60 consolidata su un'unica fonte (`getTier`), rimossa la copia morta nel config backend
+
+**Soglie adattive Anomaly (Stadio 3):**
+- La severity ora dipende da decay profile + storico abbonamenti, non più fissa per journey stage — un fan fedele ha più margine prima di essere segnalato critico, uno nuovo/volatile meno. Progettata con casi concreti, verificata sui dati reali.
+
+**5 feature predittive nuove:**
+1. `half_life_value` esposto — frase predittiva "torna entro N partite" (dato già calcolato, mai mostrato prima)
+2. Revenue biglietteria previsto per la prossima partita (per-tier)
+3. Spesa shop attesa nei prossimi 3 mesi (trend recente vs precedente)
+4. Simulatore unito a Calendario & Presenze (vedi sopra)
+5. Valore futuro atteso (CLV = renewal_probability × spesa storica recente) in FanDetailPanel + widget "Potenziale dormienti" in Dashboard — **ridefinito rispetto all'idea originale**: "Simulazione di riattivazione" basata su storico di campagne non era costruibile (FanIQ non traccia campagne), sostituita con un numero onesto (valore storico dei dormienti, nessuna % di risposta inventata)
+
+**Pulizia:**
+- 4 import Python morti pre-esistenti rimossi (non causati oggi, trovati durante l'audit finale)
+
+Tutto verificato punto per punto con dati reali nel browser (non solo unit test) — 24/24 test passano.
 
 ---
 
-## Prompt pendenti in PROMPTS_CLAUDE_CODE.md
+## Backlog aperto — niente di questo è stato toccato
 
-| Prompt | Stato | Priorità |
-|--------|-------|----------|
-| Fix messaggio timeout upload (UX per demo Pro Vercelli) | ❌ da fare | 🟡 Prima della demo |
-| Batch processing `calculate_renewal_scores_bulk` | ❌ da fare | 🟡 Media |
-| Streaming export CSV | ❌ da fare | 🟢 Bassa |
-
----
-
-## Backlog importante (non dimenticare)
-
-**Chat AI (bug noto):** In `services/chat.py` riga 24, `insights.get("insights", [])` restituisce sempre lista vuota — la chiave giusta è `azioni_settimana`. La chat funziona ma con contesto impoverito. Da fixare in sessione dedicata. Dettagli in `memory/backlog_chat_ai.md`.
-
-**Redesign visivo:** Quando il prodotto è stabile, redesign completo con shadcn/ui + Tremor + Framer Motion. In `memory/feedback_visual_redesign.md`.
-
-**Revoca token JWT:** Soluzione completa con blacklist non ancora implementata. Per ora TTL ridotto a 8 ore come mitigazione.
+| # | Cosa | Perché non fatto |
+|---|---|---|
+| 1 | **RFM Distribution Widget esclude "Occasionale"** | Trovato nell'ultimissima analisi, non ancora fixato — priorità alta, impatto su Dashboard e Report |
+| 2 | Abbonamento senza data corrompe anche la recency RFM (non solo la finestra di rinnovo) | Stesso limite di dati di sotto, conseguenza mai notata prima |
+| 3 | CTA "Crea campagna" in Predizione Presenze | Ancora uno stub "Presto" — serve un modo di esportare/contattare per tier di una partita specifica (l'export attuale filtra solo per segmento RFM) |
+| 4 | Business Score "A rischio" + sub-cluster Revenue Watch "A rischio" | Quarta e quinta occorrenza della stessa parola per concetti diversi — solo segnalate |
+| 5 | Finestra di rinnovo prevista | Bloccata: `Abbonamento` non ha nessuna data di acquisto/rinnovo, solo `stagione` come stringa — serve modifica al modello + CSV import |
+| 6 | `was_dormiente_last_week` hardcoded `False` in `engine.py` | `JourneyStage.RECUPERATO` non è mai raggiungibile — serve uno storico di snapshot settimanali (nuova tabella + job periodico), non un fix puntuale |
+| 7 | Upload — 4 card CSV con comportamento diverso (polling vs sincrono) | Bassa priorità, motivo tecnico valido (cold-start Render) ma incoerente visivamente |
 
 ---
 
@@ -63,47 +70,14 @@ Il caricamento dei CSV su Render Free tier (512MB RAM) è lento e complesso. Abb
 
 | File | Contenuto |
 |------|-----------|
-| `PROMPTS_CLAUDE_CODE.md` | Tutti i prompt pronti per Claude Code + CONTESTO OBBLIGATORIO |
-| `DEAD_CODE_AUDIT.md` | Audit codice inutilizzato del 26 giugno (storico) |
-| `CODEBASE_AUDIT_2.md` | Audit performance + dead code del 29 giugno |
-| `SECURITY_AUDIT.md` | Security audit completo del 29 giugno |
-| `CLAUDE.md` | Istruzioni tecniche complete per Claude Code |
-| `sample_csv/` | 4 file CSV di test: `*_test.csv` per abbonati, biglietteria, shop, partite |
+| `CLAUDE.md` | Istruzioni tecniche — aggiornato oggi (router/feature table, schema risposta intelligence) |
+| `sample_csv/dashtest_*.csv` | Dataset 50 fan sintetici usato per tutte le verifiche di oggi |
+| `backend/faniq.db.bak-20260902144342` | Backup del DB prima del fix schema — non tracciato in git |
 
 ---
 
-## Lavoro completato oggi (2026-06-29)
+## Prima di continuare
 
-**Performance (Audit #2):**
-- Fix renewal-scores bulk loader (da N×5 query a 5 query totali)
-- Rimosso endpoint anti-pattern `/insights/fan/{id}`
-- Fix SQL analytics (5 funzioni con aggregati invece di full-load)
-- Cache su `compute_behavioral` + fix bypass cache intelligence
-- Collegato `Calendario.jsx` al router
-- Pulizia codice morto (`client.js`, imports, `stripe_customer_id`, `require_role`)
-
-**Nuove feature:**
-- Side panel scheda fan in Report (`FanDetailPanel.jsx`)
-- UI consensi GDPR in Privacy (toggle marketing/profilazione)
-- Simulatore collegato al router e Sidebar
-- Filtro stagionale in Report
-- Pulsante "Reset dati" in Upload
-- Upload CSV asincrono con polling
-
-**Security (Audit completo):**
-- Formula injection CSV fixata
-- Rate limiting su chat, upload, intelligence
-- Fix errori esposti al client
-- TTL JWT ridotto a 8 ore
-- CSP, CORS restrittivo, Swagger disabilitato in prod
-- Rimosso pandas, JWT payload snellito
-- `FANIQ_ENV=production` impostato su Render
-
----
-
-## Note operative
-
-- **Test locali:** 29 test, 3 failure pre-esistenti per SQLAlchemy assente nel Python di sistema (non nel venv) — sono attesi
-- **Deploy:** push su `main` → Render si aggiorna automaticamente
-- **Render Free tier:** 512MB RAM, cold start ~30-60s dopo inattività, timeout connessioni ~30s
-- **FANIQ_ENV=production** impostato su Render → Swagger UI disabilitato
+1. **Committare** le modifiche di oggi (CLAUDE.md dice sempre di non lasciare sessioni con modifiche pendenti) — non ancora fatto su richiesta esplicita, chiedere conferma.
+2. Il DB locale è vuoto — ricaricare `sample_csv/dashtest_*` sul club di test se serve continuare a verificare dal vivo, o registrarne uno nuovo.
+3. Riprendere dal backlog aperto sopra, punto per punto, con lo stesso approccio di oggi (analisi → discussione → fix → verifica dal vivo).

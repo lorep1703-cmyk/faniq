@@ -90,6 +90,18 @@ export default function FanDetailPanel({ fanId, onClose }) {
                       <span className="text-slate-500">Prob. rinnovo</span>
                       <RenewalDot prob={intel.renewal_probability} />
                     </div>
+                    {intel.renewal_probability != null && detail.spesa_stagione_recente != null && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500" title="Spesa media recente per stagione × probabilità di rinnovo">
+                          Valore futuro atteso
+                        </span>
+                        <span className="font-semibold text-emerald-700">
+                          {new Intl.NumberFormat("it-IT", {
+                            style: "currency", currency: "EUR", maximumFractionDigits: 0,
+                          }).format(intel.renewal_probability * detail.spesa_stagione_recente)}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between">
                       <span className="text-slate-500">Stadio journey</span>
                       <JourneyBadge stage={intel.journey_stage} size="sm" />
@@ -154,6 +166,19 @@ export default function FanDetailPanel({ fanId, onClose }) {
                     <p className="text-xs text-slate-500 mt-1">Spesa shop</p>
                   </div>
                 </div>
+
+                {detail.spesa_shop_prevista_qualita !== "INSUFFICIENT" && (
+                  <div className="mt-3 flex items-center justify-between rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-2.5">
+                    <span className="text-xs font-medium text-emerald-700">Spesa shop attesa · prossimi 3 mesi</span>
+                    <span className="text-sm font-bold text-emerald-700">
+                      {new Intl.NumberFormat("it-IT", {
+                        style: "currency",
+                        currency: "EUR",
+                        maximumFractionDigits: 0,
+                      }).format(detail.spesa_shop_prevista)}
+                    </span>
+                  </div>
+                )}
               </section>
             </>
           )}

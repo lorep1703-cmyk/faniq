@@ -27,12 +27,34 @@ JOURNEY_FEDELTA_MIN_RATE = 0.6
 JOURNEY_PICCO_MIN_RATE = 0.85
 
 # ── Stadio 3: Subscription Anomaly ────────────────────────────────────────
+# Soglie base (poi spostate da un margine adattivo — vedi sotto)
 ANOMALY_CRITICAL_ABSENCES = 5   # assenze consecutive → severity CRITICA
 ANOMALY_HIGH_ABSENCES = 3       # assenze consecutive → severity ALTA
 ANOMALY_MEDIUM_ABSENCES = 2     # assenze consecutive → severity MEDIA
 
+# Margine (in assenze) applicato alle soglie sopra in base al decay profile:
+# un fan storicamente solido ha più margine prima di essere segnalato, uno
+# volatile ne ha meno — stessa logica dei customer health score B2B tarati
+# sulla tenure del cliente invece che uniformi per tutti.
+ANOMALY_DECAY_MARGIN = {
+    "LENTO":     2,
+    "MEDIO":     0,
+    "RAPIDO":   -1,
+    "VOLATILE": -2,
+}
+# Storico abbonamenti: ogni N stagioni consecutive → +1 margine
+ANOMALY_LOYALTY_SEASONS_PER_MARGIN = 2
+# Cap sul margine combinato (decay + loyalty) — evita soglie troppo estreme
+ANOMALY_MARGIN_MIN = -2
+ANOMALY_MARGIN_MAX = 2
+# Cap sulla soglia CRITICA effettiva dopo il margine
+ANOMALY_CRITICAL_ABSENCES_MIN = 4
+ANOMALY_CRITICAL_ABSENCES_MAX = 7
+
 # ── Stadio 4: Ambassador Score ─────────────────────────────────────────────
-AMBASSADOR_SCORE_THRESHOLD = 60   # sopra questa soglia → ambassador confermato
+# NB: la soglia "ambassador confermato" (60) non è applicata qui — il backend
+# restituisce solo lo score 0-100 grezzo. La classificazione in tier vive
+# lato frontend in AmbassadorBadge.jsx (getTier), unica fonte per tutta la UI.
 # Pesi componenti ambassador
 AMBASSADOR_WEIGHT_AVG = 0.5    # media biglietti per acquisto
 AMBASSADOR_WEIGHT_VAR = 0.3    # varianza dei gruppi (porta gente diversa)

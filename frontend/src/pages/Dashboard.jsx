@@ -10,6 +10,7 @@ import { fetchStats, fetchCitta, fetchPresenze, fetchRevenueBreakdown, fetchInte
 import JourneyDistributionWidget from "../components/intelligence/JourneyDistributionWidget";
 import AmbassadorsWidget from "../components/intelligence/AmbassadorsWidget";
 import DecayDistributionWidget from "../components/intelligence/DecayDistributionWidget";
+import DormantPotentialWidget from "../components/intelligence/DormantPotentialWidget";
 import RfmDistributionWidget from "../components/RfmDistributionWidget";
 import TopSpendersWidget from "../components/TopSpendersWidget";
 import QuickActionsWidget from "../components/QuickActionsWidget";
@@ -29,7 +30,7 @@ const cardVariants = {
 
 function IntelligenceBanner({ summary, loading }) {
   const atRisk      = summary?.fans_at_risk       ?? null;
-  const critical    = summary?.fans_critical_anomaly ?? null;
+  const toContact   = summary?.fans_to_contact    ?? null;
   const renewalAvg  = summary?.avg_renewal_probability ?? null;
 
   const renewalPct  = renewalAvg != null ? Math.round(renewalAvg * 100) : null;
@@ -49,10 +50,10 @@ function IntelligenceBanner({ summary, loading }) {
     },
     {
       label: "Da contattare oggi",
-      value: loading ? "—" : critical != null ? critical : "N/D",
+      value: loading ? "—" : toContact != null ? toContact : "N/D",
       icon: AlertCircle,
-      color: loading || !critical ? "primary" : "amber",
-      sub: loading ? "" : critical === 0 ? "Nessun abbonato silenzioso" : "abbonati paganti non usano il posto",
+      color: loading || !toContact ? "primary" : "amber",
+      sub: loading ? "" : toContact === 0 ? "Nessun abbonato silenzioso" : "abbonati paganti non usano il posto",
     },
     {
       label: "Prob. media rinnovo",
@@ -340,9 +341,14 @@ export default function Dashboard() {
         <DecayDistributionWidget />
       </div>
 
-      {/* Top Spender + Azioni rapide */}
+      {/* Potenziale dormienti + Top Spender */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <DormantPotentialWidget />
         <TopSpendersWidget />
+      </div>
+
+      {/* Azioni rapide */}
+      <div className="mb-6">
         <QuickActionsWidget />
       </div>
 

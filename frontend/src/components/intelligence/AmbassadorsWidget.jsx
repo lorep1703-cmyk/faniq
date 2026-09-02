@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Users } from "lucide-react";
 import { fetchClubIntelligence } from "../../api/client";
-import AmbassadorBadge from "./AmbassadorBadge";
+import AmbassadorBadge, { getTier } from "./AmbassadorBadge";
 
 export default function AmbassadorsWidget() {
   const [ambassadors, setAmbassadors] = useState([]);
@@ -12,7 +12,9 @@ export default function AmbassadorsWidget() {
   useEffect(() => {
     fetchClubIntelligence({ per_page: 500 })
       .then((data) => {
-        const withScore = data.items.filter((f) => f.ambassador_score != null && f.ambassador_score > 60);
+        // Stessa soglia di AmbassadorBadge — una sola fonte (getTier), non un
+        // secondo "60" hardcoded qui che potrebbe scollegarsi dall'altro.
+        const withScore = data.items.filter((f) => getTier(f.ambassador_score) === "ambassador");
         withScore.sort((a, b) => b.ambassador_score - a.ambassador_score);
         setTotal(withScore.length);
         setAmbassadors(withScore.slice(0, 10));
@@ -60,7 +62,7 @@ export default function AmbassadorsWidget() {
                 className="flex items-center justify-between gap-3 py-1.5 border-b border-slate-50 last:border-0"
               >
                 <span className="text-sm font-medium text-slate-700 truncate">
-                  {fan.fan_name ?? `Fan #${fan.fan_id}`}
+                  {fan.nome || fan.cognome ? `${fan.nome ?? ""} ${fan.cognome ?? ""}`.trim() : `Fan #${fan.fan_id}`}
                 </span>
                 <AmbassadorBadge score={fan.ambassador_score} size="sm" />
               </li>

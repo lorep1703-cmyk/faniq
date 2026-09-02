@@ -24,7 +24,21 @@ def _build_context(db: Session, club_id: int, club_nome: str) -> str:
             label = f"{s.get('nome', '')} {s.get('cognome', '')}".strip() or f"Tifoso #{s['id']}"
         seg_lines.append(f"- {label}: segmento {s['segment']}, spesa {s['total_spend']}€, fonti {s['n_sources']}")
 
-    insight_lines = [f"- {i['title']}: {i['body']}" for i in insights.get("insights", [])[:5]]
+    kpi = insights.get("kpi", {})
+    insight_lines = [f"Business Score: {kpi.get('business_score')}/100"]
+
+    for cluster in insights.get("revenue_watch", {}).get("sotto_cluster", [])[:5]:
+        insight_lines.append(
+            f"- Revenue a rischio · {cluster['nome']}: {cluster['count']} tifosi, {cluster['revenue']}€ — {cluster['consiglio']}"
+        )
+
+    for opp in insights.get("opportunita", [])[:5]:
+        insight_lines.append(
+            f"- Opportunità · {opp['titolo']}: {opp['descrizione']} (potenziale {opp['revenue_stimata']}€)"
+        )
+
+    for azione in insights.get("azioni_settimana", [])[:5]:
+        insight_lines.append(f"- Azione consigliata ({azione['urgenza']}): {azione['azione']} — {azione['valore']}")
 
     return (
         f"Club: {club_nome}\n"

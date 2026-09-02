@@ -100,27 +100,52 @@ def test_journey_rischio_volatile_in_calo():
 
 def test_anomaly_nessuna_senza_abbonamento():
     flags = _flags("11100000")
-    alert = calculate_anomaly(flags, has_active_subscription=False, journey_stage=JourneyStage.RISCHIO)
+    alert = calculate_anomaly(
+        flags, has_active_subscription=False, journey_stage=JourneyStage.RISCHIO,
+        decay_profile=DecayProfile.MEDIO, n_subscription_seasons=0,
+    )
     assert alert is None
 
 
-def test_anomaly_critica_rischio_5_assenze():
+def test_anomaly_baseline_critica_5_assenze():
+    """Decay MEDIO + zero storico → margine 0, soglie invariate rispetto al default."""
     flags = _flags("111100000")
-    alert = calculate_anomaly(flags, has_active_subscription=True, journey_stage=JourneyStage.RISCHIO)
+    alert = calculate_anomaly(
+        flags, has_active_subscription=True, journey_stage=JourneyStage.RISCHIO,
+        decay_profile=DecayProfile.MEDIO, n_subscription_seasons=0,
+    )
     assert alert is not None
     assert alert.severity == AnomalySeverity.CRITICA
 
 
-def test_anomaly_alta_fedelta_3_assenze():
-    flags = _flags("1111000")
-    alert = calculate_anomaly(flags, has_active_subscription=True, journey_stage=JourneyStage.FEDELTA)
+def test_anomaly_volatile_novizio_critica_anticipata():
+    """Decay VOLATILE + primo anno → margine negativo, CRITICA scatta a 4 assenze invece di 5."""
+    flags = _flags("11110000")
+    alert = calculate_anomaly(
+        flags, has_active_subscription=True, journey_stage=JourneyStage.ABITUDINE,
+        decay_profile=DecayProfile.VOLATILE, n_subscription_seasons=1,
+    )
+    assert alert is not None
+    assert alert.severity == AnomalySeverity.CRITICA
+
+
+def test_anomaly_lento_fedele_margine_esteso():
+    """Decay LENTO + storico lungo → margine positivo, 5 assenze restano ALTA, non CRITICA."""
+    flags = _flags("111100000")
+    alert = calculate_anomaly(
+        flags, has_active_subscription=True, journey_stage=JourneyStage.FEDELTA,
+        decay_profile=DecayProfile.LENTO, n_subscription_seasons=4,
+    )
     assert alert is not None
     assert alert.severity == AnomalySeverity.ALTA
 
 
 def test_anomaly_nessuna_fan_presente():
     flags = _flags("11111111")
-    alert = calculate_anomaly(flags, has_active_subscription=True, journey_stage=JourneyStage.PICCO)
+    alert = calculate_anomaly(
+        flags, has_active_subscription=True, journey_stage=JourneyStage.PICCO,
+        decay_profile=DecayProfile.LENTO, n_subscription_seasons=0,
+    )
     assert alert is None
 
 

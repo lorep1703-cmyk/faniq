@@ -6,14 +6,14 @@ from collections import Counter
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
-from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from database import get_db
-from fan_intelligence import DataQuality, FanIntelligence, JourneyStage
+from fan_intelligence import FanIntelligence, JourneyStage
 from models import Club, Fan
 from services.cache import get as cache_get, set as cache_set
 from services.intelligence.engine import compute_club_intelligence, compute_fan_intelligence
+from services.season_value import recent_season_spend
 from tenant import get_current_club
 
 
@@ -100,6 +100,7 @@ def _serialize(fi: FanIntelligence) -> dict:
         "computed_at": fi.computed_at.isoformat(),
         "data_quality": fi.data_quality.value,
         "momentum": fi.momentum,
+        "half_life_value": fi.half_life_value,
     }
 
 
@@ -177,9 +178,12 @@ def get_club_summary(
         1 for r in results
         if r.get("renewal_probability") is not None and r["renewal_probability"] < 0.4
     )
-    fans_critical_anomaly = sum(
+    # Stesso identico filtro di AlertsPage.jsx (fetchAlertsRaw): qualsiasi severità,
+    # non solo CRITICA — altrimenti il numero mostrato su badge/Dashboard non
+    # corrisponde a quanti elementi si trovano aprendo la pagina "Da contattare".
+    fans_to_contact = sum(
         1 for r in results
-        if r.get("subscription_anomaly") and r["subscription_anomaly"].get("severity") == "CRITICA"
+        if r.get("subscription_anomaly")
     )
 
     journey_dist = Counter(r["journey_stage"] for r in results if r.get("journey_stage"))
@@ -189,9 +193,54 @@ def get_club_summary(
         "total_fans": total,
         "avg_renewal_probability": avg_renewal,
         "fans_at_risk": fans_at_risk,
-        "fans_critical_anomaly": fans_critical_anomaly,
+        "fans_to_contact": fans_to_contact,
         "journey_distribution": dict(journey_dist),
         "decay_distribution": dict(decay_dist),
+    }
+
+
+# ── Potenziale dormienti ───────────────────────────────────────────────────
+
+@router.get("/club/dormant-potential")
+def get_dormant_potential(
+    db: Session = Depends(get_db),
+    club: Club = Depends(get_current_club),
+):
+    """Valore storico (spesa media recente per stagione, da quando erano
+    attivi) dei fan attualmente DORMIENTE. Non è una previsione di risposta
+    a una campagna — FanIQ non traccia campagne — è il valore reale che
+    avevano, su cui il club applica il proprio giudizio di recupero."""
+    results = _get_or_compute(club.id, db)
+    dormant_ids = [r["fan_id"] for r in results if r.get("journey_stage") == JourneyStage.DORMIENTE.value]
+
+    if not dormant_ids:
+        return {"fans_count": 0, "potenziale_totale": 0.0, "top_fans": []}
+
+    fans = (
+        db.query(Fan)
+        .filter(Fan.id.in_(dormant_ids), Fan.club_id == club.id)
+        .options(
+            selectinload(Fan.abbonamenti),
+            selectinload(Fan.biglietti),
+            selectinload(Fan.shop_orders),
+        )
+        .all()
+    )
+
+    entries = []
+    for fan in fans:
+        valore = recent_season_spend(fan)
+        if valore:
+            entries.append({
+                "fan_id": fan.id, "nome": fan.nome, "cognome": fan.cognome,
+                "valore_storico": valore,
+            })
+    entries.sort(key=lambda e: -e["valore_storico"])
+
+    return {
+        "fans_count": len(dormant_ids),
+        "potenziale_totale": round(sum(e["valore_storico"] for e in entries), 2),
+        "top_fans": entries[:10],
     }
 
 

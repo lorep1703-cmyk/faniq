@@ -23,7 +23,7 @@ from fan_intelligence import (
     FanIntelligence,
     JourneyStage,
 )
-from models import Abbonamento, Biglietto, Fan, Partita, ShopOrder
+from models import Fan, Partita
 from services.intelligence.ambassador import calculate_ambassador
 from services.intelligence.anomaly import calculate_anomaly
 from services.intelligence.decay import calculate_decay
@@ -143,6 +143,8 @@ def _run_pipeline(raw: _FanRaw) -> FanIntelligence:
         raw.presence_flags,
         raw.has_active_subscription,
         journey_stage,
+        decay_profile,
+        raw.n_subscription_seasons,
     )
 
     # Stadio 4 — Ambassador
@@ -221,7 +223,7 @@ def compute_fan_intelligence(fan_id: int, club_id: int, db: Session) -> FanIntel
 
     today = date.today()
     past_matches = _load_past_match_dates(club_id, today, db)
-    current_season = _current_season()
+    current_season = current_season_str()
 
     raw = _extract_fan_raw(fan, past_matches, current_season)
     return _run_pipeline(raw)
@@ -234,7 +236,7 @@ def compute_club_intelligence(club_id: int, db: Session) -> list[FanIntelligence
     today = date.today()
     # Partite: caricate una volta sola, condivise tra tutti i batch
     past_matches = _load_past_match_dates(club_id, today, db)
-    current_season = _current_season()
+    current_season = current_season_str()
 
     from sqlalchemy import func
     total = db.query(func.count(Fan.id)).filter(Fan.club_id == club_id).scalar() or 0
@@ -296,9 +298,14 @@ def _load_past_match_dates(club_id: int, today: date, db: Session) -> list[date]
     return [row.data for row in partite]
 
 
-def _current_season() -> str:
-    """Stagione corrente nel formato '2024/25'."""
+def current_season_str() -> str:
+    """Stagione corrente nel formato '2024/2025' — deve combaciare esattamente
+    con Abbonamento.stagione (CSV template: 'nome,...,stagione,...' con
+    valori a 4 cifre, es. '2024/2025'). Prima restituiva 'YYYY/YY' (2 cifre
+    finali): il confronto con lo storico reale non è mai stato vero, quindi
+    has_active_subscription era sempre False e lo Stadio 3 (Anomaly) non ha
+    mai generato un alert per nessun fan."""
     y = date.today().year
     if date.today().month >= 7:
-        return f"{y}/{str(y + 1)[-2:]}"
-    return f"{y - 1}/{str(y)[-2:]}"
+        return f"{y}/{y + 1}"
+    return f"{y - 1}/{y}"

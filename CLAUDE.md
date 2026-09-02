@@ -34,7 +34,6 @@ faniq/
 │   │   ├── dashboard.py         # GET /dashboard/stats, /segments, /fans, ecc.
 │   │   ├── insights.py          # GET /insights/overview, /fan/{id}
 │   │   ├── intelligence.py      # GET/POST /api/intelligence/...
-│   │   ├── renewal.py           # GET /fans/renewal-scores, /{id}/renewal-score
 │   │   ├── upload.py            # POST /upload/{type}, DELETE /upload/{id}
 │   │   ├── partite.py           # GET/POST/DELETE /partite/, /behavioral, /predizione
 │   │   ├── export.py            # GET /export/fans
@@ -44,7 +43,6 @@ faniq/
 │   ├── services/
 │   │   ├── analytics.py         # RFM, segmentazione, KPI dashboard
 │   │   ├── insights.py          # Business Score, Revenue Watch, Opportunità
-│   │   ├── renewal.py           # Renewal Probability Score (5 segnali pesati)
 │   │   ├── behavioral.py        # Analisi casa/trasferta, loyalty badge
 │   │   ├── csv_import.py        # Import CSV: fan, abbonamenti, biglietti, shop
 │   │   ├── chat.py              # Chat AI con anonimizzazione PII
@@ -58,8 +56,7 @@ faniq/
 │   │       ├── ambassador.py    # Stadio 4: score impatto sociale
 │   │       └── renewal.py       # Stadio 5: renewal_probability formula pesata
 │   └── tests/
-│       ├── test_intelligence_engine.py   # 23 test su dati sintetici
-│       └── test_renewal.py
+│       └── test_intelligence_engine.py   # 23 test su dati sintetici
 ├── frontend/src/
 │   ├── App.jsx                  # Router + PrivateRoute
 │   ├── api/client.js            # Tutte le chiamate API (axios + interceptor JWT)
@@ -164,7 +161,6 @@ Tutte le funzioni sono in `frontend/src/api/client.js`:
 | Autenticazione club + ClubUser con ruoli | `routers/auth.py`, `services/auth.py`, `tenant.py` |
 | RFM segmentation (VIP/Fedele/A rischio/Dormiente/Nuovo) | `services/analytics.py` |
 | Business Score 0-100 + Revenue Watch + Opportunità | `services/insights.py` |
-| Renewal Probability Score (5 segnali pesati) | `services/renewal.py`, `routers/renewal.py` |
 | Upload CSV: fan, abbonamenti, biglietti, shop, partite | `services/csv_import.py`, `routers/upload.py` |
 | Calendario partite + Predizione presenze | `routers/partite.py`, `services/behavioral.py` |
 | Export CSV fan per segmento | `routers/export.py` |
@@ -175,7 +171,7 @@ Tutte le funzioni sono in `frontend/src/api/client.js`:
 | → Stadio 2: Journey Stage (7 stadi) | `services/intelligence/journey.py` |
 | → Stadio 3: Subscription Anomaly | `services/intelligence/anomaly.py` |
 | → Stadio 4: Ambassador Score | `services/intelligence/ambassador.py` |
-| → Stadio 5: Renewal Probability | `services/intelligence/renewal.py` |
+| → Stadio 5: Renewal Probability (unica fonte di "prob. rinnovo" in tutta l'app — Report, FanDetailPanel, Dashboard, Business Score) | `services/intelligence/renewal.py` |
 | UI Journey Badge + Timeline + Distribution | `frontend/src/components/intelligence/` |
 | UI Alerts "Da contattare" con archivio | `frontend/src/pages/AlertsPage.jsx` |
 
@@ -189,7 +185,7 @@ Tutte le funzioni sono in `frontend/src/api/client.js`:
 |--------|------|----------|
 | `GET` | `/api/intelligence/fan/{fan_id}` | `FanIntelligence` singolo fan |
 | `GET` | `/api/intelligence/club` | Lista paginata, filtri: `journey_stage`, `min_renewal`, `max_renewal`, `sort` |
-| `GET` | `/api/intelligence/club/summary` | `{ total_fans, avg_renewal_probability, fans_at_risk, fans_critical_anomaly, journey_distribution, decay_distribution }` |
+| `GET` | `/api/intelligence/club/summary` | `{ total_fans, avg_renewal_probability, fans_at_risk, fans_to_contact, journey_distribution, decay_distribution }` |
 | `POST` | `/api/intelligence/club/refresh` | Avvia ricalcolo in background → `{ job_id, status: "queued" }` |
 | `GET` | `/api/intelligence/club/refresh/status` | `{ status: "queued"|"running"|"done"|"error"|"idle" }` |
 
@@ -209,7 +205,8 @@ Tutte le funzioni sono in `frontend/src/api/client.js`:
   "intelligence_score": 72,
   "computed_at": "2026-06-22T10:30:00",
   "data_quality": "FULL",
-  "momentum": 0.25
+  "momentum": 0.25,
+  "half_life_value": 2.5
 }
 ```
 
@@ -246,7 +243,7 @@ Il **push** su `main` è bloccato in modo assoluto dalla regola hookify `.claude
 
 ## Cosa NON fare
 
-- **Non riscrivere feature già esistenti** — leggi il codice prima. RFM, Business Score, Renewal e l'intero Intelligence Engine sono completi.
+- **Non riscrivere feature già esistenti** — leggi il codice prima. RFM, Business Score e l'intero Intelligence Engine (Renewal Probability incluso, Stadio 5) sono completi.
 - **Non installare librerie** senza conferma esplicita — il bundle frontend e il venv backend sono stabili.
 - **Non toccare** `tenant.py`, `services/auth.py`, `routers/auth.py`, middleware in `main.py`.
 - **Non creare file di documentazione** non richiesti (README, ADR, ecc.).

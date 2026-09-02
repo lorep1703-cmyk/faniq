@@ -60,9 +60,19 @@ def compute_behavioral(db: Session, club_id: int) -> dict:
     # Biglietti per fan
     biglietti = db.query(Biglietto).filter(Biglietto.club_id == club_id).all()
     fan_dates: dict[int, set] = {}
+    fan_prices: dict[int, list] = {}
     for b in biglietti:
         if b.data_partita:
             fan_dates.setdefault(b.fan_id, set()).add(b.data_partita)
+        if b.prezzo:
+            fan_prices.setdefault(b.fan_id, []).append(b.prezzo)
+
+    # Prezzo medio storico — per fan (usato nella stima di revenue delle
+    # predizioni presenze) e club-wide come fallback per chi non ha ancora
+    # comprato biglietti singoli (es. solo abbonati o nessun dato).
+    fan_avg_price = {fid: sum(prices) / len(prices) for fid, prices in fan_prices.items()}
+    all_prices = [p for prices in fan_prices.values() for p in prices]
+    club_avg_price = round(sum(all_prices) / len(all_prices), 2) if all_prices else 0.0
 
     fan_scores: dict[int, dict] = {}
     for fan_id, dates in fan_dates.items():
@@ -92,6 +102,8 @@ def compute_behavioral(db: Session, club_id: int) -> dict:
         "badge_counts": badge_counts,
         "fan_scores": fan_scores,
         "fan_dates": fan_dates,
+        "fan_avg_price": fan_avg_price,
+        "club_avg_price": club_avg_price,
     }
     cache_set(cache_key, result)
     return result

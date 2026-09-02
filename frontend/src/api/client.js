@@ -46,7 +46,6 @@ export const fetchAllFans = (stagione = null) =>
 export const fetchInsights = () => api.get("/insights/overview", { timeout: 60000 }).then((r) => r.data);
 export const fetchDataReadiness = () => api.get("/insights/data-readiness").then((r) => r.data);
 
-export const fetchSuggestedBase = () => api.get("/simulate/base").then((r) => r.data);
 export const fetchAttendance = (params) =>
   api.get("/simulate/attendance", { params }).then((r) => r.data);
 export const fetchHealth = () => api.get("/health", { timeout: 4000 }).then((r) => r.data);
@@ -104,7 +103,6 @@ export const uploadPartite      = (file)   => {
 };
 export const fetchBehavioral    = ()       => api.get("/partite/behavioral").then((r) => r.data);
 export const fetchPredizione    = (id)     => api.get(`/partite/predizione/${id}`).then((r) => r.data);
-export const fetchRenewalScores = (params = {}) => api.get("/fans/renewal-scores", { params: { per_page: 5000, ...params } }).then((r) => r.data);
 
 export const fetchFanDetailPanel = (id) => api.get(`/fans/${id}/detail`).then((r) => r.data);
 
@@ -114,6 +112,8 @@ export const fetchClubIntelligence  = (params = {}) =>
   api.get("/api/intelligence/club", { params: { per_page: 5000, ...params }, timeout: 60000 }).then((r) => r.data);
 export const fetchIntelligenceSummary = () =>
   api.get("/api/intelligence/club/summary", { timeout: 60000 }).then((r) => r.data);
+export const fetchDormantPotential = () =>
+  api.get("/api/intelligence/club/dormant-potential", { timeout: 60000 }).then((r) => r.data);
 
 // Alerts — filtra lato client su subscription_anomaly != null
 export const fetchAlertsRaw = () =>
