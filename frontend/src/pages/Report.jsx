@@ -161,7 +161,11 @@ export default function Report() {
   useEffect(() => {
     loadIntelligence("");
     fetchBehavioral()
-      .then((data) => setBehavioralMap(data?.fan_scores || {}))
+      .then((data) => {
+        const map = {};
+        (data?.fan_scores || []).forEach((score) => { map[score.id] = score; });
+        setBehavioralMap(map);
+      })
       .catch(() => { /* silenzioso: colonna presenze resta vuota */ });
   }, []);
 
