@@ -187,13 +187,13 @@ def undo_upload(db: Session, club_id: int, upload_id: int) -> dict:
         raise ValueError("Upload non trovato")
 
     if upload.type == "abbonati":
-        db.query(Abbonamento).filter(Abbonamento.upload_id == upload_id).delete()
+        db.query(Abbonamento).filter(Abbonamento.upload_id == upload_id, Abbonamento.club_id == club_id).delete()
     elif upload.type == "biglietteria":
-        db.query(Biglietto).filter(Biglietto.upload_id == upload_id).delete()
+        db.query(Biglietto).filter(Biglietto.upload_id == upload_id, Biglietto.club_id == club_id).delete()
     elif upload.type == "shop":
-        db.query(ShopOrder).filter(ShopOrder.upload_id == upload_id).delete()
+        db.query(ShopOrder).filter(ShopOrder.upload_id == upload_id, ShopOrder.club_id == club_id).delete()
     elif upload.type == "partite":
-        db.query(Partita).filter(Partita.upload_id == upload_id).delete()
+        db.query(Partita).filter(Partita.upload_id == upload_id, Partita.club_id == club_id).delete()
 
     # Rimuove i fan che non hanno più nessuna transazione collegata
     orphan_fans = (
