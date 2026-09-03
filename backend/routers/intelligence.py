@@ -40,20 +40,21 @@ def _get_compute_lock(club_id: int) -> threading.Lock:
 
 
 def _build_cache(club_id: int, db) -> list[dict]:
-    """Calcola intelligence, serializza e aggiunge nome/cognome in un'unica passata."""
+    """Calcola intelligence, serializza e aggiunge nome/cognome/email in un'unica passata."""
     from sqlalchemy import text
     results = compute_club_intelligence(club_id, db)
     rows = db.execute(
-        text("SELECT id, nome, cognome FROM fans WHERE club_id = :cid"),
+        text("SELECT id, nome, cognome, email FROM fans WHERE club_id = :cid"),
         {"cid": club_id},
     ).fetchall()
-    names = {row[0]: (row[1], row[2]) for row in rows}
+    names = {row[0]: (row[1], row[2], row[3]) for row in rows}
     items = []
     for fi in results:
         row = _serialize(fi)
-        nome, cognome = names.get(fi.fan_id, (None, None))
+        nome, cognome, email = names.get(fi.fan_id, (None, None, None))
         row["nome"] = nome
         row["cognome"] = cognome
+        row["email"] = email
         items.append(row)
     return items
 
