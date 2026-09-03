@@ -1,95 +1,95 @@
-nome,cognome,email,citta,stagione,importo_pagato
-Roberta,Fontana,roberta.fontana@libero.it,Novara,2026/2027,163.09
-Laura,Colombo,laura.colombo@hotmail.it,Novara,2024/2025,333.0
-Laura,Colombo,laura.colombo@hotmail.it,Novara,2025/2026,389.89
-Laura,Colombo,laura.colombo@hotmail.it,Novara,2026/2027,385.77
-Paola,Ferrara,paola.ferrara@libero.it,Novara,2024/2025,215.37
-Paola,Ferrara,paola.ferrara@libero.it,Novara,2025/2026,197.1
-Paola,Ferrara,paola.ferrara@libero.it,Novara,2026/2027,217.85
-Marco,Caruso,marco.caruso@hotmail.it,Chivasso,2024/2025,234.79
-Marco,Caruso,marco.caruso@hotmail.it,Chivasso,2025/2026,269.72
-Marco,Caruso,marco.caruso@hotmail.it,Chivasso,2026/2027,254.37
-Laura,Lombardi,laura.lombardi@hotmail.it,Chivasso,2024/2025,245.18
-Laura,Lombardi,laura.lombardi@hotmail.it,Chivasso,2025/2026,255.42
-Laura,Lombardi,laura.lombardi@hotmail.it,Chivasso,2026/2027,274.96
-Davide,Costa,davide.costa@outlook.it,Trino,2024/2025,250.12
-Davide,Costa,davide.costa@outlook.it,Trino,2025/2026,207.63
-Davide,Costa,davide.costa@outlook.it,Trino,2026/2027,181.02
-Sara,Greco,sara.greco@outlook.it,Asti,2024/2025,164.55
-Matteo,Greco,matteo.greco@alice.it,Torino,2024/2025,231.81
-Matteo,Greco,matteo.greco@alice.it,Torino,2025/2026,252.67
-Matteo,Greco,matteo.greco@alice.it,Torino,2026/2027,246.13
-Roberta,Rizzo,roberta.rizzo@gmail.com,Vercelli,2024/2025,212.11
-Roberta,Rizzo,roberta.rizzo@gmail.com,Vercelli,2025/2026,190.46
-Roberta,Rizzo,roberta.rizzo@gmail.com,Vercelli,2026/2027,196.08
-Federico,Caruso,federico.caruso@alice.it,Asti,2024/2025,203.36
-Federico,Caruso,federico.caruso@alice.it,Asti,2025/2026,257.55
-Federico,Caruso,federico.caruso@alice.it,Asti,2026/2027,184.36
-Sara,Moretti,sara.moretti@libero.it,Ivrea,2024/2025,203.93
-Sara,Moretti,sara.moretti@libero.it,Ivrea,2025/2026,256.96
-Sara,Moretti,sara.moretti@libero.it,Ivrea,2026/2027,235.23
-Giovanni,Mariani,giovanni.mariani@hotmail.it,Vercelli,2024/2025,367.56
-Giovanni,Mariani,giovanni.mariani@hotmail.it,Vercelli,2025/2026,385.23
-Giovanni,Mariani,giovanni.mariani@hotmail.it,Vercelli,2026/2027,355.43
-Daniele,Giordano,daniele.giordano@libero.it,Casale Monferrato,2024/2025,263.18
-Daniele,Giordano,daniele.giordano@libero.it,Casale Monferrato,2025/2026,189.32
-Daniele,Giordano,daniele.giordano@libero.it,Casale Monferrato,2026/2027,189.66
-Simone,Gentile,simone.gentile@libero.it,Novara,2025/2026,170.26
-Simone,Gentile,simone.gentile@libero.it,Novara,2026/2027,158.4
-Davide,Rinaldi,davide.rinaldi@gmail.com,Biella,2024/2025,165.51
-Valentina,De Luca,valentina.deluca@libero.it,Novara,2024/2025,235.43
-Valentina,De Luca,valentina.deluca@libero.it,Novara,2025/2026,259.18
-Valentina,De Luca,valentina.deluca@libero.it,Novara,2026/2027,269.59
-Elena,Longo,elena.longo@hotmail.it,Biella,2026/2027,173.75
-Cristina,Gentile,cristina.gentile@gmail.com,Trino,2026/2027,196.9
-Simone,Caruso,simone.caruso@outlook.it,Torino,2024/2025,192.96
-Simone,Caruso,simone.caruso@outlook.it,Torino,2025/2026,195.98
-Simone,Caruso,simone.caruso@outlook.it,Torino,2026/2027,228.37
-Cristina,Leone,cristina.leone@alice.it,Asti,2024/2025,246.8
-Cristina,Leone,cristina.leone@alice.it,Asti,2025/2026,223.9
-Cristina,Leone,cristina.leone@alice.it,Asti,2026/2027,238.18
-Valentina,Bruno,valentina.bruno@gmail.com,Biella,2024/2025,420.3
-Valentina,Bruno,valentina.bruno@gmail.com,Biella,2025/2026,415.57
-Valentina,Bruno,valentina.bruno@gmail.com,Biella,2026/2027,363.23
-Emanuele,Costa,emanuele.costa@hotmail.it,Casale Monferrato,2024/2025,234.41
-Emanuele,Costa,emanuele.costa@hotmail.it,Casale Monferrato,2025/2026,207.56
-Emanuele,Costa,emanuele.costa@hotmail.it,Casale Monferrato,2026/2027,250.24
-Giovanni,Martini,giovanni.martini@gmail.com,Alessandria,2024/2025,323.94
-Giovanni,Martini,giovanni.martini@gmail.com,Alessandria,2025/2026,435.57
-Giovanni,Martini,giovanni.martini@gmail.com,Alessandria,2026/2027,390.93
-Riccardo,Caruso,riccardo.caruso@alice.it,Chivasso,2024/2025,407.86
-Riccardo,Caruso,riccardo.caruso@alice.it,Chivasso,2025/2026,432.8
-Riccardo,Caruso,riccardo.caruso@alice.it,Chivasso,2026/2027,408.5
-Martina,Rizzo,martina.rizzo@outlook.it,Biella,2025/2026,180.93
-Martina,Rizzo,martina.rizzo@outlook.it,Biella,2026/2027,197.62
-Silvia,Rossi,silvia.rossi@outlook.it,Ivrea,2025/2026,219.03
-Silvia,Rossi,silvia.rossi@outlook.it,Ivrea,2026/2027,183.04
-Roberto,Lombardi,roberto.lombardi@gmail.com,Ivrea,2026/2027,204.44
-Giovanni,Ferrari,giovanni.ferrari@hotmail.it,Vercelli,2024/2025,152.26
-Davide,Longo,davide.longo@gmail.com,Alessandria,2024/2025,210.46
-Giulia,Rizzo,giulia.rizzo@gmail.com,Torino,2026/2027,180.07
-Davide,Lombardi,davide.lombardi@libero.it,Ivrea,2024/2025,197.0
-Francesco,Russo,francesco.russo@gmail.com,Asti,2024/2025,175.15
-Giulia,Marino,giulia.marino@outlook.it,Asti,2024/2025,339.81
-Giulia,Marino,giulia.marino@outlook.it,Asti,2025/2026,362.88
-Giulia,Marino,giulia.marino@outlook.it,Asti,2026/2027,369.38
-Michele,Ferrara,michele.ferrara@hotmail.it,Torino,2024/2025,196.96
-Michele,Ferrara,michele.ferrara@hotmail.it,Torino,2025/2026,218.07
-Michele,Ferrara,michele.ferrara@hotmail.it,Torino,2026/2027,193.88
-Valentina,Longo,valentina.longo@gmail.com,Novara,2025/2026,187.41
-Valentina,Longo,valentina.longo@gmail.com,Novara,2026/2027,214.64
-Marco,Mariani,marco.mariani@gmail.com,Chivasso,2024/2025,237.52
-Marco,Mariani,marco.mariani@gmail.com,Chivasso,2025/2026,224.58
-Marco,Mariani,marco.mariani@gmail.com,Chivasso,2026/2027,219.11
-Fabio,Colombo,fabio.colombo@libero.it,Asti,2024/2025,249.34
-Fabio,Colombo,fabio.colombo@libero.it,Asti,2025/2026,231.08
-Fabio,Colombo,fabio.colombo@libero.it,Asti,2026/2027,221.82
-Giovanni,Barbieri,giovanni.barbieri@libero.it,Vercelli,2024/2025,168.71
-Elisa,Marino,elisa.marino@alice.it,Novara,2024/2025,190.74
-Antonio,Gentile,antonio.gentile@alice.it,Biella,2024/2025,250.13
-Antonio,Gentile,antonio.gentile@alice.it,Biella,2025/2026,187.47
-Antonio,Gentile,antonio.gentile@alice.it,Biella,2026/2027,208.83
-Elena,Ferrara,elena.ferrara@libero.it,Chivasso,2026/2027,194.01
-Cristina,Mancini,cristina.mancini@gmail.com,Biella,2024/2025,197.38
-Cristina,Mancini,cristina.mancini@gmail.com,Biella,2025/2026,251.73
-Cristina,Mancini,cristina.mancini@gmail.com,Biella,2026/2027,191.2
+nome,cognome,email,citta,stagione,data_acquisto,importo_pagato
+Roberta,Fontana,roberta.fontana@libero.it,Novara,2026/2027,2026-09-30,163.09
+Laura,Colombo,laura.colombo@hotmail.it,Novara,2024/2025,2024-11-01,333.0
+Laura,Colombo,laura.colombo@hotmail.it,Novara,2025/2026,2025-06-16,389.89
+Laura,Colombo,laura.colombo@hotmail.it,Novara,2026/2027,2026-07-28,385.77
+Paola,Ferrara,paola.ferrara@libero.it,Novara,2024/2025,2024-07-23,215.37
+Paola,Ferrara,paola.ferrara@libero.it,Novara,2025/2026,2025-08-08,197.1
+Paola,Ferrara,paola.ferrara@libero.it,Novara,2026/2027,2026-10-16,217.85
+Marco,Caruso,marco.caruso@hotmail.it,Chivasso,2024/2025,2024-06-24,234.79
+Marco,Caruso,marco.caruso@hotmail.it,Chivasso,2025/2026,2025-10-11,269.72
+Marco,Caruso,marco.caruso@hotmail.it,Chivasso,2026/2027,2026-08-31,254.37
+Laura,Lombardi,laura.lombardi@hotmail.it,Chivasso,2024/2025,2024-11-22,245.18
+Laura,Lombardi,laura.lombardi@hotmail.it,Chivasso,2025/2026,2025-08-02,255.42
+Laura,Lombardi,laura.lombardi@hotmail.it,Chivasso,2026/2027,2026-08-07,274.96
+Davide,Costa,davide.costa@outlook.it,Trino,2024/2025,2024-08-20,250.12
+Davide,Costa,davide.costa@outlook.it,Trino,2025/2026,2025-06-03,207.63
+Davide,Costa,davide.costa@outlook.it,Trino,2026/2027,2026-08-23,181.02
+Sara,Greco,sara.greco@outlook.it,Asti,2024/2025,2024-06-21,164.55
+Matteo,Greco,matteo.greco@alice.it,Torino,2024/2025,2024-08-04,231.81
+Matteo,Greco,matteo.greco@alice.it,Torino,2025/2026,2025-09-17,252.67
+Matteo,Greco,matteo.greco@alice.it,Torino,2026/2027,2026-10-09,246.13
+Roberta,Rizzo,roberta.rizzo@gmail.com,Vercelli,2024/2025,2024-08-27,212.11
+Roberta,Rizzo,roberta.rizzo@gmail.com,Vercelli,2025/2026,2025-09-19,190.46
+Roberta,Rizzo,roberta.rizzo@gmail.com,Vercelli,2026/2027,2026-06-19,196.08
+Federico,Caruso,federico.caruso@alice.it,Asti,2024/2025,2024-06-22,203.36
+Federico,Caruso,federico.caruso@alice.it,Asti,2025/2026,2025-11-10,257.55
+Federico,Caruso,federico.caruso@alice.it,Asti,2026/2027,2026-08-28,184.36
+Sara,Moretti,sara.moretti@libero.it,Ivrea,2024/2025,2024-06-16,203.93
+Sara,Moretti,sara.moretti@libero.it,Ivrea,2025/2026,2025-06-21,256.96
+Sara,Moretti,sara.moretti@libero.it,Ivrea,2026/2027,2026-07-08,235.23
+Giovanni,Mariani,giovanni.mariani@hotmail.it,Vercelli,2024/2025,2024-08-07,367.56
+Giovanni,Mariani,giovanni.mariani@hotmail.it,Vercelli,2025/2026,2025-11-28,385.23
+Giovanni,Mariani,giovanni.mariani@hotmail.it,Vercelli,2026/2027,2026-08-18,355.43
+Daniele,Giordano,daniele.giordano@libero.it,Casale Monferrato,2024/2025,2024-06-24,263.18
+Daniele,Giordano,daniele.giordano@libero.it,Casale Monferrato,2025/2026,2025-08-22,189.32
+Daniele,Giordano,daniele.giordano@libero.it,Casale Monferrato,2026/2027,2026-10-01,189.66
+Simone,Gentile,simone.gentile@libero.it,Novara,2025/2026,2025-06-06,170.26
+Simone,Gentile,simone.gentile@libero.it,Novara,2026/2027,2026-07-15,158.4
+Davide,Rinaldi,davide.rinaldi@gmail.com,Biella,2024/2025,2024-11-06,165.51
+Valentina,De Luca,valentina.deluca@libero.it,Novara,2024/2025,2024-11-24,235.43
+Valentina,De Luca,valentina.deluca@libero.it,Novara,2025/2026,2025-11-22,259.18
+Valentina,De Luca,valentina.deluca@libero.it,Novara,2026/2027,2026-07-18,269.59
+Elena,Longo,elena.longo@hotmail.it,Biella,2026/2027,2026-11-07,173.75
+Cristina,Gentile,cristina.gentile@gmail.com,Trino,2026/2027,2026-11-29,196.9
+Simone,Caruso,simone.caruso@outlook.it,Torino,2024/2025,2024-06-05,192.96
+Simone,Caruso,simone.caruso@outlook.it,Torino,2025/2026,2025-07-27,195.98
+Simone,Caruso,simone.caruso@outlook.it,Torino,2026/2027,2026-11-06,228.37
+Cristina,Leone,cristina.leone@alice.it,Asti,2024/2025,2024-06-17,246.8
+Cristina,Leone,cristina.leone@alice.it,Asti,2025/2026,2025-06-29,223.9
+Cristina,Leone,cristina.leone@alice.it,Asti,2026/2027,2026-08-20,238.18
+Valentina,Bruno,valentina.bruno@gmail.com,Biella,2024/2025,2024-08-29,420.3
+Valentina,Bruno,valentina.bruno@gmail.com,Biella,2025/2026,2025-06-17,415.57
+Valentina,Bruno,valentina.bruno@gmail.com,Biella,2026/2027,2026-08-25,363.23
+Emanuele,Costa,emanuele.costa@hotmail.it,Casale Monferrato,2024/2025,2024-08-07,234.41
+Emanuele,Costa,emanuele.costa@hotmail.it,Casale Monferrato,2025/2026,2025-06-07,207.56
+Emanuele,Costa,emanuele.costa@hotmail.it,Casale Monferrato,2026/2027,2026-08-20,250.24
+Giovanni,Martini,giovanni.martini@gmail.com,Alessandria,2024/2025,2024-06-22,323.94
+Giovanni,Martini,giovanni.martini@gmail.com,Alessandria,2025/2026,2025-09-02,435.57
+Giovanni,Martini,giovanni.martini@gmail.com,Alessandria,2026/2027,2026-07-07,390.93
+Riccardo,Caruso,riccardo.caruso@alice.it,Chivasso,2024/2025,2024-06-15,407.86
+Riccardo,Caruso,riccardo.caruso@alice.it,Chivasso,2025/2026,2025-06-11,432.8
+Riccardo,Caruso,riccardo.caruso@alice.it,Chivasso,2026/2027,2026-06-12,408.5
+Martina,Rizzo,martina.rizzo@outlook.it,Biella,2025/2026,2025-11-17,180.93
+Martina,Rizzo,martina.rizzo@outlook.it,Biella,2026/2027,2026-07-06,197.62
+Silvia,Rossi,silvia.rossi@outlook.it,Ivrea,2025/2026,2025-08-05,219.03
+Silvia,Rossi,silvia.rossi@outlook.it,Ivrea,2026/2027,2026-06-14,183.04
+Roberto,Lombardi,roberto.lombardi@gmail.com,Ivrea,2026/2027,2026-08-18,204.44
+Giovanni,Ferrari,giovanni.ferrari@hotmail.it,Vercelli,2024/2025,2024-08-17,152.26
+Davide,Longo,davide.longo@gmail.com,Alessandria,2024/2025,2024-08-11,210.46
+Giulia,Rizzo,giulia.rizzo@gmail.com,Torino,2026/2027,2026-11-11,180.07
+Davide,Lombardi,davide.lombardi@libero.it,Ivrea,2024/2025,2024-11-26,197.0
+Francesco,Russo,francesco.russo@gmail.com,Asti,2024/2025,2024-09-27,175.15
+Giulia,Marino,giulia.marino@outlook.it,Asti,2024/2025,2024-10-05,339.81
+Giulia,Marino,giulia.marino@outlook.it,Asti,2025/2026,2025-08-02,362.88
+Giulia,Marino,giulia.marino@outlook.it,Asti,2026/2027,2026-06-02,369.38
+Michele,Ferrara,michele.ferrara@hotmail.it,Torino,2024/2025,2024-09-04,196.96
+Michele,Ferrara,michele.ferrara@hotmail.it,Torino,2025/2026,2025-06-16,218.07
+Michele,Ferrara,michele.ferrara@hotmail.it,Torino,2026/2027,2026-06-21,193.88
+Valentina,Longo,valentina.longo@gmail.com,Novara,2025/2026,2025-07-23,187.41
+Valentina,Longo,valentina.longo@gmail.com,Novara,2026/2027,2026-08-28,214.64
+Marco,Mariani,marco.mariani@gmail.com,Chivasso,2024/2025,2024-11-01,237.52
+Marco,Mariani,marco.mariani@gmail.com,Chivasso,2025/2026,2025-08-07,224.58
+Marco,Mariani,marco.mariani@gmail.com,Chivasso,2026/2027,2026-07-11,219.11
+Fabio,Colombo,fabio.colombo@libero.it,Asti,2024/2025,2024-09-28,249.34
+Fabio,Colombo,fabio.colombo@libero.it,Asti,2025/2026,2025-11-15,231.08
+Fabio,Colombo,fabio.colombo@libero.it,Asti,2026/2027,2026-07-10,221.82
+Giovanni,Barbieri,giovanni.barbieri@libero.it,Vercelli,2024/2025,2024-11-26,168.71
+Elisa,Marino,elisa.marino@alice.it,Novara,2024/2025,2024-07-05,190.74
+Antonio,Gentile,antonio.gentile@alice.it,Biella,2024/2025,2024-07-21,250.13
+Antonio,Gentile,antonio.gentile@alice.it,Biella,2025/2026,2025-08-26,187.47
+Antonio,Gentile,antonio.gentile@alice.it,Biella,2026/2027,2026-06-06,208.83
+Elena,Ferrara,elena.ferrara@libero.it,Chivasso,2026/2027,2026-10-16,194.01
+Cristina,Mancini,cristina.mancini@gmail.com,Biella,2024/2025,2024-11-20,197.38
+Cristina,Mancini,cristina.mancini@gmail.com,Biella,2025/2026,2025-09-27,251.73
+Cristina,Mancini,cristina.mancini@gmail.com,Biella,2026/2027,2026-09-03,191.2

@@ -14,6 +14,9 @@ from services.cache import get as cache_get, set as cache_set
 
 def _fan_activity_dates(fan: Fan) -> list[date]:
     dates: list[date] = []
+    for a in fan.abbonamenti:
+        if a.data_acquisto:
+            dates.append(a.data_acquisto)
     for b in fan.biglietti:
         if b.data_partita:
             dates.append(b.data_partita)

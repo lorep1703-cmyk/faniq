@@ -72,6 +72,7 @@ class Abbonamento(Base):
     upload_id = Column(Integer, ForeignKey("upload_history.id"), nullable=True)
     stagione = Column(String(20), nullable=True)
     importo_pagato = Column(Float, default=0)
+    data_acquisto = Column(Date, nullable=True)
 
     fan = relationship("Fan", back_populates="abbonamenti")
 

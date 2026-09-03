@@ -6,7 +6,7 @@ const CSV_TYPES = [
   {
     id: "abbonati",
     label: "Abbonati",
-    description: "nome, cognome, email, citta, stagione, importo_pagato",
+    description: "nome, cognome, email, citta, stagione, importo_pagato, data_acquisto",
     color: "primary",
   },
   {

@@ -133,6 +133,7 @@ def import_csv(db: Session, club_id: int, csv_type: str, content: bytes, filenam
                 upload_id=upload.id,
                 stagione=row.get("stagione"),
                 importo_pagato=_parse_float(row.get("importo_pagato")),
+                data_acquisto=_parse_date(row.get("data_acquisto")),
             ))
             count += 1
 
@@ -214,7 +215,7 @@ def undo_upload(db: Session, club_id: int, upload_id: int) -> dict:
 
 
 CSV_TEMPLATES = {
-    "abbonati": "nome,cognome,email,citta,stagione,importo_pagato\nPaolo,Verdi,p.verdi@gmail.com,Torino,2024/2025,200.00",
+    "abbonati": "nome,cognome,email,citta,stagione,importo_pagato,data_acquisto\nPaolo,Verdi,p.verdi@gmail.com,Torino,2024/2025,200.00,2024-07-15",
     "biglietteria": "nome,cognome,email,data_partita,settore,prezzo\nPaolo,Verdi,p.verdi@gmail.com,2025-03-02,Tribuna,18.00",
     "shop": "email,prodotto,importo,data\np.verdi@gmail.com,Maglia Home,75.00,2024-10-15",
 }
