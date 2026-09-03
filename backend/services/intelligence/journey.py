@@ -35,7 +35,7 @@ def calculate_journey(
     if was_dormiente_last_week and any(recent[-2:]):
         return JourneyStage.RECUPERATO, momentum
 
-    stage = _classify_stage(recent_rate, momentum, decay_profile)
+    stage = _classify_stage(recent_rate, momentum)
     return stage, round(momentum, 3)
 
 
@@ -49,7 +49,6 @@ def _compute_momentum(recent_rate: float, prev_rate: float) -> float:
 def _classify_stage(
     recent_rate: float,
     momentum: float,
-    decay: DecayProfile,
 ) -> JourneyStage:
     # DORMIENTE: quasi mai presente
     if recent_rate == 0.0:
@@ -63,11 +62,8 @@ def _classify_stage(
     if recent_rate >= JOURNEY_FEDELTA_MIN_RATE and momentum >= 0:
         return JourneyStage.FEDELTA
 
-    # RISCHIO: decay veloce + momentum negativo
+    # RISCHIO: momentum negativo oltre soglia
     if momentum <= JOURNEY_LOW_MOMENTUM:
-        # VOLATILE in calo → rischio più rapido
-        if decay in (DecayProfile.VOLATILE, DecayProfile.RAPIDO):
-            return JourneyStage.RISCHIO
         return JourneyStage.RISCHIO
 
     # ABITUDINE: presenza media, stabile
