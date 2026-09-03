@@ -35,7 +35,7 @@ function buildInsight(dist, total) {
     return {
       color: "#f97316",
       bg: "#fff7ed",
-      text: `1 tifoso su 5 è a rischio abbandono. Agisci prima dei rinnovi.`,
+      text: `1 tifoso su 5 è in fase di declino. Agisci prima dei rinnovi.`,
     };
   }
   if (pct("DORMIENTE") > 40) {

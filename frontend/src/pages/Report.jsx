@@ -34,7 +34,7 @@ const JOURNEY_STAGES = [
 ];
 
 const SORT_OPTIONS = [
-  { value: "rinnovo",  label: "Prob. rinnovo (rischio prima)" },
+  { value: "rinnovo",  label: "Prob. rinnovo (più bassa prima)" },
   { value: "presenze", label: "% presenze allo stadio" },
   { value: "spesa",    label: "Spesa (alta prima)" },
   { value: "impatto",  label: "Impatto community" },
@@ -325,7 +325,7 @@ export default function Report() {
                 : "border-slate-200 text-slate-500 hover:bg-slate-50"
             }`}
           >
-            {soloRischio ? "✕ Solo a rischio rinnovo" : "Mostra solo a rischio rinnovo"}
+            {soloRischio ? "✕ Solo probabilità rinnovo bassa" : "Mostra solo probabilità rinnovo bassa"}
           </button>
         </div>
 
