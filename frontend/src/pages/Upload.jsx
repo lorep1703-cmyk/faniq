@@ -47,12 +47,16 @@ const colorMap = {
   },
 };
 
-function UploadCard({ type }) {
+function UploadCard({ type, onSuccess }) {
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState(null); // null | 'loading' | 'success' | 'error'
   const [message, setMessage] = useState("");
   const inputRef = useRef();
   const c = colorMap[type.color];
+
+  useEffect(() => {
+    if (status === "success") onSuccess?.();
+  }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleFile = (f) => {
     if (!f) return;
@@ -69,7 +73,7 @@ function UploadCard({ type }) {
   const handleUpload = async () => {
     if (!file) return;
     setStatus("loading");
-    setMessage("Caricamento in corso...");
+    setMessage("Caricamento in corso — può richiedere qualche minuto per file grandi...");
     try {
       const { job_id } = await uploadCsv(type.id, file);
       // polling
@@ -181,6 +185,12 @@ function UploadCard({ type }) {
       </div>
 
       {/* Feedback */}
+      {status === "loading" && message && (
+        <div className="mt-3 flex items-center gap-2 text-slate-500 bg-slate-50 rounded-lg px-3 py-2">
+          <span className="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-500 rounded-full animate-spin shrink-0" />
+          <span className="text-sm">{message}</span>
+        </div>
+      )}
       {status === "success" && (
         <div className="mt-3 flex items-center gap-2 text-emerald-600 bg-emerald-50 rounded-lg px-3 py-2">
           <CheckCircle size={16} />
@@ -205,11 +215,15 @@ function UploadCard({ type }) {
   );
 }
 
-function PartiteUploadCard() {
+function PartiteUploadCard({ onSuccess }) {
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState(null);
   const [message, setMessage] = useState("");
   const inputRef = useRef();
+
+  useEffect(() => {
+    if (status === "success") onSuccess?.();
+  }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleFile = (f) => { if (!f) return; setFile(f); setStatus(null); setMessage(""); };
   const handleDrop = (e) => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); };
@@ -217,6 +231,7 @@ function PartiteUploadCard() {
   const handleUpload = async () => {
     if (!file) return;
     setStatus("loading");
+    setMessage("Caricamento in corso...");
     try {
       const result = await uploadPartite(file);
       setStatus("success");
@@ -279,6 +294,12 @@ function PartiteUploadCard() {
         )}
       </div>
 
+      {status === "loading" && message && (
+        <div className="mt-3 flex items-center gap-2 text-slate-500 bg-slate-50 rounded-lg px-3 py-2">
+          <span className="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-500 rounded-full animate-spin shrink-0" />
+          <span className="text-sm">{message}</span>
+        </div>
+      )}
       {status === "success" && (
         <div className="mt-3 flex items-center gap-2 text-emerald-600 bg-emerald-50 rounded-lg px-3 py-2">
           <CheckCircle size={16} /><span className="text-sm">{message}</span>
@@ -301,7 +322,7 @@ function PartiteUploadCard() {
   );
 }
 
-function UploadHistory() {
+function UploadHistory({ refreshKey }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -320,7 +341,7 @@ function UploadHistory() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load, refreshKey]);
 
   const handleUndo = async (id, filename) => {
     if (!window.confirm(`Annullare il caricamento "${filename}"? I record importati verranno rimossi.`)) return;
@@ -449,6 +470,11 @@ function ResetSection() {
 }
 
 export default function Upload() {
+  // Incrementato ad ogni upload riuscito (qualunque delle 4 card) — fa
+  // ricaricare "Storico caricamenti" senza bisogno di un reload manuale.
+  const [refreshKey, setRefreshKey] = useState(0);
+  const bumpRefresh = () => setRefreshKey((k) => k + 1);
+
   return (
     <div className="flex-1 p-8 overflow-auto">
       <div className="mb-8">
@@ -460,9 +486,9 @@ export default function Upload() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {CSV_TYPES.map((type) => (
-          <UploadCard key={type.id} type={type} />
+          <UploadCard key={type.id} type={type} onSuccess={bumpRefresh} />
         ))}
-        <PartiteUploadCard />
+        <PartiteUploadCard onSuccess={bumpRefresh} />
       </div>
 
       <div className="mt-8 bg-slate-50 border border-slate-200 rounded-xl p-5">
@@ -474,7 +500,7 @@ export default function Upload() {
         </ul>
       </div>
 
-      <UploadHistory />
+      <UploadHistory refreshKey={refreshKey} />
       <ResetSection />
     </div>
   );
