@@ -283,3 +283,35 @@ def test_data_quality_insufficient():
     }):
         import services.intelligence.engine as eng
         assert eng._determine_data_quality([]) == DataQuality.INSUFFICIENT
+
+
+# ── Regressione: _extract_fan_raw usa l'RFM passato, non un proxy interno ──
+
+def test_extract_fan_raw_usa_rfm_segment_passato():
+    import sys
+    for key in list(sys.modules):
+        if "intelligence.engine" in key:
+            del sys.modules[key]
+    import unittest.mock as mock
+    from datetime import date as _date
+
+    with mock.patch.dict("sys.modules", {
+        "models": mock.MagicMock(),
+        "database": mock.MagicMock(),
+    }):
+        import services.intelligence.engine as eng
+
+        fake_fan = mock.MagicMock()
+        fake_fan.id = 1
+        fake_fan.club_id = 1
+        fake_fan.abbonamenti = []
+        fake_fan.biglietti = []
+        fake_fan.shop_orders = []
+
+        raw = eng._extract_fan_raw(
+            fake_fan,
+            past_match_dates=[],
+            current_season="2024/2025",
+            rfm_segment="A rischio",
+        )
+        assert raw.rfm_segment == "A rischio"

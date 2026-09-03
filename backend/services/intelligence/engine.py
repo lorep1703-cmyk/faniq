@@ -95,6 +95,7 @@ def _extract_fan_raw(
     fan: Fan,
     past_match_dates: list[date],
     current_season: str,
+    rfm_segment: str,
 ) -> _FanRaw:
     fan_ticket_dates = {b.data_partita for b in fan.biglietti if b.data_partita}
     presence_flags = _build_presence_flags(fan_ticket_dates, past_match_dates)
@@ -110,8 +111,6 @@ def _extract_fan_raw(
         if b.data_partita:
             by_date[b.data_partita] = by_date.get(b.data_partita, 0) + 1
     purchases = [{"date": d, "n_tickets": n, "amount": 0.0} for d, n in by_date.items()]
-
-    rfm_segment = _rfm_from_fan(fan)
 
     return _FanRaw(
         fan_id=fan.id,
