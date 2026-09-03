@@ -19,7 +19,7 @@ const fmtDate = (d) => d
 // ── Business Score ────────────────────────────────────────────────────────────
 
 const scoreColor = (s) => s >= 75 ? "#10b981" : s >= 50 ? "#f59e0b" : s >= 25 ? "#ef4444" : "#dc2626";
-const scoreLabel = (s) => s >= 75 ? "Buona salute" : s >= 50 ? "Attenzione" : s >= 25 ? "Allarme" : "Critico";
+const scoreLabel = (s) => s >= 75 ? "Buona salute" : s >= 50 ? "Attenzione" : s >= 25 ? "Allarme" : "Grave";
 
 function BusinessScore({ score }) {
   const r    = 52;
