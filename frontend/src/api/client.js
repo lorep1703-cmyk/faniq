@@ -104,6 +104,22 @@ export const uploadPartite      = (file)   => {
 export const fetchBehavioral    = ()       => api.get("/partite/behavioral").then((r) => r.data);
 export const fetchPredizione    = (id)     => api.get(`/partite/predizione/${id}`).then((r) => r.data);
 
+export const exportPredizioneTier = (partitaId, tier = "bassa,nessun_dato") => {
+  return api
+    .get(`/partite/predizione/${partitaId}/export`, {
+      params: { tier },
+      responseType: "blob",
+    })
+    .then((r) => {
+      const url = URL.createObjectURL(r.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `faniq_partita_${partitaId}_${tier.replace(/,/g, "_")}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+};
+
 export const fetchFanDetailPanel = (id) => api.get(`/fans/${id}/detail`).then((r) => r.data);
 
 // Intelligence Engine

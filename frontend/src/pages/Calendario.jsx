@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import {
   fetchPartite, addPartita, deletePartita, uploadPartite,
-  fetchBehavioral, fetchPredizione, fetchAttendance, API_URL,
+  fetchBehavioral, fetchPredizione, fetchAttendance, exportPredizioneTier, API_URL,
 } from "../api/client";
 import StatCard from "../components/StatCard";
 
@@ -486,6 +486,13 @@ function PredizionePresenze({ partite }) {
   const [selectedId, setSelectedId] = useState(null);
   const [pred, setPred]             = useState(null);
   const [loading, setLoading]       = useState(false);
+  const [exporting, setExporting]   = useState(false);
+
+  const handleExportCampagna = () => {
+    if (!selectedId || exporting) return;
+    setExporting(true);
+    exportPredizioneTier(selectedId, "bassa,nessun_dato").finally(() => setExporting(false));
+  };
 
   // Precompila sulla prossima partita futura appena disponibile
   useEffect(() => {
@@ -594,10 +601,16 @@ function PredizionePresenze({ partite }) {
               <div className="rounded-lg border border-dashed border-slate-300 px-4 py-3 flex items-center gap-3">
                 <Megaphone size={16} className="text-slate-400 shrink-0" />
                 <div className="flex-1">
-                  <p className="text-xs font-semibold text-slate-600">Crea campagna per chi probabilmente non viene</p>
-                  <p className="text-xs text-slate-400 mt-0.5">Raggiungi i tifosi "Presenza incerta" e "Nessun dato" prima della partita</p>
+                  <p className="text-xs font-semibold text-slate-600">Esporta chi probabilmente non viene</p>
+                  <p className="text-xs text-slate-400 mt-0.5">CSV dei tifosi "Presenza incerta" e "Nessun dato" con consenso marketing, pronti da contattare</p>
                 </div>
-                <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md shrink-0">Presto</span>
+                <button
+                  onClick={handleExportCampagna}
+                  disabled={exporting}
+                  className="text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 px-3 py-1.5 rounded-md shrink-0 transition-colors"
+                >
+                  {exporting ? "Esporto…" : "Esporta CSV"}
+                </button>
               </div>
             </>
           )}

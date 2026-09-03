@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import csv
 import io
+import re
 from datetime import date
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -201,33 +202,20 @@ def get_behavioral(db: Session = Depends(get_db), club: Club = Depends(get_curre
 
 # ── Predizione presenze ───────────────────────────────────────────────────────
 
-@router.get("/predizione/{partita_id}")
-def get_predizione(
-    partita_id: int,
-    db: Session = Depends(get_db),
-    club: Club = Depends(get_current_club),
-):
-    partita = db.query(Partita).filter(Partita.id == partita_id, Partita.club_id == club.id).first()
-    if not partita:
-        raise HTTPException(404, "Partita non trovata")
-
-    partita_out = {
-        "id": partita.id,
-        "data": partita.data.isoformat(),
-        "avversario": partita.avversario,
-        "casa_trasferta": partita.casa_trasferta,
-        "competizione": partita.competizione,
-    }
-
+def _build_prediction_tiers(db: Session, club: Club, partita: Partita) -> dict | None:
+    """Costruisce i 4 tier di probabilità presenza per una partita, liste complete
+    (non troncate) — condiviso tra /predizione (preview troncata in UI) e
+    /predizione/{id}/export (CSV completo)."""
     behavioral = compute_behavioral(db, club.id)
     if not behavioral or not behavioral.get("fan_scores"):
-        return {"empty": True, "partita": partita_out}
+        return None
 
     raw_scores = behavioral["fan_scores"]
 
-    # RFM per ogni fan
+    # RFM + consenso marketing per ogni fan
     rfm = compute_fan_segments(db, club.id)
     seg_map = {f["id"]: f["segment"] for f in rfm}
+    consent_map = {f["id"]: f.get("consenso_marketing") for f in rfm}
 
     # Ultime 5 partite dello stesso tipo (casa/trasferta) per lo streak
     tipo = partita.casa_trasferta
@@ -257,6 +245,7 @@ def get_predizione(
         base = {
             "id": fan.id, "nome": fan.nome, "cognome": fan.cognome,
             "email": fan.email, "segment": segment,
+            "consenso_marketing": consent_map.get(fan.id),
             "streak": build_streak(fan.id),
         }
 
@@ -277,6 +266,34 @@ def get_predizione(
 
     for tier in [alta, media, bassa]:
         tier.sort(key=lambda f: -f.get("rate", 0))
+
+    return {"alta": alta, "media": media, "bassa": bassa, "nessun_dato": nessun_dato, "behavioral": behavioral}
+
+
+@router.get("/predizione/{partita_id}")
+def get_predizione(
+    partita_id: int,
+    db: Session = Depends(get_db),
+    club: Club = Depends(get_current_club),
+):
+    partita = db.query(Partita).filter(Partita.id == partita_id, Partita.club_id == club.id).first()
+    if not partita:
+        raise HTTPException(404, "Partita non trovata")
+
+    partita_out = {
+        "id": partita.id,
+        "data": partita.data.isoformat(),
+        "avversario": partita.avversario,
+        "casa_trasferta": partita.casa_trasferta,
+        "competizione": partita.competizione,
+    }
+
+    tiers = _build_prediction_tiers(db, club, partita)
+    if tiers is None:
+        return {"empty": True, "partita": partita_out}
+
+    alta, media, bassa, nessun_dato = tiers["alta"], tiers["media"], tiers["bassa"], tiers["nessun_dato"]
+    behavioral = tiers["behavioral"]
 
     totale_previsto = round(len(alta) * 0.85 + len(media) * 0.50 + len(bassa) * 0.15)
 
@@ -325,3 +342,56 @@ def get_predizione(
             "nessun_dato":{"fans": nessun_dato[:10], "count": len(nessun_dato),"label": "Nessun dato storico",        "color": "#6b7280", "prob": 0,  "revenue": 0},
         },
     }
+
+
+_VALID_TIERS = {"alta", "media", "bassa", "nessun_dato"}
+
+
+@router.get("/predizione/{partita_id}/export")
+def export_predizione_tier(
+    partita_id: int,
+    tier: str = "bassa,nessun_dato",
+    db: Session = Depends(get_db),
+    club: Club = Depends(get_current_club),
+):
+    """CSV completo (non troncato a 20/10 come la preview UI) dei tifosi nei
+    tier richiesti per una partita specifica — pensato per campagne di
+    contatto pre-partita. Filtra sempre su consenso_marketing=True + email
+    presente: è un export per contattare le persone, non un'analisi dati."""
+    partita = db.query(Partita).filter(Partita.id == partita_id, Partita.club_id == club.id).first()
+    if not partita:
+        raise HTTPException(404, "Partita non trovata")
+
+    tiers = _build_prediction_tiers(db, club, partita)
+    if tiers is None:
+        raise HTTPException(404, "Nessun dato comportamentale disponibile per questa partita")
+
+    requested = [t.strip() for t in tier.split(",") if t.strip() in _VALID_TIERS]
+    if not requested:
+        raise HTTPException(400, f"Tier non valido — usa uno o più tra: {', '.join(sorted(_VALID_TIERS))}")
+
+    fieldnames = ["id", "nome", "cognome", "email", "segment", "tier", "percentuale_presenza", "partite_seguite"]
+    rows = []
+    for t in requested:
+        for f in tiers[t]:
+            if f.get("consenso_marketing") is not True or not f.get("email"):
+                continue
+            rows.append({
+                "id": f["id"], "nome": f["nome"], "cognome": f["cognome"], "email": f["email"],
+                "segment": f["segment"], "tier": t,
+                "percentuale_presenza": f.get("rate", ""), "partite_seguite": f.get("partite_seguite", ""),
+            })
+
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerows(rows)
+    output.seek(0)
+
+    safe_tier = re.sub(r'[^a-zA-Z0-9_\-]', '_', "_".join(requested))
+    filename = f"faniq_partita_{partita_id}_{safe_tier}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
