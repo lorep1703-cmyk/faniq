@@ -24,6 +24,7 @@ from fan_intelligence import (
     JourneyStage,
 )
 from models import Fan, Partita
+from services.analytics import compute_fan_segments
 from services.intelligence.ambassador import calculate_ambassador
 from services.intelligence.anomaly import calculate_anomaly
 from services.intelligence.decay import calculate_decay
@@ -75,20 +76,6 @@ def _determine_data_quality(presence_flags: list[bool]) -> DataQuality:
     if total < MIN_MATCHES_FOR_DECAY:
         return DataQuality.PARTIAL
     return DataQuality.FULL
-
-
-def _rfm_from_fan(fan: Fan) -> str:
-    """Calcola categoria RFM semplificata per usarla come proxy."""
-    total_activities = len(fan.abbonamenti) + len(fan.biglietti) + len(fan.shop_orders)
-    if len(fan.abbonamenti) >= 2 and total_activities >= 5:
-        return "VIP"
-    if len(fan.abbonamenti) >= 1 and total_activities >= 3:
-        return "Fedele"
-    if total_activities == 0:
-        return "Dormiente"
-    if total_activities == 1:
-        return "Nuovo"
-    return "Occasionale"
 
 
 def _extract_fan_raw(
@@ -236,7 +223,10 @@ def compute_fan_intelligence(fan_id: int, club_id: int, db: Session) -> FanIntel
     past_matches = _load_past_match_dates(club_id, today, db)
     current_season = current_season_str()
 
-    raw = _extract_fan_raw(fan, past_matches, current_season)
+    seg_map = {f["id"]: f["segment"] for f in compute_fan_segments(db, club_id)}
+    rfm_segment = seg_map.get(fan_id, "")
+
+    raw = _extract_fan_raw(fan, past_matches, current_season, rfm_segment)
     return _run_pipeline(raw)
 
 
@@ -248,6 +238,10 @@ def compute_club_intelligence(club_id: int, db: Session) -> list[FanIntelligence
     # Partite: caricate una volta sola, condivise tra tutti i batch
     past_matches = _load_past_match_dates(club_id, today, db)
     current_season = current_season_str()
+
+    # RFM reale calcolato una volta per l'intero club (cache-backed in
+    # compute_fan_segments) — non un proxy per-fan, vedi CONTEXT_HANDOFF.
+    seg_map = {f["id"]: f["segment"] for f in compute_fan_segments(db, club_id)}
 
     from sqlalchemy import func
     total = db.query(func.count(Fan.id)).filter(Fan.club_id == club_id).scalar() or 0
@@ -282,7 +276,7 @@ def compute_club_intelligence(club_id: int, db: Session) -> list[FanIntelligence
 
         # 3. Estrai dati puri Python ed esegui pipeline — nessun riferimento ORM rimane
         for fan in fans:
-            raw = _extract_fan_raw(fan, past_matches, current_season)
+            raw = _extract_fan_raw(fan, past_matches, current_season, seg_map.get(fan.id, ""))
             results.append(_run_pipeline(raw))
 
         # 4. Libera gli oggetti ORM del batch dalla identity map di SQLAlchemy
