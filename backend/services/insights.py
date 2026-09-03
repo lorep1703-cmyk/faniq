@@ -76,17 +76,19 @@ def _business_score(dormienti_pct: float, rischio_pct: float, vip_fedeli_pct: fl
 
 
 def _sub_cluster(recency_days: int) -> str:
+    # Nomi distinti dal segmento RFM "A rischio": qui è un bucket per urgenza
+    # di intervento dentro dormienti+a_rischio, non una classificazione RFM.
     if recency_days > 540:  return "Persi"
     if recency_days > 365:  return "Freddi"
     if recency_days > 180:  return "Tiepidi"
-    return "A rischio"
+    return "Caldi"
 
 
 _CLUSTER_CFG = [
-    ("Persi",     "#dc2626", "high",   0.90, "Ultima chiamata — servono offerte shock o esperienze esclusive"),
-    ("Freddi",    "#ea580c", "high",   0.75, "Finestra stretta — campagna nostalgia o invito a un evento speciale"),
-    ("Tiepidi",   "#d97706", "medium", 0.50, "Ancora recuperabili — sconto biglietto prossima partita"),
-    ("A rischio", "#f59e0b", "medium", 0.35, "Intervieni subito — un messaggio personale può bastare"),
+    ("Persi",   "#dc2626", "high",   0.90, "Ultima chiamata — servono offerte shock o esperienze esclusive"),
+    ("Freddi",  "#ea580c", "high",   0.75, "Finestra stretta — campagna nostalgia o invito a un evento speciale"),
+    ("Tiepidi", "#d97706", "medium", 0.50, "Ancora recuperabili — sconto biglietto prossima partita"),
+    ("Caldi",   "#f59e0b", "medium", 0.35, "Intervieni subito — un messaggio personale può bastare"),
 ]
 
 

@@ -19,7 +19,7 @@ const fmtDate = (d) => d
 // ── Business Score ────────────────────────────────────────────────────────────
 
 const scoreColor = (s) => s >= 75 ? "#10b981" : s >= 50 ? "#f59e0b" : s >= 25 ? "#ef4444" : "#dc2626";
-const scoreLabel = (s) => s >= 75 ? "Buona salute" : s >= 50 ? "Attenzione" : s >= 25 ? "A rischio" : "Critico";
+const scoreLabel = (s) => s >= 75 ? "Buona salute" : s >= 50 ? "Attenzione" : s >= 25 ? "Allarme" : "Critico";
 
 function BusinessScore({ score }) {
   const r    = 52;
@@ -210,7 +210,7 @@ function RevenueWatch({ data, onExport }) {
             </div>
 
             <button
-              onClick={() => onExport(cluster.nome === "A rischio" ? "A rischio" : "Dormiente")}
+              onClick={() => onExport(cluster.nome === "Caldi" ? "A rischio" : "Dormiente")}
               className="mt-3 ml-4 flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
             >
               <Download size={12} />
