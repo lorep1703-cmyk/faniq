@@ -124,6 +124,17 @@ def _extract_fan_raw(
     )
 
 
+def _was_dormiente_before_last_match(presence_flags: list[bool], decay_profile: DecayProfile) -> bool:
+    """Stadio del fan escludendo l'ultima partita giocata — non serve uno storico
+    persistito: presence_flags è già ricostruito da Biglietto.data_partita, quindi
+    "un momento fa" è semplicemente presence_flags[:-1]. Abilita JourneyStage.RECUPERATO
+    senza tabella di snapshot né job periodico."""
+    if len(presence_flags) < 2:
+        return False
+    stage_before, _ = calculate_journey(presence_flags[:-1], decay_profile)
+    return stage_before == JourneyStage.DORMIENTE
+
+
 def _run_pipeline(raw: _FanRaw) -> FanIntelligence:
     """Esegue i 5 stadi in sequenza e costruisce FanIntelligence."""
     data_quality = _determine_data_quality(raw.presence_flags)
@@ -132,10 +143,11 @@ def _run_pipeline(raw: _FanRaw) -> FanIntelligence:
     decay_profile, half_life = calculate_decay(raw.presence_flags, raw.rfm_segment)
 
     # Stadio 2 — Journey
+    was_dormiente_last_week = _was_dormiente_before_last_match(raw.presence_flags, decay_profile)
     journey_stage, momentum = calculate_journey(
         raw.presence_flags,
         decay_profile,
-        was_dormiente_last_week=False,  # non disponibile senza storico settimanale
+        was_dormiente_last_week=was_dormiente_last_week,
     )
 
     # Stadio 3 — Anomaly

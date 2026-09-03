@@ -16,6 +16,7 @@ from services.intelligence.journey import calculate_journey
 from services.intelligence.anomaly import calculate_anomaly
 from services.intelligence.ambassador import calculate_ambassador
 from services.intelligence.renewal import calculate_renewal
+from services.intelligence.engine import _was_dormiente_before_last_match
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────
@@ -94,6 +95,23 @@ def test_journey_rischio_volatile_in_calo():
     flags = _flags("11111000")
     stage, _ = calculate_journey(flags, DecayProfile.VOLATILE)
     assert stage == JourneyStage.RISCHIO
+
+
+def test_recuperato_raggiungibile_end_to_end():
+    """DA-00: was_dormiente_last_week era sempre hardcoded False in engine.py —
+    RECUPERATO non era mai raggiungibile in pipeline reale. Verifica che la
+    derivazione da presence_flags[:-1] lo sblocchi davvero."""
+    flags = _flags("00000000001")  # dormiente da 10 partite, torna solo all'ultima
+    was_dormiente = _was_dormiente_before_last_match(flags, DecayProfile.MEDIO)
+    assert was_dormiente is True
+
+    stage, _ = calculate_journey(flags, DecayProfile.MEDIO, was_dormiente_last_week=was_dormiente)
+    assert stage == JourneyStage.RECUPERATO
+
+
+def test_was_dormiente_before_last_match_nessun_falso_positivo():
+    flags = _flags("1" * 11)  # sempre presente, mai stato dormiente
+    assert _was_dormiente_before_last_match(flags, DecayProfile.MEDIO) is False
 
 
 # ── Stadio 3: Anomaly ──────────────────────────────────────────────────────
