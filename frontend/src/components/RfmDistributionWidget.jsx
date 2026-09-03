@@ -11,7 +11,7 @@ export const SEGMENT_COLORS = {
   Occasionale: "#AAA6E3",
 };
 
-const DISPLAY_ORDER = ["VIP", "Fedele", "Nuovo", "A rischio", "Dormiente"];
+const DISPLAY_ORDER = ["VIP", "Fedele", "Nuovo", "Occasionale", "A rischio", "Dormiente"];
 
 function getInsight(data, total) {
   if (!total) return null;
