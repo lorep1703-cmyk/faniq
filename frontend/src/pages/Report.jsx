@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import FanDetailPanel from "../components/FanDetailPanel";
-import { Download, Search } from "lucide-react";
+import { ArrowUp, Download, Search, TriangleAlert } from "lucide-react";
 import RfmDistributionWidget from "../components/RfmDistributionWidget";
 import TopSpendersWidget from "../components/TopSpendersWidget";
 import {
@@ -104,6 +104,14 @@ export default function Report() {
   const [seasons, setSeasons] = useState([]);
   const [seasonFilter, setSeasonFilter] = useState("");
   const [visibleCount, setVisibleCount] = useState(100);
+  const [dataQualityFilter, setDataQualityFilter] = useState("tutti");
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  useEffect(() => {
+    // Il layout non ha un contenitore con overflow reale: è la window a scrollare.
+    const onWindowScroll = () => setShowBackToTop(window.scrollY > 400);
+    window.addEventListener("scroll", onWindowScroll);
+    return () => window.removeEventListener("scroll", onWindowScroll);
+  }, []);
 
   useEffect(() => {
     Promise.all([fetchAllFans(), fetchSegments(), fetchTopSpenders(), fetchStats(), fetchSeasons()])
@@ -162,7 +170,7 @@ export default function Report() {
 
   useEffect(() => {
     setVisibleCount(100);
-  }, [filter, segmentFilter, journeyFilter, soloRischio, seasonFilter]);
+  }, [filter, segmentFilter, journeyFilter, soloRischio, seasonFilter, dataQualityFilter]);
 
   if (loading) {
     return (
@@ -217,11 +225,19 @@ export default function Report() {
       const matchText = !q || `${f.nome} ${f.cognome} ${f.email} ${f.citta}`.toLowerCase().includes(q);
       const matchRischio = !soloRischio || (intelligenceMap[f.id]?.renewal_probability ?? 1) < 0.4;
       const matchJourney = !journeyFilter || intelligenceMap[f.id]?.journey_stage === journeyFilter;
-      return matchSeg && matchText && matchRischio && matchJourney;
+      const matchQuality =
+        dataQualityFilter === "tutti" ||
+        (dataQualityFilter === "senza_nome" && !f.nome) ||
+        (dataQualityFilter === "senza_email" && !f.email);
+      return matchSeg && matchText && matchRischio && matchJourney && matchQuality;
     })
     .sort(SORTERS[sortBy] || (() => 0));
 
   const colSpan = 6 + (hasIntelligence ? 2 : 0);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div className="flex-1 p-8 overflow-auto">
@@ -299,6 +315,17 @@ export default function Report() {
             {JOURNEY_STAGES.map((s) => (
               <option key={s.value} value={s.value}>{s.label}</option>
             ))}
+          </select>
+
+          <select
+            value={dataQualityFilter}
+            onChange={(e) => setDataQualityFilter(e.target.value)}
+            title="Filtra per completezza del profilo"
+            className="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300"
+          >
+            <option value="tutti">Qualità dati: tutti i profili</option>
+            <option value="senza_nome">Senza nome</option>
+            <option value="senza_email">Senza email</option>
           </select>
         </div>
 
@@ -379,7 +406,17 @@ export default function Report() {
                       } ${isRecuperato ? "border-l-2 border-l-violet-400" : ""}`}
                     >
                       <td className="py-2.5 pr-4 font-semibold text-slate-800">
-                        {f.nome} {f.cognome}
+                        {f.nome ? (
+                          `${f.nome} ${f.cognome}`
+                        ) : (
+                          <span
+                            className="flex items-center gap-1.5 font-normal italic text-slate-400"
+                            title="Nome non disponibile — profilo creato solo da un acquisto shop, senza anagrafica"
+                          >
+                            <TriangleAlert size={13} className="shrink-0 text-amber-500" />
+                            {f.email || "—"}
+                          </span>
+                        )}
                       </td>
                       <td className="py-2.5 pr-4 text-slate-500">{f.citta || "—"}</td>
                       <td className="py-2.5 pr-4">
@@ -454,6 +491,16 @@ export default function Report() {
       </div>
 
       <FanDetailPanel fanId={selectedFanId} onClose={() => setSelectedFanId(null)} />
+
+      {showBackToTop && (
+        <button
+          onClick={scrollToTop}
+          title="Torna su"
+          className="fixed bottom-6 left-6 z-40 flex items-center justify-center w-11 h-11 bg-white border border-slate-200 hover:border-primary-300 text-slate-600 hover:text-primary-600 rounded-full shadow-lg transition-colors"
+        >
+          <ArrowUp size={18} />
+        </button>
+      )}
     </div>
   );
 }
