@@ -11,7 +11,7 @@ from models import Abbonamento, Biglietto, Fan, Partita, ShopOrder, UploadHistor
 from services.cache import invalidate
 
 
-from services.utils import _norm_email
+from services.utils import _norm_email, _norm_stagione
 
 
 _FORMULA_PREFIXES = ('=', '+', '-', '@', '\t', '\r')
@@ -131,7 +131,7 @@ def import_csv(db: Session, club_id: int, csv_type: str, content: bytes, filenam
                 club_id=club_id,
                 fan_id=fan.id,
                 upload_id=upload.id,
-                stagione=row.get("stagione"),
+                stagione=_norm_stagione(row.get("stagione")),
                 importo_pagato=_parse_float(row.get("importo_pagato")),
                 data_acquisto=_parse_date(row.get("data_acquisto")),
             ))
