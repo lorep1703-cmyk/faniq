@@ -446,7 +446,7 @@ export default function Report() {
                 onClick={() => setVisibleCount((c) => c + 100)}
                 className="text-xs font-semibold text-primary-600 hover:text-primary-700 px-2.5 py-1 rounded-lg border border-primary-200 hover:border-primary-300 transition-colors"
               >
-                Carica altri 100
+                Carica altri {Math.min(100, filtered.length - visibleCount)}
               </button>
             </div>
           )}
