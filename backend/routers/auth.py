@@ -11,14 +11,20 @@ from database import get_db
 from models import Club
 from services.auth import create_token, hash_password, verify_password
 from services.cache import get as cache_get, set as cache_set
-from services.intelligence.engine import compute_club_intelligence
 
 
 def _warmup_intelligence(club_id: int, db: Session) -> None:
-    key = f"intelligence_{club_id}"
+    # Deve produrre lo stesso formato (dict serializzati, non oggetti FanIntelligence
+    # grezzi) di routers.intelligence._build_cache — è la stessa chiave di cache,
+    # letta da lì con r.get(...). Riusa quella funzione invece di duplicarne la
+    # logica: la duplicazione qui aveva introdotto un bug, il warmup scriveva
+    # oggetti grezzi e ogni richiesta successiva a GET /api/intelligence/club
+    # crashava con AttributeError.
+    from routers.intelligence import _build_cache, _intel_cache_key
+
+    key = _intel_cache_key(club_id)
     if cache_get(key) is None:
-        results = compute_club_intelligence(club_id, db)
-        cache_set(key, results)
+        cache_set(key, _build_cache(club_id, db))
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
