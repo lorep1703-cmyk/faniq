@@ -17,6 +17,7 @@ def compute_data_readiness(db: Session, club_id: int) -> dict:
             "uploads": 0,
         }
 
+    with_nome = sum(1 for f in fans if f.nome and f.nome.strip())
     with_email = sum(1 for f in fans if f.email and f.email.strip())
     with_citta = sum(1 for f in fans if f.citta and f.citta.strip())
     n_abbonamenti = db.query(Abbonamento).filter(Abbonamento.club_id == club_id).count()
@@ -24,6 +25,7 @@ def compute_data_readiness(db: Session, club_id: int) -> dict:
     n_shop = db.query(ShopOrder).filter(ShopOrder.club_id == club_id).count()
     n_uploads = db.query(UploadHistory).filter(UploadHistory.club_id == club_id).count()
 
+    nome_pct = with_nome / n_fans
     email_pct = with_email / n_fans
     citta_pct = with_citta / n_fans
     has_abbonati = n_abbonamenti > 0
@@ -33,6 +35,7 @@ def compute_data_readiness(db: Session, club_id: int) -> dict:
 
     checks = [
         {"label": "Tifosi identificati", "ok": n_fans >= 10, "detail": f"{n_fans} profili"},
+        {"label": "Nome presente", "ok": nome_pct >= 0.8, "detail": f"{round(nome_pct * 100)}% con nome"},
         {"label": "Email presenti", "ok": email_pct >= 0.5, "detail": f"{round(email_pct * 100)}% con email"},
         {"label": "Città indicate", "ok": citta_pct >= 0.4, "detail": f"{round(citta_pct * 100)}% con città"},
         {"label": "Dati abbonamenti", "ok": has_abbonati, "detail": f"{n_abbonamenti} record" if has_abbonati else "Non caricati"},
@@ -41,7 +44,7 @@ def compute_data_readiness(db: Session, club_id: int) -> dict:
         {"label": "Fonti multiple", "ok": sources_count >= 2, "detail": f"{sources_count}/3 fonti attive"},
     ]
 
-    weights = [15, 20, 10, 15, 15, 15, 10]
+    weights = [10, 15, 15, 10, 15, 15, 10, 10]
     score = min(100, sum(w for c, w in zip(checks, weights) if c["ok"]))
 
     return {
