@@ -103,6 +103,7 @@ export default function Report() {
   const [selectedFanId, setSelectedFanId] = useState(null);
   const [seasons, setSeasons] = useState([]);
   const [seasonFilter, setSeasonFilter] = useState("");
+  const [visibleCount, setVisibleCount] = useState(100);
 
   useEffect(() => {
     Promise.all([fetchAllFans(), fetchSegments(), fetchTopSpenders(), fetchStats(), fetchSeasons()])
@@ -158,6 +159,10 @@ export default function Report() {
   useEffect(() => {
     if (searchParams.get("filter") === "at_risk") setSoloRischio(true);
   }, [searchParams]);
+
+  useEffect(() => {
+    setVisibleCount(100);
+  }, [filter, segmentFilter, journeyFilter, soloRischio, seasonFilter]);
 
   if (loading) {
     return (
@@ -350,7 +355,7 @@ export default function Report() {
               </tr>
             </thead>
             <tbody>
-              {filtered.slice(0, 100).map((f) => {
+              {filtered.slice(0, visibleCount).map((f) => {
                 const intel = intelligenceMap[f.id];
                 const behav = behavioralMap[f.id];
                 const isRecuperato = intel?.journey_stage === "RECUPERATO";
@@ -432,8 +437,18 @@ export default function Report() {
               })}
             </tbody>
           </table>
-          {filtered.length > 100 && (
-            <p className="text-xs text-slate-400 mt-3">Mostrati i primi 100 di {filtered.length} risultati</p>
+          {filtered.length > visibleCount && (
+            <div className="flex items-center gap-3 mt-3">
+              <p className="text-xs text-slate-400">
+                Mostrati {Math.min(visibleCount, filtered.length)} di {filtered.length} risultati
+              </p>
+              <button
+                onClick={() => setVisibleCount((c) => c + 100)}
+                className="text-xs font-semibold text-primary-600 hover:text-primary-700 px-2.5 py-1 rounded-lg border border-primary-200 hover:border-primary-300 transition-colors"
+              >
+                Carica altri 100
+              </button>
+            </div>
           )}
         </div>
       </div>
