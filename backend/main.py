@@ -7,6 +7,9 @@ import time
 from collections import defaultdict
 
 from dotenv import load_dotenv
+
+load_dotenv()
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,8 +22,6 @@ from config import CORS_ORIGINS, FANIQ_ENV, LOG_LEVEL
 from database import Base, SessionLocal, _IS_POSTGRES, engine
 from routers import chat, dashboard, export, fans, insights, intelligence, partite, privacy, simulator, upload
 from routers.auth import router as auth_router
-
-load_dotenv()
 
 logging.basicConfig(level=LOG_LEVEL)
 logger = logging.getLogger("faniq")
