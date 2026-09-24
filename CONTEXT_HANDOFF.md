@@ -1,76 +1,70 @@
 # FanIQ — Context Handoff
-> Aggiornato: 2026-09-03 | Da leggere all'inizio della prossima sessione
+> Aggiornato: 2026-09-24 | Da leggere all'inizio della prossima sessione
 
 ---
 
 ## Stato attuale
 
-Sessione lunga: chiuso l'intero backlog aperto di ieri (7 punti), poi un audit di coerenza generale (4 agenti in parallelo su naming, formule dati, sicurezza tenant, contratto frontend↔backend), poi chiusi tutti i problemi trovati (5 punti, uno via Superpowers Subagent-Driven Development in worktree isolato, gli altri diretti). **Tutto committato e pushato su `main`, deploy verificato live** (`faniq-backend.onrender.com/health` → `200`, frontend Vercel senza errori console) più volte durante la sessione, ultima volta dopo il commit `1192138`.
+Il 23/09 sessione lunga di **test end-to-end** (non di sviluppo feature): caricati dataset sintetici combinati (~1844 fan) su un club di test locale, esplorate tutte le pagine, incrociati i numeri mostrati con query dirette su SQLite. Trovati e risolti 6 bug reali + 2 miglioramenti UI. **Tutto committato in locale, NON pushato** (`main` è 8 commit avanti a `origin/main`; il push lo fa Lorenzo, vedi CLAUDE.md). Test backend: 36/36 passano.
 
-**Plugin installati oggi**: `superpowers@superpowers-dev` (13 skill: brainstorming, writing-plans, subagent-driven-development, systematic-debugging, test-driven-development, requesting-code-review, verification-before-completion, using-git-worktrees, ecc.) e `concise@concise` (modalità output compatta, `/concise` per attivare, "stop concise" per disattivare). Entrambi a livello `user` (attivi in ogni progetto, non solo FanIQ).
-
-**Preferenza esplicita di Lorenzo (salvata in memoria)**: segnalare sempre quando una skill installata farebbe un task meglio/più rigorosamente di come lo farei di default, prima di procedere — finché non è autonomo nel capire quale skill usare quando. Concise resta attiva anche sopra le altre skill (non la sovrascrivono).
-
-**Ambiente locale**: DB SQLite locale (`backend/faniq.db`) ha il club di test "FC Torino Nord" (club_id=2, 50 fan sintetici da `sample_csv/dashtest_*`), usato per tutte le verifiche di oggi. Non toccato il DB Postgres di produzione se non per una migrazione manuale (vedi sotto).
+Approccio che Lorenzo apprezza: verificare che i dati mostrati **rispecchino la realtà** (non solo che la pagina non crashi), lavorare **un fix alla volta con feedback dopo ciascuno**, e discutere brevemente il design (proposta in chat → ok → implementazione) prima di aggiungere UI nuova.
 
 ---
 
-## Backlog di ieri — tutto chiuso oggi
+## Fatto il 23/09 (commit in ordine)
 
-| # | Cosa | Commit |
-|---|---|---|
-| 1 | RFM Distribution Widget escludeva "Occasionale" | `b745a4c` |
-| 2 | Recency RFM ignorava del tutto le date abbonamento (nuova colonna `Abbonamento.data_acquisto` — **richiesta una migrazione manuale `ALTER TABLE` su Neon prod, eseguita da Lorenzo durante la sessione**) | `6d5eeb7` |
-| 3 | CTA "Crea campagna" in Predizione Presenze era uno stub — ora esporta CSV reale (tier bassa/nessun_dato, filtrato per consenso marketing) | `059e9bf` |
-| 4 | `JourneyStage.RECUPERATO` mai raggiungibile (`was_dormiente_last_week` hardcoded `False`) — risolto **senza** tabella di snapshot: si ricalcola lo stadio su `presence_flags[:-1]`, nessuno storico persistito serve | `8f7efee` |
-| 5 | Codice morto in `journey.py::_classify_stage` (ramo if/else che ritornava sempre lo stesso valore) — trovato per caso durante il punto 4 | `050bc6d` |
-| 6 | Naming collision "A rischio" tra segmento RFM, Business Score, Revenue Watch — rinominati Revenue Watch→"Caldi", Business Score→"Allarme" | `0c3ad66` |
-| 7 | Upload: le 4 card CSV non aggiornavano "Storico caricamenti" dopo un upload riuscito (dovevi ricaricare la pagina a mano) | `4f4d23c` |
-
----
-
-## Audit di coerenza di oggi — 4 problemi trovati, tutti chiusi
-
-| # | Cosa | Come | Commit |
-|---|---|---|---|
-| 1 | **Fan Intelligence Engine usava un RFM "proxy" interno** (solo conteggi, ignora recency, non può mai produrre "A rischio") invece dell'RFM reale — un fan mostrato ovunque come "A rischio" veniva trattato dal motore come categoria più sana, `renewal_probability` gonfiata fino a +15 punti nei casi di churn imminente. Il più serio trovato oggi. | **Superpowers Subagent-Driven Development completo**: piano scritto (`docs/superpowers/plans/2026-09-03-fix-rfm-proxy-intelligence.md`), worktree isolato, 3 task ognuno con implementer+reviewer dedicati, poi review finale sull'intero branch, merge locale in `main` | `a2d87ed`, `bbd559b`, `2c2f50d` |
-| 2 | `/api/intelligence/club` non includeva mai `email` — bottone "Contatta" in AlertsPage sempre vuoto per ogni fan, anche con email in anagrafica | Fix diretto + review leggera (`requesting-code-review`) | `d7542e1` |
-| 3 | "rischio" ripetuto 3 volte su Report.jsx per concetti diversi (RFM, Journey, prob. rinnovo) + un testo che vanificava il rename di ieri | Fix diretto | `14b4ec4` |
-| 4 | "Critico/Critica" per Business Score (club) vs Anomaly Severity (singolo fan) | Business Score → "Grave" | `9757655` |
-| 5 (bassa priorità) | `undo_upload` senza filtro `club_id` esplicito nelle delete (non sfruttabile, difesa in profondità) | Fix diretto | `1192138` |
-
-**Non ha senso usare Superpowers/piano per ogni fix** — solo il punto 1 (motore "completo", rischio alto) ha giustificato tutto il processo. Gli altri sono stati fix diretti con verifica dal vivo, coerenti con lo stile di ieri.
+| Commit | Cosa |
+|---|---|
+| `17a654a` | `main.py`: `load_dotenv()` era chiamato dopo `from config import ...`, ma `config.py` legge le env var a import-time → il `.env` non veniva mai letto in tempo |
+| `d051b0f` | `_norm_stagione()` in `services/utils.py`, applicato all'import abbonamenti: "2024/25" e "2024/2025" erano stagioni diverse in filtri/aggregazioni (+ 5 test) |
+| `b65743f` | `data_readiness.py`: il punteggio "Affidabilità dati" ignorava il nome mancante (mostrava 100% con 29% di profili senza nome). Aggiunto check "Nome presente" (soglia 80%), pesi ribilanciati (+ 2 test) |
+| `d354546`, `2ab6c70` | `Report.jsx`: il taglio fisso `slice(0,100)` rendeva invisibili i fan oltre il 100°. Ora bottone "Carica altri N" (N = min(100, rimasti)), reset al cambio filtro |
+| `690c469` | `Report.jsx`: colonna Nome mostra email + icona ⚠️ quando manca il nome; nuovo filtro "Qualità dati" (Senza nome / Senza email); bottone flottante "Torna su" (lo scroll è sulla `window`, non su un div interno) |
+| `27c9087` | **Bug serio**: `routers/auth.py::_warmup_intelligence` (background task dopo ogni login) scriveva oggetti `FanIntelligence` grezzi nella chiave di cache `intelligence_{club_id}`, che `routers/intelligence.py` legge come dict serializzati → `GET /api/intelligence/club` andava in 500 (frontend: "Backend non raggiungibile", fuorviante). Ora riusa `_build_cache` (+ 2 test) |
 
 ---
 
-## Idee feature Dashboard — generate ma NON scelte, da scremare domani
+## Questioni APERTE (da qui ripartire)
 
-Lorenzo ha chiesto di generare idee per nuove feature sulla Dashboard, tenerle tutte, eventualmente aggiungerne altre, e decidere domani quale/i approfondire. Nessuna ancora discussa/approvata nel dettaglio (skill `brainstorming` di Superpowers avviata ma non completata — resta da fare: chiarimenti one-by-one, poi design, poi approvazione, PRIMA di scrivere codice).
+1. **Ambassador Score ("Community", icona 🧍/👥 + numero in Report)** — Lorenzo è scettico, "forse non la manterrei". Verificato: max 28/100 su 1844 fan, 82% tra 0-9 (schiacciato). Cause: (a) la penalità -40% "nessun acquisto multiplo negli ultimi 6 mesi" usa `date.today()`, quindi con dati 2023-25 colpisce **tutti**; (b) limite strutturale: il "gruppo" è dedotto raggruppando biglietti per stessa data+persona, non osservato (due amici con email diverse = due persone sole). **Decisione da prendere**: rimuovere / tenere ma segnalare come sperimentale / fixare la data e rivalutare.
+2. **"Da contattare" (AlertsPage)** — vuota nonostante il dataset abbia fan "a rischio". Lorenzo ha detto di rivederla insieme; mai fatto. Sospetto: stesso problema di date (vedi pattern sotto).
+3. **Profili senza nome (29% nel dataset di test)** — spiegato: il CSV shop ha solo `email,prodotto,importo,data`, quindi chi ha solo acquisti shop nasce senza nome/città. Scenario realistico anche per club veri. Mitigato in UI (fallback email + filtro) ma restano da decidere eventuali altri passi (es. non contarli come "Tifosi identificati" nel KPI principale).
+4. **7 idee feature Dashboard del 03/09** — ancora da scremare (brainstorming Superpowers interrotto; elenco sotto). Nota: l'idea #2 "indicatore affidabilità dati" esiste già in parte (badge `DataHealthPill` su Report/Intelligence). Prima di costruire l'idea "Prossima partita" serve capire come gestire il calendario (vedi pattern sotto).
+5. **F9 in `product/feature_ideas.md`** (monitoraggio predittivo continuo + contenuti personalizzati via agenti/MCP; Hermes/Klaviyo come piste) — parcheggiata, Lorenzo ha detto di tenere Hermes da parte per ora.
 
-1. **Widget "Momentum"** — fan in traiettoria positiva/negativa (campo `momentum`, già calcolato per ogni fan, mai aggregato/mostrato). Segnale precoce prima che un fan diventi "Dormiente".
-2. **Indicatore di affidabilità dati** — quanti fan hanno `data_quality` FULL/PARTIAL/INSUFFICIENT, per capire quanto fidarsi dei numeri.
-3. **"Prossima partita" in anteprima su Dashboard** — la predizione presenze (già in Calendario & Presenze) come widget compatto qui.
-4. **Confronto stagione su stagione** — revenue/presenze anno corrente vs precedente (estende "Abbonati per stagione").
-5. **Export "report per il board"** — PDF/riepilogo stampabile dei KPI, per riunioni con dirigenza/sponsor.
-6. **Cohort di acquisizione** — curva di retention per anno di primo acquisto (derivabile da dati esistenti, nessuna tabella nuova).
-7. **Partite che performano meglio** — revenue/presenze per tipo partita (derby/standard/finale) o giorno settimana, usando `Partita`+`Biglietto` già esistenti.
-
-Scartate per ora (richiedono dati cross-tenant o storico non disponibile): benchmark tra club, "cosa è cambiato questa settimana" (richiede snapshot storici, stesso blocco già risolto diversamente per RECUPERATO ma qui servirebbe davvero uno storico persistito).
+### Pattern di bug ricorrente: `date.today()` come riferimento di "recente"
+Calendario & Presenze (zero predizioni: nessuna partita futura), "Da contattare" (zero anomalie), Ambassador Score (penalità universale) ancorano "recente/futuro" alla **data reale di sistema** invece che alle date dei dati del club. Con dati demo/storici o in pausa estiva falliscono silenziosamente. **Prima di dare per buono un "non c'è nulla da mostrare", controllare se il codice usa `date.today()`.**
 
 ---
 
-## File chiave del workspace
+## Ambiente locale (per riprendere i test)
 
-| File | Contenuto |
-|------|-----------|
-| `docs/superpowers/plans/2026-09-03-fix-rfm-proxy-intelligence.md` | Piano SDD del fix motore RFM — utile come esempio di formato piano per prossimi task grossi |
-| `sample_csv/dashtest_*.csv` | Dataset 50 fan sintetici, ora con colonna `data_acquisto` aggiunta (anche su `abbonati_demo.csv`, `abbonati_test.csv`) |
-| `backend/faniq.db.bak-20260902144342` | Backup pre-esistente, non toccato |
+- **Avvio backend**: `cd backend && source .venv/bin/activate && uvicorn main:app --reload --port 8000` (ora legge `backend/.env`; il file locale è gitignored, JWT secret generato). **Frontend**: `cd frontend && npm run dev` (porta 3000; c'è `.claude/launch.json` con `faniq-frontend`). I test pytest richiedono `FANIQ_JWT_SECRET` esportato nella shell (nessun conftest).
+- **DB**: `backend/faniq.db` (SQLite, gitignored). Club di test **`test-demo`** (club_id=3, "FC Test Demo"): ~1844 fan da `sample_csv/*_demo`, `*_esempio`, `*_test` caricati via API + **inserimenti manuali**: 3 fan (id 1892-1894, "Giada Neri", "Tommaso Vitale", "Beatrice Longo") e 4 partite sintetiche 2025-05-25/06-01/06-08/06-15 create apposta per ottenere lo stadio Journey **Scoperta** (prima assente nei dati: serve presenza in 1 sola delle ultime 4 partite, *non* nelle ultime 2, altrimenti scatta RECUPERATO). Password del club: chiederla a Lorenzo, oppure registrare un nuovo club dall'UI.
+- **Upload CSV**: il drag&drop non è pilotabile dal browser automatico → usare `curl` con login (`POST /auth/login` → token → `POST /upload/{abbonati|biglietteria|shop}` e `POST /partite/upload`, campo `file`).
+- **Cache intelligence in-memory** (TTL 900s): dopo modifiche dirette al DB, forzare `POST /api/intelligence/club/refresh` (un altro processo Python non può invalidare la cache del server).
+- **Console del browser di test**: `read_console_messages` accumula errori vecchi tra navigazioni — verificare lo stato con screenshot, non fidarsi solo dello storico.
+- Non pushato: 8 commit locali (vedi sopra + `d9d1e9f` handoff precedente). `product/feature_ideas.md` (riga F9) committato a parte.
+- Untracked non nostri, non toccati: `.codex/`, `AGENTS.md`, `backend/faniq.db.bak-20260902144342`.
 
 ---
 
-## Prima di continuare
+## Idee feature Dashboard (03/09) — generate ma NON scelte
 
-1. Tutto pushato e verificato live — nessuna azione di deploy in sospeso.
-2. Riprendere il brainstorming Dashboard da dove si è fermato: presentare le 7 idee sopra a Lorenzo, farne scremare 1-2, poi seguire il processo completo della skill `brainstorming` (chiarimenti → design → approvazione) prima di scrivere qualunque codice.
-3. Nessun bug noto aperto sul resto dell'app.
+1. **Widget "Momentum"** — fan in traiettoria positiva/negativa (campo `momentum` già calcolato, mai aggregato/mostrato in UI; confermato il 23/09).
+2. **Indicatore affidabilità dati** — parzialmente già presente (`DataHealthPill`), rivalutare cosa manca.
+3. **"Prossima partita" in anteprima su Dashboard** — dipende dal calendario con partite future (vedi pattern `date.today()`).
+4. **Confronto stagione su stagione** — ora fattibile senza spezzare i dati grazie alla normalizzazione stagione; esiste già un indice DB `ix_abbonamenti_club_stagione` pensato per la retention per stagione.
+5. **Export "report per il board"** — PDF: **nessuna libreria PDF installata**, servirebbe conferma esplicita per aggiungerne una (regola CLAUDE.md).
+6. **Cohort di acquisizione** — curva di retention per anno di primo acquisto.
+7. **Partite che performano meglio** — revenue/presenze per tipo partita o giorno.
+
+Scartate per ora: benchmark tra club (dati cross-tenant), "cosa è cambiato questa settimana" (serve storico persistito).
+
+---
+
+## Altre note
+
+- **Hermes Agent** (agente open source Nous Research) esplorato in sessioni precedenti come possibile motore always-on per FanIQ (monitoraggio + contenuti per cluster). Clonato in `~/Developer/hermes-agent` (spostato da `~/Desktop` per problemi iCloud con git). Messo da parte per ora; nessuna azione in sospeso. Se si riprende: dati reali di tifosi + agenti autonomi = tema GDPR, accesso solo via API con token scoped, mai DB diretto.
+- Plugin attivi: `superpowers` (brainstorming, subagent-driven-development, ecc.) e `concise`. Preferenze salvate in memoria: segnalare quando una skill fitterebbe meglio il task; restare concisi anche usando le skill.
+- Regole invariate (CLAUDE.md): niente modifiche a auth/JWT/RLS/middleware, niente dati reali, niente librerie nuove senza conferma, **il push su main lo esegue solo Lorenzo**.
