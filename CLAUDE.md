@@ -110,6 +110,10 @@ cd frontend && npm run build
 | `FANIQ_DATABASE_URL` | no | Default: SQLite locale |
 | `FANIQ_CORS_ORIGINS` | no | Default: localhost:3000,5173 |
 | `FANIQ_OPENAI_MODEL` | no | Default: gpt-4o |
+| `FANIQ_FRONTEND_URL` | sì in prod | Base dei link nelle email di recupero password (es. URL Vercel). Default: localhost:3000 |
+| `FANIQ_SMTP_HOST` / `_PORT` / `_USER` / `_PASSWORD` | sì per inviare email | SMTP (es. Brevo `smtp-relay.brevo.com:587`). Senza host le email non partono |
+| `FANIQ_MAIL_FROM` | sì per inviare email | Mittente, es. `FanIQ <noreply@dominio.it>` |
+| `FANIQ_PASSWORD_RESET_MINUTES` | no | Validità del link di recupero. Default: 60 |
 
 ---
 
@@ -137,7 +141,7 @@ def handler(
 `get_current_club` è la dipendenza universale: valida il token e attiva RLS in una sola chiamata.
 
 ### Rate limiting
-Middleware custom in `main.py` (non slowapi). Solo su `/auth/register` (5 req/min) e `/auth/login` (10 req/min).
+Middleware custom in `main.py` (non slowapi). Su `/auth/register` (5 req/min), `/auth/login` (10 req/min), `/auth/password-reset/request` (3 req/min), `/auth/password-reset/confirm` (10 req/min), più chat, upload e refresh intelligence (vedi `_RATE_LIMITS`). Le due righe del recupero password sono state autorizzate da Lorenzo (24/09/2026).
 
 ### Pattern chiamate API frontend
 Tutte le funzioni sono in `frontend/src/api/client.js`:
@@ -159,6 +163,7 @@ Tutte le funzioni sono in `frontend/src/api/client.js`:
 | Feature | File principale |
 |---------|----------------|
 | Autenticazione club + ClubUser con ruoli | `routers/auth.py`, `services/auth.py`, `tenant.py` |
+| Recupero password club (link email monouso, schema Django/fastapi-users senza tabella) | `routers/password_reset.py`, `services/password_reset.py`, `services/email.py` |
 | RFM segmentation (VIP/Fedele/A rischio/Dormiente/Nuovo) | `services/analytics.py` |
 | Business Score 0-100 + Revenue Watch + Opportunità | `services/insights.py` |
 | Upload CSV: fan, abbonamenti, biglietti, shop, partite | `services/csv_import.py`, `routers/upload.py` |

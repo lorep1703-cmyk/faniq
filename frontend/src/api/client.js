@@ -31,6 +31,12 @@ api.interceptors.response.use(
   }
 );
 
+// Recupero password (pubblico, senza login)
+export const requestPasswordReset = (email) =>
+  api.post("/auth/password-reset/request", { email }).then((r) => r.data);
+export const confirmPasswordReset = (token, password) =>
+  api.post("/auth/password-reset/confirm", { token, password }).then((r) => r.data);
+
 export const fetchStats = () => api.get("/dashboard/stats").then((r) => r.data);
 export const fetchCitta = () => api.get("/dashboard/citta").then((r) => r.data);
 export const fetchPresenze = () => api.get("/dashboard/presenze").then((r) => r.data);

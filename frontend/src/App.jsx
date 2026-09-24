@@ -8,6 +8,8 @@ import Report from "./pages/Report";
 import Insights from "./pages/Insights";
 import Privacy from "./pages/Privacy";
 import Login from "./pages/Login";
+import RecuperaPassword from "./pages/RecuperaPassword";
+import ReimpostaPassword from "./pages/ReimpostaPassword";
 import AlertsPage from "./pages/AlertsPage";
 import Calendario from "./pages/Calendario";
 import ChatWidget from "./components/ChatWidget";
@@ -21,6 +23,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/recupera-password" element={<RecuperaPassword />} />
+      <Route path="/reimposta-password" element={<ReimpostaPassword />} />
       <Route
         path="/*"
         element={

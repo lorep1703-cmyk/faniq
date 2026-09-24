@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Users, LogIn, UserPlus } from "lucide-react";
 import { API_URL } from "../api/client";
 
@@ -127,6 +127,13 @@ export default function Login() {
                 required
                 minLength={8}
               />
+              {tab === "login" && (
+                <div className="text-right mt-1.5">
+                  <Link to="/recupera-password" className="text-xs text-primary-600 hover:text-primary-700">
+                    Password dimenticata?
+                  </Link>
+                </div>
+              )}
             </div>
 
             {error && (
