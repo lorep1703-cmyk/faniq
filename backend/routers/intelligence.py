@@ -6,13 +6,18 @@ from collections import Counter
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from sqlalchemy import distinct, func
 from sqlalchemy.orm import Session, selectinload
 
 from database import get_db
 from fan_intelligence import FanIntelligence, JourneyStage
-from models import Club, Fan
+from models import Abbonamento, Club, Fan
 from services.cache import get as cache_get, set as cache_set
-from services.intelligence.engine import compute_club_intelligence, compute_fan_intelligence
+from services.intelligence.engine import (
+    compute_club_intelligence,
+    compute_fan_intelligence,
+    current_season_str,
+)
 from services.season_value import recent_season_spend
 from tenant import get_current_club
 
@@ -160,6 +165,39 @@ def get_club_intelligence(
         "per_page": per_page,
         "items": items[start: start + per_page],
     }
+
+
+# ── Contesto alert ─────────────────────────────────────────────────────────
+
+def _alerts_context(club_id: int, db: Session) -> dict:
+    """Perché "Da contattare" può essere vuota: lo Stadio 3 considera solo gli
+    abbonati della stagione corrente (calcolata sulla data reale). Se il club
+    ha caricato solo stagioni passate, la pagina va spiegata, non mostrata
+    come "tutto sotto controllo"."""
+    season = current_season_str()
+    active = (
+        db.query(func.count(distinct(Abbonamento.fan_id)))
+        .filter(Abbonamento.club_id == club_id, Abbonamento.stagione == season)
+        .scalar()
+    ) or 0
+    seasons = [
+        s for (s,) in db.query(distinct(Abbonamento.stagione))
+        .filter(Abbonamento.club_id == club_id, Abbonamento.stagione.isnot(None))
+        .all()
+    ]
+    return {
+        "current_season": season,
+        "active_subscribers": active,
+        "latest_season": max(seasons) if seasons else None,
+    }
+
+
+@router.get("/club/alerts-context")
+def get_alerts_context(
+    db: Session = Depends(get_db),
+    club: Club = Depends(get_current_club),
+):
+    return _alerts_context(club.id, db)
 
 
 # ── Summary club ───────────────────────────────────────────────────────────

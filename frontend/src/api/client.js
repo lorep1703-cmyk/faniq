@@ -128,6 +128,8 @@ export const fetchClubIntelligence  = (params = {}) =>
   api.get("/api/intelligence/club", { params: { per_page: 5000, ...params }, timeout: 60000 }).then((r) => r.data);
 export const fetchIntelligenceSummary = () =>
   api.get("/api/intelligence/club/summary", { timeout: 60000 }).then((r) => r.data);
+export const fetchAlertsContext = () =>
+  api.get("/api/intelligence/club/alerts-context").then((r) => r.data);
 export const fetchDormantPotential = () =>
   api.get("/api/intelligence/club/dormant-potential", { timeout: 60000 }).then((r) => r.data);
 

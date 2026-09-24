@@ -186,6 +186,7 @@ Tutte le funzioni sono in `frontend/src/api/client.js`:
 | `GET` | `/api/intelligence/fan/{fan_id}` | `FanIntelligence` singolo fan |
 | `GET` | `/api/intelligence/club` | Lista paginata, filtri: `journey_stage`, `min_renewal`, `max_renewal`, `sort` |
 | `GET` | `/api/intelligence/club/summary` | `{ total_fans, avg_renewal_probability, fans_at_risk, fans_to_contact, journey_distribution, decay_distribution }` |
+| `GET` | `/api/intelligence/club/alerts-context` | `{ current_season, active_subscribers, latest_season }` — spiega "Da contattare" vuota |
 | `POST` | `/api/intelligence/club/refresh` | Avvia ricalcolo in background → `{ job_id, status: "queued" }` |
 | `GET` | `/api/intelligence/club/refresh/status` | `{ status: "queued"|"running"|"done"|"error"|"idle" }` |
 

@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
-import { Mail, Archive, BellOff } from "lucide-react";
-import { fetchAlertsRaw } from "../api/client";
+import { useNavigate } from "react-router-dom";
+import { Mail, Archive, BellOff, CalendarX, Upload } from "lucide-react";
+import { fetchAlertsContext, fetchAlertsRaw } from "../api/client";
 
 // ── Config severity ───────────────────────────────────────────────────────────
 
@@ -140,12 +141,21 @@ export default function AlertsPage() {
   const [activeTab, setActiveTab] = useState("tutte");
   const [archived, setArchived] = useState(() => getArchived());
 
+  const [context, setContext] = useState(null);
+  const navigate = useNavigate();
+
   useEffect(() => {
     fetchAlertsRaw()
       .then(setRawItems)
       .catch((err) => setError(err.userMessage || "Impossibile caricare i dati. Riprova."))
       .finally(() => setLoading(false));
+    // Solo per spiegare una pagina vuota: se fallisce resta il messaggio generico.
+    fetchAlertsContext().then(setContext).catch(() => {});
   }, []);
+
+  // Gli alert riguardano solo gli abbonati della stagione in corso: senza di loro
+  // la pagina è vuota per mancanza di dati, non perché va tutto bene.
+  const noCurrentSubscribers = context?.active_subscribers === 0;
 
   // Filtra archiviati
   const activeItems = useMemo(
@@ -195,6 +205,8 @@ export default function AlertsPage() {
             ? "Caricamento..."
             : counterParts.length > 0
             ? counterParts.join(" · ")
+            : noCurrentSubscribers
+            ? `Nessun abbonato per la stagione ${context.current_season}.`
             : "Nessuna situazione da gestire al momento."}
         </p>
       </div>
@@ -212,7 +224,27 @@ export default function AlertsPage() {
       {/* Contenuto */}
       {!loading && !error && (
         <>
-          {activeItems.length === 0 ? (
+          {activeItems.length === 0 && noCurrentSubscribers ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center max-w-md mx-auto">
+              <CalendarX size={40} className="text-slate-300 mb-4" />
+              <p className="text-slate-600 font-medium">
+                Nessun abbonamento per la stagione {context.current_season}
+              </p>
+              <p className="text-slate-400 text-sm mt-1">
+                {context.latest_season
+                  ? `L'ultima stagione caricata è la ${context.latest_season}. `
+                  : "Non hai ancora caricato abbonamenti. "}
+                Gli avvisi riguardano solo gli abbonati della stagione in corso: carica il loro file per attivarli.
+              </p>
+              <button
+                onClick={() => navigate("/upload")}
+                className="mt-5 inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+              >
+                <Upload size={16} />
+                Carica abbonamenti
+              </button>
+            </div>
+          ) : activeItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <BellOff size={40} className="text-slate-200 mb-4" />
               <p className="text-slate-500 font-medium">Tutto sotto controllo</p>
