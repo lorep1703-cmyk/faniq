@@ -237,7 +237,7 @@ git add backend/  # o i file modificati
 git commit -m "fix: descrizione"
 ```
 
-Il **push** su `main` è bloccato in modo assoluto dalla regola hookify `.claude/hookify.conferma-distruttivi.local.md` (pattern `git\s+push`, `action: block`): è un divieto tecnico, non aggirabile con una conferma in chat — Claude Code non può eseguirlo in nessun caso, nemmeno se Lorenzo dice "vai" nello stesso turno. Claude Code annuncia sempre chiaramente cosa sta per pushare (commit inclusi) e poi si ferma lì: il push effettivo — che fa scattare il deploy automatico su Render — lo esegue sempre Lorenzo dal proprio terminale con `git push origin main`. Nessun workaround per aggirare il blocco (niente flag alternativi, niente comandi equivalenti).
+Il **push** su `main` è bloccato in modo assoluto dalla regola hookify `.claude/hookify.conferma-distruttivi.local.md` (`action: block`). La regola blocca ogni push tranne quello (non forzato) su un ramo `claude/...` di sessione cloud: lì il lavoro va salvato perché il contenitore viene cancellato, e non parte nessun deploy. Blocca sempre: push che nominano `main`, push senza ramo esplicito, `--force`/`-f`: è un divieto tecnico, non aggirabile con una conferma in chat — Claude Code non può eseguirlo in nessun caso, nemmeno se Lorenzo dice "vai" nello stesso turno. Claude Code annuncia sempre chiaramente cosa sta per pushare (commit inclusi) e poi si ferma lì: il push effettivo — che fa scattare il deploy automatico su Render — lo esegue sempre Lorenzo dal proprio terminale con `git push origin main`. Nessun workaround per aggirare il blocco (niente flag alternativi, niente comandi equivalenti).
 
 ---
 
