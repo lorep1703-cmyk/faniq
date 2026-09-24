@@ -27,9 +27,15 @@ def send_email(to: str, subject: str, text: str, html: str | None = None) -> boo
     if html:
         msg.add_alternative(html, subtype="html")
 
+    context = ssl.create_default_context()
     try:
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as smtp:
-            smtp.starttls(context=ssl.create_default_context())
+        if SMTP_PORT == 465:  # TLS implicito
+            smtp = smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=15, context=context)
+        else:  # 587: STARTTLS
+            smtp = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15)
+        with smtp:
+            if SMTP_PORT != 465:
+                smtp.starttls(context=context)
             if SMTP_USER:
                 smtp.login(SMTP_USER, SMTP_PASSWORD)
             smtp.send_message(msg)

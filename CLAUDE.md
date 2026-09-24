@@ -31,6 +31,7 @@ faniq/
 │   ├── intelligence_config.py   # Soglie e pesi del Fan Intelligence Engine
 │   ├── routers/                 # Un file per dominio funzionale
 │   │   ├── auth.py              # POST /auth/register, /auth/login
+│   │   ├── password_reset.py    # POST /auth/password-reset/request, /confirm
 │   │   ├── dashboard.py         # GET /dashboard/stats, /segments, /fans, ecc.
 │   │   ├── insights.py          # GET /insights/overview, /fan/{id}
 │   │   ├── intelligence.py      # GET/POST /api/intelligence/...
@@ -48,6 +49,8 @@ faniq/
 │   │   ├── chat.py              # Chat AI con anonimizzazione PII
 │   │   ├── cache.py             # Cache in-memory semplice (TTL configurabile)
 │   │   ├── auth.py              # hash_password, verify_password, create_token
+│   │   ├── password_reset.py    # Token recupero password (stateless, monouso)
+│   │   ├── email.py             # Invio email SMTP (stdlib)
 │   │   └── intelligence/        # Fan Intelligence Engine (DA-00)
 │   │       ├── engine.py        # Orchestratore pipeline 5 stadi + bulk loading
 │   │       ├── decay.py         # Stadio 1: half-life pausa tra presenze

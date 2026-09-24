@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { KeyRound, ArrowLeft } from "lucide-react";
 import AuthCard from "../components/AuthCard";
 import { confirmPasswordReset } from "../api/client";
@@ -9,9 +9,11 @@ export default function ReimpostaPassword() {
 
   // Tolto subito dall'indirizzo: così il token non resta nella cronologia e non
   // finisce nell'header Referer di altre richieste (OWASP).
+  const navigate = useNavigate();
+  const location = useLocation();
   useEffect(() => {
-    if (window.location.search) window.history.replaceState(null, "", window.location.pathname);
-  }, []);
+    if (location.search) navigate(location.pathname, { replace: true });
+  }, [location.search, location.pathname, navigate]);
   const [password, setPassword] = useState("");
   const [conferma, setConferma] = useState("");
   const [done, setDone] = useState("");

@@ -45,7 +45,10 @@ def create_reset_token(club: Club, now: datetime | None = None) -> str:
 def club_from_reset_token(token: str, db: Session) -> Club | None:
     """Il club del token, o None se il token è falso, scaduto o già usato."""
     try:
-        payload = jwt.decode(token, _SECRET, algorithms=[JWT_ALGORITHM], audience=_AUDIENCE)
+        payload = jwt.decode(
+            token, _SECRET, algorithms=[JWT_ALGORITHM], audience=_AUDIENCE,
+            options={"require_aud": True, "require_exp": True},
+        )
         club_id = int(payload["sub"])
         fgp = str(payload["fgp"])
     except (JWTError, KeyError, ValueError):
