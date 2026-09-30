@@ -114,8 +114,8 @@ cd frontend && npm run build
 | `FANIQ_CORS_ORIGINS` | no | Default: localhost:3000,5173 |
 | `FANIQ_OPENAI_MODEL` | no | Default: gpt-4o |
 | `FANIQ_FRONTEND_URL` | sì in prod | Base dei link nelle email di recupero password (es. URL Vercel). Default: localhost:3000 |
-| `FANIQ_SMTP_HOST` / `_PORT` / `_USER` / `_PASSWORD` | sì per inviare email | SMTP (es. Brevo `smtp-relay.brevo.com:587`). Senza host le email non partono |
-| `FANIQ_MAIL_FROM` | sì per inviare email | Mittente, es. `FanIQ <noreply@dominio.it>` |
+| `FANIQ_SMTP_HOST` / `_PORT` / `_USER` / `_PASSWORD` | sì per inviare email | Oggi su Render: Gmail dedicato (`smtp.gmail.com:587` + password per app). Senza host le email non partono |
+| `FANIQ_MAIL_FROM` | sì per inviare email | Mittente, uguale all'utente SMTP: `FanIQ <indirizzo@gmail.com>` |
 | `FANIQ_PASSWORD_RESET_MINUTES` | no | Validità del link di recupero. Default: 60 |
 
 ---
@@ -234,6 +234,8 @@ Tutte le funzioni sono in `frontend/src/api/client.js`:
 - `Base.metadata.create_all()` NON altera colonne esistenti su Neon → ALTER TABLE manuale via SQL Editor
 - `from __future__ import annotations` obbligatorio nei file che usano `X | None` su Python <3.10
 - Pydantic v2: `detail` è array per errori di validazione — il middleware in `main.py` lo normalizza a stringa
+- **Email di recupero password NON partono in produzione (decisione di Lorenzo, 30/09/2026).** Render free blocca l'SMTP in uscita (porte 25/465/587, dal 26/09/2025): nei log compare `Invio email '...' fallito: OSError`. Codice e variabili SMTP su Render sono già a posto. Si sblocca quando arriva il primo club, con UNA di queste: **A)** Render a pagamento → Gmail SMTP funziona senza toccare il codice; **B)** dominio proprio + Brevo via API HTTPS → piccola modifica a `services/email.py`. Brevo senza dominio sconsigliato: riscrive il mittente Gmail, rischio spam. Nel frattempo i reset si fanno a mano.
+- Su Render l'IP nei log è quello reale del client (non il proxy interno): il rate limit per IP in `main.py` distingue gli utenti.
 
 ---
 
