@@ -40,3 +40,17 @@ JWT_SECRET_KEY = _jwt_secret
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.environ.get("FANIQ_JWT_EXPIRE_MINUTES", "480"))  # 8 ore
 FANIQ_ENV: str = os.environ.get("FANIQ_ENV", "development")
+
+# Recupero password
+# URL fisso del frontend per i link nelle email: mai ricavato dalla richiesta
+# (host header injection, vedi OWASP Forgot Password Cheat Sheet).
+FRONTEND_URL = os.environ.get("FANIQ_FRONTEND_URL", "http://localhost:3000").rstrip("/")
+PASSWORD_RESET_MINUTES = int(os.environ.get("FANIQ_PASSWORD_RESET_MINUTES", "60"))
+
+# Email (SMTP) — es. Brevo: smtp-relay.brevo.com:587. Senza SMTP_HOST le email
+# non partono (in sviluppo il flusso funziona lo stesso, senza invio).
+SMTP_HOST = os.environ.get("FANIQ_SMTP_HOST", "")
+SMTP_PORT = int(os.environ.get("FANIQ_SMTP_PORT", "587"))
+SMTP_USER = os.environ.get("FANIQ_SMTP_USER", "")
+SMTP_PASSWORD = os.environ.get("FANIQ_SMTP_PASSWORD", "")
+MAIL_FROM = os.environ.get("FANIQ_MAIL_FROM", "FanIQ <noreply@localhost>")

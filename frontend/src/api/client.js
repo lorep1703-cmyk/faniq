@@ -31,6 +31,12 @@ api.interceptors.response.use(
   }
 );
 
+// Recupero password (pubblico, senza login)
+export const requestPasswordReset = (email) =>
+  api.post("/auth/password-reset/request", { email }).then((r) => r.data);
+export const confirmPasswordReset = (token, password) =>
+  api.post("/auth/password-reset/confirm", { token, password }).then((r) => r.data);
+
 export const fetchStats = () => api.get("/dashboard/stats").then((r) => r.data);
 export const fetchCitta = () => api.get("/dashboard/citta").then((r) => r.data);
 export const fetchPresenze = () => api.get("/dashboard/presenze").then((r) => r.data);
@@ -128,6 +134,8 @@ export const fetchClubIntelligence  = (params = {}) =>
   api.get("/api/intelligence/club", { params: { per_page: 5000, ...params }, timeout: 60000 }).then((r) => r.data);
 export const fetchIntelligenceSummary = () =>
   api.get("/api/intelligence/club/summary", { timeout: 60000 }).then((r) => r.data);
+export const fetchAlertsContext = () =>
+  api.get("/api/intelligence/club/alerts-context").then((r) => r.data);
 export const fetchDormantPotential = () =>
   api.get("/api/intelligence/club/dormant-potential", { timeout: 60000 }).then((r) => r.data);
 

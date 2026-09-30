@@ -20,7 +20,7 @@ from sqlalchemy.exc import OperationalError
 
 from config import CORS_ORIGINS, FANIQ_ENV, LOG_LEVEL
 from database import Base, SessionLocal, _IS_POSTGRES, engine
-from routers import chat, dashboard, export, fans, insights, intelligence, partite, privacy, simulator, upload
+from routers import chat, dashboard, export, fans, insights, intelligence, partite, password_reset, privacy, simulator, upload
 from routers.auth import router as auth_router
 
 logging.basicConfig(level=LOG_LEVEL)
@@ -39,6 +39,8 @@ _rate_store: dict = defaultdict(list)
 _RATE_LIMITS = {
     "/auth/register": (5, 60),
     "/auth/login": (10, 60),
+    "/auth/password-reset/request": (3, 60),   # evita raffiche di email
+    "/auth/password-reset/confirm": (10, 60),  # evita tentativi a raffica sui link
     "/chat/": (20, 60),
     "POST:/upload/": (5, 60),          # solo POST — il polling GET /upload/status/ non viene contato
     "/api/intelligence/club/refresh": (3, 60),
@@ -148,6 +150,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(password_reset.router)
 app.include_router(dashboard.router)
 app.include_router(upload.router)
 app.include_router(insights.router)

@@ -31,6 +31,7 @@ faniq/
 │   ├── intelligence_config.py   # Soglie e pesi del Fan Intelligence Engine
 │   ├── routers/                 # Un file per dominio funzionale
 │   │   ├── auth.py              # POST /auth/register, /auth/login
+│   │   ├── password_reset.py    # POST /auth/password-reset/request, /confirm
 │   │   ├── dashboard.py         # GET /dashboard/stats, /segments, /fans, ecc.
 │   │   ├── insights.py          # GET /insights/overview, /fan/{id}
 │   │   ├── intelligence.py      # GET/POST /api/intelligence/...
@@ -48,6 +49,8 @@ faniq/
 │   │   ├── chat.py              # Chat AI con anonimizzazione PII
 │   │   ├── cache.py             # Cache in-memory semplice (TTL configurabile)
 │   │   ├── auth.py              # hash_password, verify_password, create_token
+│   │   ├── password_reset.py    # Token recupero password (stateless, monouso)
+│   │   ├── email.py             # Invio email SMTP (stdlib)
 │   │   └── intelligence/        # Fan Intelligence Engine (DA-00)
 │   │       ├── engine.py        # Orchestratore pipeline 5 stadi + bulk loading
 │   │       ├── decay.py         # Stadio 1: half-life pausa tra presenze
@@ -110,6 +113,10 @@ cd frontend && npm run build
 | `FANIQ_DATABASE_URL` | no | Default: SQLite locale |
 | `FANIQ_CORS_ORIGINS` | no | Default: localhost:3000,5173 |
 | `FANIQ_OPENAI_MODEL` | no | Default: gpt-4o |
+| `FANIQ_FRONTEND_URL` | sì in prod | Base dei link nelle email di recupero password (es. URL Vercel). Default: localhost:3000 |
+| `FANIQ_SMTP_HOST` / `_PORT` / `_USER` / `_PASSWORD` | sì per inviare email | SMTP (es. Brevo `smtp-relay.brevo.com:587`). Senza host le email non partono |
+| `FANIQ_MAIL_FROM` | sì per inviare email | Mittente, es. `FanIQ <noreply@dominio.it>` |
+| `FANIQ_PASSWORD_RESET_MINUTES` | no | Validità del link di recupero. Default: 60 |
 
 ---
 
@@ -137,7 +144,7 @@ def handler(
 `get_current_club` è la dipendenza universale: valida il token e attiva RLS in una sola chiamata.
 
 ### Rate limiting
-Middleware custom in `main.py` (non slowapi). Solo su `/auth/register` (5 req/min) e `/auth/login` (10 req/min).
+Middleware custom in `main.py` (non slowapi). Su `/auth/register` (5 req/min), `/auth/login` (10 req/min), `/auth/password-reset/request` (3 req/min), `/auth/password-reset/confirm` (10 req/min), più chat, upload e refresh intelligence (vedi `_RATE_LIMITS`). Le due righe del recupero password sono state autorizzate da Lorenzo (24/09/2026).
 
 ### Pattern chiamate API frontend
 Tutte le funzioni sono in `frontend/src/api/client.js`:
@@ -159,6 +166,7 @@ Tutte le funzioni sono in `frontend/src/api/client.js`:
 | Feature | File principale |
 |---------|----------------|
 | Autenticazione club + ClubUser con ruoli | `routers/auth.py`, `services/auth.py`, `tenant.py` |
+| Recupero password club (link email monouso, schema Django/fastapi-users senza tabella) | `routers/password_reset.py`, `services/password_reset.py`, `services/email.py` |
 | RFM segmentation (VIP/Fedele/A rischio/Dormiente/Nuovo) | `services/analytics.py` |
 | Business Score 0-100 + Revenue Watch + Opportunità | `services/insights.py` |
 | Upload CSV: fan, abbonamenti, biglietti, shop, partite | `services/csv_import.py`, `routers/upload.py` |
@@ -186,6 +194,7 @@ Tutte le funzioni sono in `frontend/src/api/client.js`:
 | `GET` | `/api/intelligence/fan/{fan_id}` | `FanIntelligence` singolo fan |
 | `GET` | `/api/intelligence/club` | Lista paginata, filtri: `journey_stage`, `min_renewal`, `max_renewal`, `sort` |
 | `GET` | `/api/intelligence/club/summary` | `{ total_fans, avg_renewal_probability, fans_at_risk, fans_to_contact, journey_distribution, decay_distribution }` |
+| `GET` | `/api/intelligence/club/alerts-context` | `{ current_season, active_subscribers, latest_season }` — spiega "Da contattare" vuota |
 | `POST` | `/api/intelligence/club/refresh` | Avvia ricalcolo in background → `{ job_id, status: "queued" }` |
 | `GET` | `/api/intelligence/club/refresh/status` | `{ status: "queued"|"running"|"done"|"error"|"idle" }` |
 

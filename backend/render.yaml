@@ -22,6 +22,18 @@ services:
         value: "120"
       - key: FANIQ_LOG_LEVEL
         value: "INFO"
+      - key: FANIQ_FRONTEND_URL
+        sync: false          # es. https://faniq.vercel.app — base dei link di recupero password
+      - key: FANIQ_SMTP_HOST
+        sync: false          # es. smtp-relay.brevo.com
+      - key: FANIQ_SMTP_PORT
+        value: "587"
+      - key: FANIQ_SMTP_USER
+        sync: false
+      - key: FANIQ_SMTP_PASSWORD
+        sync: false
+      - key: FANIQ_MAIL_FROM
+        sync: false          # es. FanIQ <noreply@dominio.it>
       - key: OPENAI_API_KEY
         sync: false          # opzionale
       - key: PYTHON_VERSION
