@@ -1,0 +1,18 @@
+# Configurazione di progetto per Codex. Le regole del progetto stanno in AGENTS.md (collegamento a CLAUDE.md).
+# Codex legge questo file solo se il progetto è "trusted" in ~/.codex/config.toml.
+
+# Sicurezza: scrive solo nella cartella del progetto, senza rete, e chiede prima dei comandi fuori dall'isolamento.
+# Senza rete un `git push` non può arrivare a GitHub, qualunque opzione usi (anche --no-verify).
+# Le regole in .codex/rules/faniq.rules fanno da primo filtro (git push vietato, comandi distruttivi su conferma).
+sandbox_mode = "workspace-write"
+approval_policy = "on-request"
+
+[sandbox_workspace_write]
+network_access = false
+
+[mcp_servers.chrome-devtools]
+command = "npx"
+args = [
+    "-y",
+    "chrome-devtools-mcp@latest",
+]

@@ -1,0 +1,23 @@
+# Regole di sicurezza FanIQ per Codex (stesse di CLAUDE.md, sezione Deploy).
+# Il push lo fa solo Lorenzo dal suo terminale: Codex non può eseguirlo.
+prefix_rule(
+    pattern = ["git", "push"],
+    decision = "forbidden",
+    justification = "Il push su GitHub fa partire il deploy: lo esegue solo Lorenzo (CLAUDE.md, Deploy).",
+)
+# Comandi distruttivi: Codex deve chiedere prima (come la regola hookify di Claude Code).
+prefix_rule(
+    pattern = ["git", "reset", "--hard"],
+    decision = "prompt",
+    justification = "Cancella modifiche non salvate: serve la conferma di Lorenzo.",
+)
+prefix_rule(
+    pattern = ["rm", "-rf"],
+    decision = "prompt",
+    justification = "Cancellazione ricorsiva: serve la conferma di Lorenzo.",
+)
+prefix_rule(
+    pattern = ["git", "config", "core.hooksPath"],
+    decision = "forbidden",
+    justification = "Disattiverebbe il blocco pre-push (CLAUDE.md).",
+)
