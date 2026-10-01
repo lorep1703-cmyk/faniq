@@ -1,4 +1,4 @@
-# FanIQ — Guida per Claude Code
+# FanIQ — Guida per gli agenti AI (Claude Code; Codex la legge tramite AGENTS.md)
 
 ## Progetto
 

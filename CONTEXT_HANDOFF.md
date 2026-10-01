@@ -61,7 +61,7 @@ Punti censiti l'01/10: `services/intelligence/ambassador.py:48`, `services/intel
 ## Pulizia in corso (01/10)
 
 1. ✅ Memoria e handoff senza doppioni: lo stato del progetto sta solo qui, la memoria di Claude tiene solo le preferenze di lavoro.
-2. ⏳ `AGENTS.md` (guida Codex, ferma al 04/09) da riallineare a `CLAUDE.md`.
+2. ✅ `AGENTS.md` è un collegamento a `CLAUDE.md`: Codex e Claude Code leggono lo stesso file. Hindsight valutato e annotato in F9 (`product/feature_ideas.md`).
 3. ⏳ File non tracciati: `.codex/` e backup DB del 02/09.
 4. ⏳ Rami già uniti da cancellare (`claude/sleepy-williams-e87eb2`, `feature/agent-upgrade` con uno stash da guardare, remoto `claude/sleepy-thompson-bt6kf5`).
 5. ⏳ Documenti di giugno nella root (`CONTEXT.md`, `PROJECT_STRUCTURE.md`, `instructions.md`, audit…) da archiviare.
