@@ -1,9 +1,9 @@
-# Regole di sicurezza FanIQ per Codex (stesse di CLAUDE.md, sezione Deploy).
+# Regole di sicurezza FanIQ per Codex (stesse di CLAUDE.md, sezione "Commit e push").
 # Il push lo fa solo Lorenzo dal suo terminale: Codex non può eseguirlo.
 prefix_rule(
     pattern = ["git", "push"],
     decision = "forbidden",
-    justification = "Il push su GitHub fa partire il deploy: lo esegue solo Lorenzo (CLAUDE.md, Deploy).",
+    justification = "Il push su GitHub fa partire il deploy: lo esegue solo Lorenzo (CLAUDE.md, sezione Commit e push).",
 )
 # Comandi distruttivi: Codex deve chiedere prima (come la regola hookify di Claude Code).
 prefix_rule(

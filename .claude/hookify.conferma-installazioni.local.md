@@ -7,4 +7,4 @@ action: block
 ---
 📦 **Installazione di pacchetti o esecuzione di script remoti.**
 
-Prima di installare: elenca a Lorenzo i pacchetti e la loro funzione, dichiara DOVE finiscono (versionato / non versionato / globale) e attendi conferma. Regola di sicurezza (installata a luglio 2026; CLAUDE.md: niente librerie senza conferma).
+Il comando è **bloccato**. Elenca a Lorenzo i pacchetti e la loro funzione e dichiara DOVE finiscono (versionato / non versionato / globale): se approva, li installa lui dal suo terminale. Regola di sicurezza (installata a luglio 2026; CLAUDE.md: niente librerie senza conferma).

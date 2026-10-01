@@ -49,6 +49,7 @@ Approccio che Lorenzo apprezza: verificare che i dati mostrati **rispecchino la 
    - Rate limit in memoria: si azzera al riavvio e non regge più istanze su Render.
    - Prompt injection nella Chat AI: i dati caricati finiscono nel contesto del modello.
    - Minore: JWT con algoritmo simmetrico HS256 (`config.py:40`).
+8. **Da verificare su Postgres (bassa priorità)**: `routers/auth.py::_warmup_intelligence` gira in background dopo il login riusando la sessione della richiesta. Lì `SET LOCAL` non vale più, quindi probabilmente calcola su zero righe e mette in cache un risultato vuoto. Non c'è rischio di vedere dati di altri club: senza contesto la policy RLS non restituisce nulla. `auth.py` è zona vietata: serve l'ok di Lorenzo. Gli altri task in background (`upload.py`, refresh in `intelligence.py`) impostano il contesto da soli.
 7. **Roadmap commerciale da rifare**: le milestone di giugno (M1–M4, prima demo Pro Vercelli entro il 31/07) sono scadute e il file è stato rimosso l'01/10. **Stato Pro Vercelli da chiarire con Lorenzo** (email mai confermata come inviata): da questo dipendono `sales_assets/outreach_pro_vercelli.md`, `research/club_profiles.md` e le domande Q-06/Q-07 in `decisions/open_questions.md`.
 
 ### Pattern di bug ricorrente: `date.today()` come riferimento di "recente"
