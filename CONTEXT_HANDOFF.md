@@ -1,17 +1,28 @@
 # FanIQ — Context Handoff
-> Aggiornato: 2026-09-24 | Da leggere all'inizio della prossima sessione
+> Aggiornato: 2026-10-01 | Da leggere all'inizio della prossima sessione
+> **Fonte unica** per stato e questioni aperte. Le regole stabili stanno in `CLAUDE.md`: qui non vanno ripetute.
 
 ---
 
 ## Stato attuale
 
-Il 23/09 sessione lunga di **test end-to-end** (non di sviluppo feature): caricati dataset sintetici combinati (~1844 fan) su un club di test locale, esplorate tutte le pagine, incrociati i numeri mostrati con query dirette su SQLite. Trovati e risolti 6 bug reali + 2 miglioramenti UI. **Tutto committato in locale, NON pushato** (`main` è 8 commit avanti a `origin/main`; il push lo fa Lorenzo, vedi CLAUDE.md). Test backend: 36/36 passano.
+Tutto il lavoro fino al 30/09 è **su `origin/main` e in produzione** (PR #2 e #3). Test backend: 49/49 passano (01/10).
 
-Approccio che Lorenzo apprezza: verificare che i dati mostrati **rispecchino la realtà** (non solo che la pagina non crashi), lavorare **un fix alla volta con feedback dopo ciascuno**, e discutere brevemente il design (proposta in chat → ok → implementazione) prima di aggiungere UI nuova.
+Approccio che Lorenzo apprezza: verificare che i dati mostrati **rispecchino la realtà** (non solo che la pagina non crashi), lavorare **un passo alla volta**, dicendo dopo ciascuno cosa è cambiato e cosa ci si guadagna, e discutere brevemente il design (proposta in chat → ok → implementazione) prima di aggiungere UI nuova.
 
 ---
 
-## Fatto il 23/09 (commit in ordine)
+## Fatto dal 24/09 al 30/09
+
+| Commit | Cosa |
+|---|---|
+| `774c427` | "Da contattare": nuovo `GET /api/intelligence/club/alerts-context`; se non ci sono abbonati della stagione corrente la pagina lo spiega, invece di dire "Tutto sotto controllo" (+ test) |
+| `db84afd`, `cb4748f` | Recupero password del club: link email monouso valido 60 min, nessuna tabella nuova, rate limit autorizzato da Lorenzo. Pagine `RecuperaPassword.jsx`/`ReimpostaPassword.jsx` (+ test) |
+| `57abdce` | CLAUDE.md: le email **non partono in produzione** perché Render free blocca l'SMTP. Si sblocca al primo club (Render a pagamento oppure dominio + Brevo); nel frattempo i reset si fanno a mano |
+
+---
+
+## Fatto il 23/09: sessione di test end-to-end (~1844 fan sintetici, numeri incrociati con il DB)
 
 | Commit | Cosa |
 |---|---|
@@ -27,13 +38,14 @@ Approccio che Lorenzo apprezza: verificare che i dati mostrati **rispecchino la 
 ## Questioni APERTE (da qui ripartire)
 
 1. **Ambassador Score ("Community", icona 🧍/👥 + numero in Report)** — Lorenzo è scettico, "forse non la manterrei". Verificato: max 28/100 su 1844 fan, 82% tra 0-9 (schiacciato). Cause: (a) la penalità -40% "nessun acquisto multiplo negli ultimi 6 mesi" usa `date.today()`, quindi con dati 2023-25 colpisce **tutti**; (b) limite strutturale: il "gruppo" è dedotto raggruppando biglietti per stessa data+persona, non osservato (due amici con email diverse = due persone sole). **Decisione da prendere**: rimuovere / tenere ma segnalare come sperimentale / fixare la data e rivalutare.
-2. **"Da contattare" (AlertsPage)** — vuota nonostante il dataset abbia fan "a rischio". Lorenzo ha detto di rivederla insieme; mai fatto. Sospetto: stesso problema di date (vedi pattern sotto).
+2. **"Da contattare" (AlertsPage)** — vuota nonostante il dataset abbia fan "a rischio". Dal 24/09 la pagina almeno **spiega** il vuoto (mancano abbonati della stagione corrente, `774c427`), ma la causa di fondo, cioè le date (vedi pattern sotto), resta. La revisione da fare insieme non c'è ancora stata.
 3. **Profili senza nome (29% nel dataset di test)** — spiegato: il CSV shop ha solo `email,prodotto,importo,data`, quindi chi ha solo acquisti shop nasce senza nome/città. Scenario realistico anche per club veri. Mitigato in UI (fallback email + filtro) ma restano da decidere eventuali altri passi (es. non contarli come "Tifosi identificati" nel KPI principale).
 4. **7 idee feature Dashboard del 03/09** — ancora da scremare (brainstorming Superpowers interrotto; elenco sotto). Nota: l'idea #2 "indicatore affidabilità dati" esiste già in parte (badge `DataHealthPill` su Report/Intelligence). Prima di costruire l'idea "Prossima partita" serve capire come gestire il calendario (vedi pattern sotto).
 5. **F9 in `product/feature_ideas.md`** (monitoraggio predittivo continuo + contenuti personalizzati via agenti/MCP; Hermes/Klaviyo come piste) — parcheggiata, Lorenzo ha detto di tenere Hermes da parte per ora.
 
 ### Pattern di bug ricorrente: `date.today()` come riferimento di "recente"
 Calendario & Presenze (zero predizioni: nessuna partita futura), "Da contattare" (zero anomalie), Ambassador Score (penalità universale) ancorano "recente/futuro" alla **data reale di sistema** invece che alle date dei dati del club. Con dati demo/storici o in pausa estiva falliscono silenziosamente. **Prima di dare per buono un "non c'è nulla da mostrare", controllare se il codice usa `date.today()`.**
+Punti censiti l'01/10: `services/intelligence/ambassador.py:48`, `services/intelligence/engine.py:222/237/313`, `services/behavioral.py:38`, `routers/partite.py:60`, `services/analytics.py:133`, `services/spending_forecast.py:30` (quest'ultimo accetta già `today` come parametro).
 
 ---
 
@@ -44,8 +56,15 @@ Calendario & Presenze (zero predizioni: nessuna partita futura), "Da contattare"
 - **Upload CSV**: il drag&drop non è pilotabile dal browser automatico → usare `curl` con login (`POST /auth/login` → token → `POST /upload/{abbonati|biglietteria|shop}` e `POST /partite/upload`, campo `file`).
 - **Cache intelligence in-memory** (TTL 900s): dopo modifiche dirette al DB, forzare `POST /api/intelligence/club/refresh` (un altro processo Python non può invalidare la cache del server).
 - **Console del browser di test**: `read_console_messages` accumula errori vecchi tra navigazioni — verificare lo stato con screenshot, non fidarsi solo dello storico.
-- Non pushato: 8 commit locali (vedi sopra + `d9d1e9f` handoff precedente). `product/feature_ideas.md` (riga F9) committato a parte.
-- Untracked non nostri, non toccati: `.codex/`, `AGENTS.md`, `backend/faniq.db.bak-20260902144342`.
+- Untracked: `.codex/`, `AGENTS.md`, `backend/faniq.db.bak-20260902144342` → in sistemazione dall'01/10 (vedi "Pulizia in corso").
+
+## Pulizia in corso (01/10)
+
+1. ✅ Memoria e handoff senza doppioni: lo stato del progetto sta solo qui, la memoria di Claude tiene solo le preferenze di lavoro.
+2. ⏳ `AGENTS.md` (guida Codex, ferma al 04/09) da riallineare a `CLAUDE.md`.
+3. ⏳ File non tracciati: `.codex/` e backup DB del 02/09.
+4. ⏳ Rami già uniti da cancellare (`claude/sleepy-williams-e87eb2`, `feature/agent-upgrade` con uno stash da guardare, remoto `claude/sleepy-thompson-bt6kf5`).
+5. ⏳ Documenti di giugno nella root (`CONTEXT.md`, `PROJECT_STRUCTURE.md`, `instructions.md`, audit…) da archiviare.
 
 ---
 
@@ -66,5 +85,4 @@ Scartate per ora: benchmark tra club (dati cross-tenant), "cosa è cambiato ques
 ## Altre note
 
 - **Hermes Agent** (agente open source Nous Research) esplorato in sessioni precedenti come possibile motore always-on per FanIQ (monitoraggio + contenuti per cluster). Clonato in `~/Developer/hermes-agent` (spostato da `~/Desktop` per problemi iCloud con git). Messo da parte per ora; nessuna azione in sospeso. Se si riprende: dati reali di tifosi + agenti autonomi = tema GDPR, accesso solo via API con token scoped, mai DB diretto.
-- Plugin attivi: `superpowers` (brainstorming, subagent-driven-development, ecc.) e `concise`. Preferenze salvate in memoria: segnalare quando una skill fitterebbe meglio il task; restare concisi anche usando le skill.
-- Regole invariate (CLAUDE.md): niente modifiche a auth/JWT/RLS/middleware, niente dati reali, niente librerie nuove senza conferma, **il push su main lo esegue solo Lorenzo**.
+- Plugin attivi: `superpowers` e `concise`. Le preferenze d'uso sono nella memoria di Claude Code, le regole del progetto in `CLAUDE.md`.
