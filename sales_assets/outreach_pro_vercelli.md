@@ -1,6 +1,7 @@
 # Outreach — Pro Vercelli
 
-> Questo file contiene le bozze dei messaggi per il primo contatto con Pro Vercelli. Nessun messaggio è ancora stato inviato.
+> Questo file contiene le bozze dei messaggi per il primo contatto con Pro Vercelli.
+> **Stato al 15/07/2026:** l'email era ancora una bozza in Gmail (oggetto "Pro Vercelli — chi rischia di non rinnovare l'abbonamento?"), mai inviata. Stato attuale e obiettivo da confermare con Lorenzo (vedi `CONTEXT_HANDOFF.md`).
 > **Non inviare nulla senza approvazione esplicita.**
 
 ---
@@ -156,30 +157,3 @@ Come cercarlo:
 - [ ] Calendly configurato
 - [ ] Pricing definito (risposta a Q-01)
 
----
-
-## Aggiornamento — 2026-07-15
-*Sessione: Marketing (automatica, URGENCY PHASE — 16 giorni al 31 luglio)*
-
-### Stato verificato
-
-- La bozza Gmail creata il 24/06 (ID `r-6590928301483137746`, oggetto "Pro Vercelli — chi rischia di non rinnovare l'abbonamento?") **esiste ancora come bozza non inviata**. Nessuna risposta da Pro Vercelli — perché nessun messaggio è mai partito.
-- Nessuna delle voci della checklist pre-invio risulta segnata come completata dal 24/06: pricing (Q-01/Q-02/Q-03) ancora "proposta da validare", landing page/one-pager ancora assenti, LinkedIn di Piccica non verificato, Calendly non configurato.
-- 🔴 Rischio concreto: siamo a 16 giorni dalla deadline M1 (22 luglio, presentazione pronta) e a 16 giorni dalla deadline M2 (31 luglio, prima demo) — e il primo contatto non è ancora partito.
-
-### Raccomandazione (⭐⭐⭐⭐ — inferenza ragionevole dai vincoli noti)
-
-> 💡 PROPOSTA DA VALIDARE (confidenza alta — richiede comunque conferma di Lorenzo prima di inviare qualsiasi email):
-> Con 16 giorni rimasti, aspettare che pricing, landing page e Calendly siano tutti pronti prima di scrivere a Pro Vercelli rischia di far saltare la finestra dell'estate (il momento in cui i club pianificano la campagna abbonamenti). Si può contattare Alessandro Piccica **senza** landing page e senza Calendly: bastano l'email e la disponibilità a fissare una data via risposta diretta. Pricing e Calendly possono seguire dopo la sua prima risposta, non prima.
-
-### Email pronta all'invio — versione aggiornata (bozza Gmail esistente, da approvare)
-
-La bozza esistente (ID `r-6590928301483137746`) resta valida: tono calcistico corretto, nessuna parola vietata, CTA unica (demo 20 minuti), ~80 parole. Non è stata modificata per non perdere lo storico della bozza — **rimane in attesa di approvazione esplicita di Lorenzo prima dell'invio**.
-
-Unica modifica suggerita se Lorenzo approva l'invio ora: sostituire "Disponibile la prossima settimana?" con una data precisa, per esempio *"Disponibile martedì o mercoledì prossimo, 15-20 minuti?"* — una domanda con data concreta ottiene più risposte di una domanda generica.
-
-### Prossima azione
-
-- [ ] Lorenzo: approvare (o modificare) la bozza Gmail e autorizzare l'invio — questo è ora il collo di bottiglia principale del piano.
-- [ ] Se approvata, inviare entro il 17-18 luglio per non perdere altri giorni utili prima del 22 luglio (M1).
-- [ ] Verifica LinkedIn di Alessandro Piccica può avvenire in parallelo, non è bloccante per l'invio.

@@ -66,7 +66,6 @@ Mostrare con dati sintetici realistici (club similare a Pro Vercelli):
 - [ ] One-pager da lasciare dopo la demo
 - [ ] Pricing comunicabile
 
-→ Task in `product/backlog.md`
 
 ---
 

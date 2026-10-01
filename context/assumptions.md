@@ -43,7 +43,7 @@ Questo file raccoglie le ipotesi che guidano le decisioni di FanIQ ma che non so
 Quando validi o smentisci un'ipotesi:
 1. Aggiungi una riga sotto l'ipotesi con `> ✅ Confermata` o `> ❌ Smentita` + fonte + data
 2. Sposta la voce in `decisions/decisions_log.md`
-3. Aggiorna la strategia o il roadmap se necessario
+3. Aggiorna la strategia se necessario (questioni aperte in `CONTEXT_HANDOFF.md`)
 
 ---
 

@@ -7,7 +7,7 @@ Profili dei club target con note commerciali. Aggiornare prima di ogni contatto.
 ## Pro Vercelli — Target primario
 
 **Stato contatto:** ❌ Nessun contatto ancora effettuato
-**Priorità:** 🔴 Primo target — deadline fine luglio 2026
+**Priorità:** 🔴 Primo target (deadline di fine luglio 2026 superata — da confermare con Lorenzo)
 
 | Attributo | Informazione |
 |-----------|-------------|

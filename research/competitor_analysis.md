@@ -1,7 +1,6 @@
 # Competitor Analysis — FanIQ
 
-> ⚠️ Questo file è un template di lavoro. Non è ancora stata condotta un'analisi sistematica dei competitor.
-> Per condurre l'analisi: usare il prompt `STR-01` in `prompts/prompt_library.md`.
+> Prima mappatura ipotetica in alto; analisi con ricerca web del 22/06/2026 nella sezione "Aggiornamento" in fondo.
 
 ---
 

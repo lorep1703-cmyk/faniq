@@ -41,17 +41,16 @@ Registro delle decisioni confermate. Ogni decisione ha data, rationale e fonte.
 **Decisione:** Row-Level Security (RLS) su PostgreSQL per l'isolamento dei dati.
 **Rationale:** Soluzione nativa a livello di database — più sicura di filtri applicativi.
 **Impatto:** Ogni modifica al database richiede attenzione alle policy RLS. Non toccare senza approvazione.
-**File collegati:** `governance/approval_gates.md`
+**File collegati:** `CLAUDE.md` (vincoli di sicurezza)
 
 ### D-03 — Stripe integrato ma non attivato
 **Data:** Ante 2026-06-22
-**Stato:** Confermata (da completare)
+**Stato:** Superata da D-06
 **Chi ha deciso:** Lorenzo Ponzi
 **Contesto:** Il prodotto deve poter incassare, ma nessun cliente ancora.
 **Decisione:** Stripe è integrato nel codice ma non attivato — da attivare prima della prima demo.
 **Rationale:** Meglio averlo pronto che attivarlo di fretta dopo la firma.
-**Impatto:** Task urgente in `product/backlog.md` (P2).
-**File collegati:** `product/backlog.md`, `strategy/risks.md` (R6)
+**Impatto:** —
 
 ---
 
@@ -69,14 +68,28 @@ Registro delle decisioni confermate. Ogni decisione ha data, rationale e fonte.
 
 ### D-05 — Deadline primo cliente: fine luglio 2026
 **Data:** 2026-06-22
-**Stato:** Confermata
+**Stato:** Superata da D-07
 **Chi ha deciso:** Lorenzo Ponzi
 **Contesto:** Obiettivo temporale per la prima presentazione a un club reale.
 **Decisione:** Tutto pronto (pricing, pitch, landing page) entro fine luglio 2026 per presentare a Pro Vercelli.
 **Rationale:** Scadenza autoimposta per creare urgenza operativa.
 **Impatto:** Roadmap e backlog costruiti su questa deadline.
-**File collegati:** `strategy/roadmap.md`
+
+### D-06 — Nessun sistema di pagamento nel prodotto
+**Data:** 2026-10-01
+**Stato:** Confermata (constatazione)
+**Chi ha deciso:** verifica sul codice durante la pulizia del repo
+**Contesto:** D-03 diceva "Stripe integrato ma non attivato".
+**Decisione:** Stripe non è nel codice: c'era solo la colonna `stripe_customer_id`, rimossa come codice morto (commit `2e460a4`). Il sistema di pagamento è da scegliere e collegare prima del primo incasso.
+**Impatto:** Supera D-03.
+
+### D-07 — Deadline di fine luglio superata
+**Data:** 2026-10-01
+**Stato:** Aperta — nuova roadmap da definire con Lorenzo
+**Contesto:** D-05 fissava presentazione a Pro Vercelli entro fine luglio 2026. Al 15/07 l'email di primo contatto era ancora una bozza non inviata.
+**Decisione:** La deadline è superata; roadmap e backlog di giugno rimossi dal repo. Nuova roadmap da rifare (questione 7 in `CONTEXT_HANDOFF.md`).
+**Impatto:** Supera D-05.
 
 ---
 
-*Aggiornato il 22 giugno 2026.*
+*Aggiornato il 1 ottobre 2026.*

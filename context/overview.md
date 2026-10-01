@@ -39,7 +39,7 @@ FanIQ è una piattaforma di fan intelligence per club sportivi. I club caricano 
 |-------|-----------|--------|
 | Backend | FastAPI + PostgreSQL (Neon) | Render |
 | Frontend | React + Vite | Vercel |
-| Pagamenti | Stripe | Non attivo |
+| Pagamenti | — | Nessun sistema di pagamento ancora |
 | AI | OpenAI | Attivo (Chat AI) |
 
 **Repository:** `https://github.com/lorep1703-cmyk/faniq.git`
@@ -47,13 +47,13 @@ FanIQ è una piattaforma di fan intelligence per club sportivi. I club caricano 
 
 ---
 
-## Stato al 22 giugno 2026
+## Stato al 1 ottobre 2026
 
 - MVP completo e deployato ✅
 - Zero clienti paganti ❌
-- Stripe integrato ma non attivato ⚠️
+- Nessun sistema di pagamento (Stripe mai integrato) ⚠️
 - Landing page pubblica: non esiste ❌
-- Primo target: Pro Vercelli — deadline fine luglio 2026 🎯
+- Primo target: Pro Vercelli — mai contattato (email rimasta in bozza), obiettivo da confermare 🎯
 
 ---
 

@@ -43,6 +43,14 @@ Approccio che Lorenzo apprezza: verificare che i dati mostrati **rispecchino la 
 4. **7 idee feature Dashboard del 03/09** — ancora da scremare (brainstorming Superpowers interrotto; elenco sotto). Nota: l'idea #2 "indicatore affidabilità dati" esiste già in parte (badge `DataHealthPill` su Report/Intelligence). Prima di costruire l'idea "Prossima partita" serve capire come gestire il calendario (vedi pattern sotto).
 5. **F9 in `product/feature_ideas.md`** (monitoraggio predittivo continuo + contenuti personalizzati via agenti/MCP; Hermes/Klaviyo come piste) — parcheggiata, Lorenzo ha detto di tenere Hermes da parte per ora.
 
+6. **Sicurezza: punti ancora aperti dell'audit del 29/06** (verificati nel codice l'01/10; il resto dell'audit è stato corretto e il file rimosso). Da valutare prima del primo club pagante. Alcuni toccano l'autenticazione, che è zona vietata: **serve la decisione di Lorenzo**.
+   - Nessuna revoca del token al logout: il JWT resta valido fino alla scadenza (default 8 ore, `config.py:41`; verificare che su Render `FANIQ_JWT_EXPIRE_MINUTES` non sia più alta).
+   - `python-jose` e `passlib` poco mantenuti (dipendenze di auth e recupero password).
+   - Rate limit in memoria: si azzera al riavvio e non regge più istanze su Render.
+   - Prompt injection nella Chat AI: i dati caricati finiscono nel contesto del modello.
+   - Minore: JWT con algoritmo simmetrico HS256 (`config.py:40`).
+7. **Roadmap commerciale da rifare**: le milestone di giugno (M1–M4, prima demo Pro Vercelli entro il 31/07) sono scadute e il file è stato rimosso l'01/10. **Stato Pro Vercelli da chiarire con Lorenzo** (email mai confermata come inviata): da questo dipendono `sales_assets/outreach_pro_vercelli.md`, `research/club_profiles.md` e le domande Q-06/Q-07 in `decisions/open_questions.md`.
+
 ### Pattern di bug ricorrente: `date.today()` come riferimento di "recente"
 Calendario & Presenze (zero predizioni: nessuna partita futura), "Da contattare" (zero anomalie), Ambassador Score (penalità universale) ancorano "recente/futuro" alla **data reale di sistema** invece che alle date dei dati del club. Con dati demo/storici o in pausa estiva falliscono silenziosamente. **Prima di dare per buono un "non c'è nulla da mostrare", controllare se il codice usa `date.today()`.**
 Punti censiti l'01/10: `services/intelligence/ambassador.py:48`, `services/intelligence/engine.py:222/237/313`, `services/behavioral.py:38`, `routers/partite.py:60`, `services/analytics.py:133`, `services/spending_forecast.py:30` (quest'ultimo accetta già `today` come parametro).
@@ -63,7 +71,7 @@ Punti censiti l'01/10: `services/intelligence/ambassador.py:48`, `services/intel
 2. ✅ `AGENTS.md` è un collegamento a `CLAUDE.md`: Codex e Claude Code leggono lo stesso file. Hindsight valutato e annotato in F9 (`product/feature_ideas.md`).
 3. ✅ Sicurezza push e Codex: hook `.githooks/pre-push` (conferma umana, vale per ogni agente); `.codex/` versionato con isolamento senza rete + `.codex/rules/faniq.rules` (verificati nel sandbox reale). Backup DB del 02/09 nel Cestino, `*.db.bak*` in `.gitignore`. **Da fare (Lorenzo):** segnare `~/Developer/faniq` come trusted in Codex, altrimenti la config di progetto non viene letta. Blocco lato GitHub rinviato: repo privato → servirebbe piano a pagamento, e comunque non distingue Lorenzo dagli agenti.
 4. ✅ Rami già uniti cancellati in locale; stash del 09/07 svuotato dopo averne recuperato le idee (sezione "Idee dal passato da rifare"). **Da fare (Lorenzo):** `git push origin --delete claude/sleepy-thompson-bt6kf5` (chiederà conferma).
-5. ⏳ Documenti di giugno nella root (`CONTEXT.md`, `PROJECT_STRUCTURE.md`, `instructions.md`, audit…) da archiviare.
+5. ✅ Documenti superati rimossi (audit già risolti nel codice, prompt già eseguiti, ciclo "potenziamento", log delle sessioni automatiche, regole per agenti in conflitto con CLAUDE.md, `.clinerules`, due worktree vecchi). Idee recuperate in `product/feature_ideas.md`, punti di sicurezza aperti e roadmap qui sopra (questioni 6 e 7). Corretto ovunque "Stripe integrato": nel codice non c'è.
 
 ---
 
@@ -72,7 +80,7 @@ Punti censiti l'01/10: `services/intelligence/ambassador.py:48`, `services/intel
 Lavoro marketing/brand delle sessioni automatiche di luglio, mai entrato in `main`. Tenute solo le idee; scartati i log di scadenze (tutte passate) e una cancellazione accidentale dei CSV di esempio. **Da rifare, non da copiare**: pricing e tono di voce non sono mai stati approvati da Lorenzo.
 
 1. **FAQ obiezione Vivaticket** per landing/pitch: *"Vivaticket ti dice quanti biglietti hai venduto. FanIQ ti dice chi sono i tifosi che li hanno comprati: chi rischia di sparire, chi premiare, chi richiamare prima del rinnovo. Il CSV che già esporti è pronto da caricare, nessuna integrazione."*
-2. **Chi è il vero avversario**, risposta a "con chi vi confrontate?": *"Non competiamo con un altro software, ma con il file Excel che l'ufficio marketing apre ogni lunedì e richiude senza aver deciso niente."* (L'idea è già in `research/competitor_analysis.md:105`, manca la frase pronta per il pitch.)
+2. **Chi è il vero avversario**, risposta a "con chi vi confrontate?": *"Non competiamo con un altro software, ma con il file Excel che l'ufficio marketing apre ogni lunedì e richiude senza aver deciso niente."* (L'idea è già in `research/competitor_analysis.md:104`, manca la frase pronta per il pitch.)
 3. **Dato di mercato per il pitch**: Serie C oltre 3 milioni di spettatori nel 2025-26 (+8% sull'anno prima, +40% in tre anni). Fonti indicate a luglio: comunicati FIGC e Lega Pro. **Da riverificare** prima di usarlo; è un dato di lega, non del singolo club.
 4. **Da monitorare**: Lega Pro ha un progetto di *digital engagement* per i 59 club (community/social, non analisi commerciale): non è un concorrente oggi, ma è un possibile partner o rischio.
 5. **Sezione prezzo sulla landing** ("Un prezzo. Tutto incluso.", proposta €299/mese con primo periodo gratuito): dipende dalla decisione sul pricing, mai presa.

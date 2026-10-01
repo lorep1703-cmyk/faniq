@@ -87,7 +87,6 @@ Bottone: "Richiedi una demo gratuita"
 - Form di contatto / richiesta demo → per ora basta un link Calendly o un form email semplice
 - La dashboard vera (`faniq-seven.vercel.app`) rimane separata e protetta da login
 
-→ Prompt per costruire la landing page: `prompts/prompt_library.md`
 
 ---
 
@@ -186,7 +185,7 @@ Sotto il bottone (testo piccolo): *"Nessun impegno. Ti mostro il prodotto live c
 ### Note operative per la sessione di sviluppo landing
 
 - Priorità costruzione: Hero → Problema → Come funziona → Feature → CTA finale → FAQ
-- Urgenza: la landing deve essere live entro la settimana 6-12 luglio per non bloccare l'outreach
+- Serve prima dell'outreach: avere qualcosa da linkare
 - Dominio da decidere (Q-05 in `decisions/open_questions.md`)
 - Social proof: sezione vuota fino al primo cliente. NON inventare citazioni.
 

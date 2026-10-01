@@ -7,4 +7,4 @@ action: block
 ---
 🛑 **Comando con effetti distruttivi o su main.**
 
-Regola del piano potenziamento: fermati, spiega a Lorenzo in linguaggio semplice cosa farebbe questo comando e quali rischi comporta, e procedi solo dopo la sua conferma esplicita.
+Regola di sicurezza (installata a luglio 2026, vedi CLAUDE.md, Deploy): fermati, spiega a Lorenzo in linguaggio semplice cosa farebbe questo comando e quali rischi comporta, e procedi solo dopo la sua conferma esplicita.

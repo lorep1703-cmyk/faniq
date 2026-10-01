@@ -6,7 +6,7 @@
 
 ## Vincoli noti
 
-- Stripe è integrato ma non attivato — va attivato prima della prima demo
+- Nessun sistema di pagamento nel prodotto (Stripe mai integrato davvero): da scegliere e collegare prima del primo incasso
 - Il mercato target (Lega Pro / Serie C) ha budget contenuti
 - Non c'è ancora feedback di mercato reale
 
@@ -53,7 +53,6 @@ Utile per il cash flow nelle fasi iniziali.
 ## Prossimo passo
 Definire il pricing prima del primo contatto con Pro Vercelli, in modo da poter rispondere se chiedono "quanto costa?"
 
-→ Task in `product/backlog.md`
 
 ---
 
@@ -118,4 +117,3 @@ Non dare il prezzo per email prima di aver mostrato il prodotto. Il prezzo senza
 - **Q-02 (trial gratuito):** Proposta → 3 mesi per il pilot Pro Vercelli. Da confermare da Lorenzo.
 - **Q-03 (prezzi pilot):** Proposta → incluso nei 3 mesi gratuiti + testimonianza. Da confermare da Lorenzo.
 
-⚠️ **Scadenza decisione: entro 28 giugno 2026** — la roadmap prevede che il pricing sia definito questa settimana per non bloccare il pitch e l'outreach programmati per la settimana successiva.

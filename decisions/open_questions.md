@@ -22,8 +22,8 @@ Quando una domanda viene risolta, spostarla in `decisions/decisions_log.md`.
 ## Domande aperte — Pricing
 
 ### Q-01 — Quale modello di pricing adottare?
-**Priorità:** 🔴 URGENTE — scadenza entro 28 giugno 2026
-**Scadenza:** Entro 28 giugno (questa settimana) — la roadmap dipende da questa decisione
+**Priorità:** 🔴 Alta — bloccante per il primo contatto con un club
+**Scadenza:** Prima del primo contatto (scadenza originale 28/06/2026 superata)
 **Contesto:** Non si può fare outreach o demo senza sapere rispondere a "quanto costa?". Opzioni in `gtm/pricing.md`.
 **Opzioni:** Canone fisso per piano / Canone per fascia tifosi / Ibrido
 **Proposta sessione 2026-06-24:** Canone fisso unico €299/mese (nessun tier per il pilot). Motivazione e dettagli in `gtm/pricing.md` (Aggiornamento 2026-06-24).
@@ -41,7 +41,7 @@ Quando una domanda viene risolta, spostarla in `decisions/decisions_log.md`.
 
 ### Q-03 — Prezzi speciali per il primo cliente (pilot)?
 **Priorità:** 🔴 Alta — dipende da Q-01 e Q-02
-**Scadenza:** Prima della proposta a Pro Vercelli (settimana 6-12 luglio)
+**Scadenza:** Prima della proposta al primo club
 **Contesto:** Il primo cliente è anche il primo case study. Vale la pena fare un prezzo speciale per averlo?
 **Opzioni:** Sconto permanente / Sconto solo primo anno / Accesso in cambio di testimonianza / Prezzo pieno da subito
 **Proposta sessione 2026-06-24:** Incluso nella proposta Q-02 — i 3 mesi gratuiti coprono il pilot; condizione: testimonianza usabile se soddisfatti.
@@ -85,7 +85,7 @@ Quando una domanda viene risolta, spostarla in `decisions/decisions_log.md`.
 **Scadenza:** Prima della demo
 **Contesto:** I dati sintetici potrebbero non essere abbastanza convincenti. Come rendiamo la demo credibile?
 **Opzioni:** Dataset sintetico molto realistico / Offrire subito il trial con i loro dati / Chiedere un campione di dati prima della demo
-**Prossima azione:** Preparare dataset sintetico (P1 in `product/backlog.md`) e valutare
+**Prossima azione:** Dataset sintetico realistico già pronto (~1844 fan, sessione di test del 23/09). Resta da valutare
 **Aperta dal:** 2026-06-22
 
 ---
@@ -104,25 +104,3 @@ Quando una domanda viene risolta, spostarla in `decisions/decisions_log.md`.
 
 *Aggiornato il 22 giugno 2026.*
 
----
-
-## Aggiornamento — 2026-07-15
-*Sessione: Marketing (automatica) — URGENCY PHASE, 16 giorni al 31 luglio 2026*
-
-### Q-01/Q-02/Q-03 — escalation critica
-
-Le proposte pricing (€299/mese, 3 mesi gratuiti pilot) sono ferme in stato "da validare" da 21 giorni (proposte il 24/06, scadenza originale 28/06). Nessuna decisione registrata in `decisions/decisions_log.md`. Con 16 giorni alla deadline M1 (22 luglio) e M2 (31 luglio), questo è ora il rischio più alto del piano insieme al mancato invio dell'outreach.
-
-**Prossima azione:** Lorenzo deve confermare o modificare Q-01/Q-02/Q-03 entro il 17 luglio 2026 — non c'è più margine per rimandare senza compromettere M1/M2. Vedi anche `sales_assets/outreach_pro_vercelli.md` (Aggiornamento 2026-07-15).
-
----
-
-## Aggiornamento — 2026-07-17
-*Sessione: Brand Identity (automatica) — URGENCY PHASE, 14 giorni al 31 luglio 2026*
-
-### [BRAND] Escalation — approvazioni brand ferme da 25 giorni
-
-Mission, Vision, Valori, Tono di voce e Tagline in `marketing/brand_identity.md` sono ancora tutti in stato "Proposta — non approvata" dal 2026-06-22 (25 giorni). Nessuna di queste proposte è stata modificata o bocciata da Lorenzo — semplicemente non è mai stata revisionata. Stesso pattern di stallo già segnalato per Q-01/Q-02/Q-03 (pricing) e per l'invio dell'outreach.
-**Rischio:** con 14 giorni alla deadline, se Pro Vercelli chiede materiali (one-pager, landing) prima della demo, questi verrebbero costruiti su un brand ancora "proposta" e non ufficiale.
-**Prossima azione:** Lorenzo approva (anche in blocco, senza modifiche) mission/vision/valori/tono/tagline — non richiede lavoro, solo una conferma. Se non risponde entro pochi giorni, trattarle come de facto valide per non bloccare la produzione di materiali (landing, one-pager).
-**Aperta dal:** 2026-07-17
