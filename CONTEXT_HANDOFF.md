@@ -56,13 +56,12 @@ Punti censiti l'01/10: `services/intelligence/ambassador.py:48`, `services/intel
 - **Upload CSV**: il drag&drop non è pilotabile dal browser automatico → usare `curl` con login (`POST /auth/login` → token → `POST /upload/{abbonati|biglietteria|shop}` e `POST /partite/upload`, campo `file`).
 - **Cache intelligence in-memory** (TTL 900s): dopo modifiche dirette al DB, forzare `POST /api/intelligence/club/refresh` (un altro processo Python non può invalidare la cache del server).
 - **Console del browser di test**: `read_console_messages` accumula errori vecchi tra navigazioni — verificare lo stato con screenshot, non fidarsi solo dello storico.
-- Untracked: `.codex/`, `AGENTS.md`, `backend/faniq.db.bak-20260902144342` → in sistemazione dall'01/10 (vedi "Pulizia in corso").
 
 ## Pulizia in corso (01/10)
 
 1. ✅ Memoria e handoff senza doppioni: lo stato del progetto sta solo qui, la memoria di Claude tiene solo le preferenze di lavoro.
 2. ✅ `AGENTS.md` è un collegamento a `CLAUDE.md`: Codex e Claude Code leggono lo stesso file. Hindsight valutato e annotato in F9 (`product/feature_ideas.md`).
-3. ⏳ File non tracciati: `.codex/` e backup DB del 02/09.
+3. ✅ Sicurezza push e Codex: hook `.githooks/pre-push` (conferma umana, vale per ogni agente); `.codex/` versionato con isolamento senza rete + `.codex/rules/faniq.rules` (verificati nel sandbox reale). Backup DB del 02/09 nel Cestino, `*.db.bak*` in `.gitignore`. **Da fare (Lorenzo):** segnare `~/Developer/faniq` come trusted in Codex, altrimenti la config di progetto non viene letta. Blocco lato GitHub rinviato: repo privato → servirebbe piano a pagamento, e comunque non distingue Lorenzo dagli agenti.
 4. ⏳ Rami già uniti da cancellare (`claude/sleepy-williams-e87eb2`, `feature/agent-upgrade` con uno stash da guardare, remoto `claude/sleepy-thompson-bt6kf5`).
 5. ⏳ Documenti di giugno nella root (`CONTEXT.md`, `PROJECT_STRUCTURE.md`, `instructions.md`, audit…) da archiviare.
 
