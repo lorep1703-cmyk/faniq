@@ -1,0 +1,39 @@
+#!/bin/sh
+# Blocco del push valido per qualunque strumento (Claude Code, Codex, IDE, terminale).
+# Un push su main o un push forzato richiede una conferma scritta da una persona
+# in un terminale vero. Gli agenti non hanno un terminale (/dev/tty): vengono bloccati.
+# Attivazione (una volta per clone): git config core.hooksPath .githooks
+
+zero=0000000000000000000000000000000000000000
+motivi=""
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+    case "$remote_ref" in
+        refs/heads/main)
+            motivi="$motivi\n  - push su main (fa partire il deploy su Render)" ;;
+    esac
+    # Push forzato: il commit remoto non è antenato di quello locale
+    if [ "$remote_sha" != "$zero" ] && [ "$local_sha" != "$zero" ]; then
+        if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+            motivi="$motivi\n  - push forzato su $remote_ref (riscrive la storia remota)"
+        fi
+    fi
+    if [ "$local_sha" = "$zero" ]; then
+        motivi="$motivi\n  - cancellazione del ramo remoto $remote_ref"
+    fi
+done
+
+[ -z "$motivi" ] && exit 0
+
+if ! (exec </dev/tty) 2>/dev/null; then
+    printf "PUSH BLOCCATO:%b\n" "$motivi" >&2
+    echo "Serve la conferma di Lorenzo da un terminale. Gli agenti AI non possono confermare." >&2
+    exit 1
+fi
+
+printf "Attenzione:%b\n" "$motivi" >/dev/tty
+printf "Confermi? Scrivi 'si' per procedere: " >/dev/tty
+read -r risposta </dev/tty
+[ "$risposta" = "si" ] && exit 0
+echo "Push annullato." >&2
+exit 1
