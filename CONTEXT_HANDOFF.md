@@ -62,8 +62,21 @@ Punti censiti l'01/10: `services/intelligence/ambassador.py:48`, `services/intel
 1. ✅ Memoria e handoff senza doppioni: lo stato del progetto sta solo qui, la memoria di Claude tiene solo le preferenze di lavoro.
 2. ✅ `AGENTS.md` è un collegamento a `CLAUDE.md`: Codex e Claude Code leggono lo stesso file. Hindsight valutato e annotato in F9 (`product/feature_ideas.md`).
 3. ✅ Sicurezza push e Codex: hook `.githooks/pre-push` (conferma umana, vale per ogni agente); `.codex/` versionato con isolamento senza rete + `.codex/rules/faniq.rules` (verificati nel sandbox reale). Backup DB del 02/09 nel Cestino, `*.db.bak*` in `.gitignore`. **Da fare (Lorenzo):** segnare `~/Developer/faniq` come trusted in Codex, altrimenti la config di progetto non viene letta. Blocco lato GitHub rinviato: repo privato → servirebbe piano a pagamento, e comunque non distingue Lorenzo dagli agenti.
-4. ⏳ Rami già uniti da cancellare (`claude/sleepy-williams-e87eb2`, `feature/agent-upgrade` con uno stash da guardare, remoto `claude/sleepy-thompson-bt6kf5`).
+4. ✅ Rami già uniti cancellati in locale; stash del 09/07 svuotato dopo averne recuperato le idee (sezione "Idee dal passato da rifare"). **Da fare (Lorenzo):** `git push origin --delete claude/sleepy-thompson-bt6kf5` (chiederà conferma).
 5. ⏳ Documenti di giugno nella root (`CONTEXT.md`, `PROJECT_STRUCTURE.md`, `instructions.md`, audit…) da archiviare.
+
+---
+
+## Idee dal passato da rifare (recuperate l'01/10 dallo stash del 09/07, poi cancellato)
+
+Lavoro marketing/brand delle sessioni automatiche di luglio, mai entrato in `main`. Tenute solo le idee; scartati i log di scadenze (tutte passate) e una cancellazione accidentale dei CSV di esempio. **Da rifare, non da copiare**: pricing e tono di voce non sono mai stati approvati da Lorenzo.
+
+1. **FAQ obiezione Vivaticket** per landing/pitch: *"Vivaticket ti dice quanti biglietti hai venduto. FanIQ ti dice chi sono i tifosi che li hanno comprati: chi rischia di sparire, chi premiare, chi richiamare prima del rinnovo. Il CSV che già esporti è pronto da caricare, nessuna integrazione."*
+2. **Chi è il vero avversario**, risposta a "con chi vi confrontate?": *"Non competiamo con un altro software, ma con il file Excel che l'ufficio marketing apre ogni lunedì e richiude senza aver deciso niente."* (L'idea è già in `research/competitor_analysis.md:105`, manca la frase pronta per il pitch.)
+3. **Dato di mercato per il pitch**: Serie C oltre 3 milioni di spettatori nel 2025-26 (+8% sull'anno prima, +40% in tre anni). Fonti indicate a luglio: comunicati FIGC e Lega Pro. **Da riverificare** prima di usarlo; è un dato di lega, non del singolo club.
+4. **Da monitorare**: Lega Pro ha un progetto di *digital engagement* per i 59 club (community/social, non analisi commerciale): non è un concorrente oggi, ma è un possibile partner o rischio.
+5. **Sezione prezzo sulla landing** ("Un prezzo. Tutto incluso.", proposta €299/mese con primo periodo gratuito): dipende dalla decisione sul pricing, mai presa.
+6. **Pulizia del linguaggio** in pitch/posizionamento/landing ("data scientist", "SQL", "KPI", "onboarding", "ottimizzati" → parole semplici). Ha senso solo se Lorenzo approva il tono di voce in `marketing/brand_identity.md`.
 
 ---
 
