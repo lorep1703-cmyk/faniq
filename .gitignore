@@ -34,3 +34,7 @@ frontend/.vite/
 .idea/
 *.swp
 frontend/.claude/
+
+# Codex: hook importato da .claude/hooks, con percorso assoluto del Mac
+.codex/hooks.json
+.codex/hooks/
